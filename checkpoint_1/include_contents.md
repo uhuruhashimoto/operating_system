@@ -60,7 +60,11 @@ defines how to load memory information from an ELF file (mmap?)
 
 ## ykernel.h
 ```
-
+defines a bunch of helper programs
+defines KILL error (for use in LoadProgram)
 ```
 
 ## yuser.h
+```
+Defines a bunch of syscall wrappers
+```
