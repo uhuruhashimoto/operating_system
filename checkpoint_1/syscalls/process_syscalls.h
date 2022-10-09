@@ -1,6 +1,6 @@
 //
 // Created by smooth_operator on 10/8/22.
-// Specs are on Page 32 of Yalnix Manual
+// Specs are on Page 29 of Yalnix Manual
 //
 
 #ifndef CURRENT_CHUNGUS_PROCESS_SYSCALL_HANDLERS
