@@ -1,12 +1,17 @@
 #include "ipc_syscalls.h"
 #include "stdbool.h"
+#include "../data_structures/pcb.h"
 
 typedef struct pipe {
   int pipe_id;
   char buf[/* TODO -- buf length */];
   int start_id=0;
   int end_id=0;
+  pcb_t* blocked_head;                 // the head of the linked list of blocked processes
+  pcb_t* blocked_tail;                 // the tail of the linked list of blocked processes
 } pipe_t;
+
+/****************** UTILITY FUNCTIONS ***********************/
 
 bool is_full(int pipe_id)
 {
@@ -34,6 +39,33 @@ int write_byte(int pipe_id)
   // returns 0
 }
 
+int block_pcb_on_pipe(int pipe_id, pcb_t* process_block)
+{
+  // if head is NULL, place process_block there, set up tail
+  // otherwise:
+  //  get variable old_tail
+  //  point tail at the pcb
+  //  point old_tail and pcb at each other
+  // return SUCCESS or ERROR
+}
+
+/********** unblock_pcb_on_pipe *************/
+/*
+ * Gets the pcb_t* at head of pipe, places it in ready queue, returns a pointer to it
+ */
+pcb_t* unblock_pcb_on_pipe(int pipe_id)
+{
+  // gets head of pipe
+  // sets head of pipe to head->next_pcb
+  // sets the prev_pcb of the new head to NULL
+  // sets the next_pcb of the old head to NULL
+  // sticks the old head in the ready queue
+  // returns the old head
+}
+
+/***************** END UTILITY FUNCTIONS *********************/
+
+
 /*
  * Create a new pipe; save its identifier at *pipe idp. (See the header files for the length of the pipe’s internal
 buffer.) In case of any error, the value ERROR is returned.
@@ -55,7 +87,9 @@ In case of any error, the value ERROR is returned. Otherwise, the return value i
  */
 int PipeRead(int pipe_id, void *buf, int len)
 {
-  // if the pipe is empty, block the caller
+  // if the pipe is empty, block the caller:
+  //   put the caller in the blocked queue of the pipe
+  //   swap a new process into the ready slot for execution
   // read bytes from the pipe into *buf
 }
 
