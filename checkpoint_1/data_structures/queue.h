@@ -7,15 +7,17 @@
 
 #include "pcb.h"
 
-/*
- * Adds the PCB to the back of the ready queue
- */
-int add_to_ready_queue(pcb_t* pcb);
+typedef struct queue queue_t;
 
 /*
- * Removes a PCB from the front of the ready queue
+ * Adds the PCB to the back of the queue
  */
-pcb_t* remove_from_ready_queue();
+int add_to_queue(queue_t* queue, pcb_t* pcb);
+
+/*
+ * Removes a PCB from the front of the queue
+ */
+pcb_t* remove_from_queue(queue_t* queue,);
 
 
 #endif //CURRENT_CHUNGUS_CIRCULAR_QUEUE

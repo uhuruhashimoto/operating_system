@@ -1,5 +1,11 @@
 #include "io_syscalls.h"
 
+// TODO -- should I be storing terminal information here or elsewhere...?
+typedef struct tty {
+  int id;
+
+} tty_t;
+
 /*
  * Read the next line of input from terminal tty id, copying it into the buffer referenced by buf. The maximum
 length of the line to be returned is given by len. The line returned in the buffer is not null-terminated.
