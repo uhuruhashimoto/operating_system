@@ -68,5 +68,6 @@ int PipeWrite(int pipe_id, void *buf, int len)
 {
   // checks to see if the buffer has enough free space
   // write all the bytes into the buffer, checking return code
+  // put any processes waiting on the pipe back into the ready queue
   // return ERROR or the number of bytes written
 }
