@@ -6,10 +6,12 @@
 #ifndef CURRENT_CHUNGUS_TRAP_HANDLERS
 #define CURRENT_CHUNGUS_TRAP_HANDLERS
 
+typedef void (*trap_handler) ();
+
 /*
  * Handle traps to the kernel
  */
-void handle_trap_kernel(uswr_context* context);
+void handle_trap_kernel();
 
 /*
  * Handle traps to clock -- starts the next process

@@ -4,12 +4,14 @@
 /*
  * Handle traps to the kernel
  */
-void handle_trap_kernel(uswr_context* context) {
+void handle_trap_kernel() {
+  // TODO -- get user context global
   int trap_type = context->code;
+
+  // TODO -- get args from the registers
 
   // switch based on the trap type
   switch (trap_type) {
-    // TODO -- where are these arguments?
 
     // process syscalls
     case YALNIX_FORK:
