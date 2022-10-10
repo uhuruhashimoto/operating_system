@@ -17,7 +17,7 @@ process). If the length of the next available input line is shorter than len byt
 to the calling process as are available in the input line; On success, the number of bytes actually copied into the
 calling process’s buffer is returned; in case of any error, the value ERROR is returned.
  */
-int TtyRead(int tty id, void *buf, int len);
+int TtyRead(int tty_id, void *buf, int len);
 
 /*
  * Write the contents of the buffer referenced by buf to the terminal tty id. The length of the buffer in bytes
@@ -26,6 +26,6 @@ terminal. On success, the number of bytes written (len) is returned; in case of 
 returned.
 Calls to TtyWrite for more than TERMINAL MAX LINE bytes should be supported.
  */
-int TtyWrite(int tty id, void *buf, int len);
+int TtyWrite(int tty_id, void *buf, int len);
 
 #endif //CURRENT_CHUNGUS_IO_SYSCALL_HANDLERS
