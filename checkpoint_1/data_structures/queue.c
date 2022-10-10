@@ -8,6 +8,8 @@ typedef struct queue {
   int size=0;
 } queue_t;
 
+// TODO -- function to create new queue objects
+
 /*
  * Adds the PCB to the back of the ready queue
  */

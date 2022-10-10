@@ -1,4 +1,5 @@
 #include "trap_handlers.h"
+#include "syscalls/process_syscalls.h"
 
 /*
  * Handle traps to the kernel
@@ -6,6 +7,36 @@
 void handle_trap_kernel(uswr_context* context) {
   int trap_type = context->code;
 
+  // switch based on the trap type
+  switch (trap_type) {
+    // TODO -- where are these arguments?
+
+    // process syscalls
+    case YALNIX_FORK:
+      Fork();
+      break;
+    case YALNIX_EXEC:
+      Exec();
+      break;
+    case YALNIX_EXIT:
+      Exit();
+      break;
+    case YALNIX_WAIT:
+      Wait();
+      break;
+    case YALNIX_GETPID:
+      GetPid();
+      break;
+    case YALNIX_BRK:
+      Brk();
+      break;
+    case YALNIX_DELAY:
+      Delay();
+      break;
+
+    // TODO -- what other kernel syscalls do we need to handle?
+    // TODO -- create a default case
+  }
 
   context->regs[0] = return_val
 }
