@@ -1,5 +1,7 @@
 #include "kernel_start.h"
 #include "trap_handlers.h"
+#include "data_structures/pcb.h"
+#include "data_structures/queue.h"
 
 /*
  * Behavior:
@@ -10,11 +12,11 @@
 void KernelStart(char *cmd args[],
                  unsigned int pmem size,
                  UserContext *uctxt) {
-// TODO -- VIRTUAL MEMORY
+  // TODO -- VIRTUAL MEMORY
 
-// TODO -- TRAP HANDLERS
-// write base pointer of trap handlers to REG_VECTOR_BASE (how?)
-// set up trap handler array
+  // TODO -- TRAP HANDLERS
+  // write base pointer of trap handlers to REG_VECTOR_BASE (how?)
+  // set up trap handler array
   trap_handler[TRAP_VECTOR_SIZE];
   trap_handler[TRAP_KERNEL] = &handle_trap_kernel;
   trap_handler[TRAP_CLOCK] = &handle_trap_clock;
@@ -29,7 +31,9 @@ void KernelStart(char *cmd args[],
     trap_handler[i] = &handle_trap_tty_unhandled;
   }
 
+  // TODO -- allocate memory for the ready queue
 
-// TODO -- IDLE PCB
+  // TODO -- IDLE PCB
+  // TODO -- stick the idle PCB into the running_process global
 
 }

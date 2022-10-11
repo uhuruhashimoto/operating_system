@@ -5,6 +5,10 @@
 #ifndef CURRENT_CHUNGUS_KERNEL_START_H
 #define CURRENT_CHUNGUS_KERNEL_START_H
 
+// globals for the entire kernel
+pcb_t* running_process;
+queue_t* ready_queue;
+
 /********** KernelStart ***********/
 /*
  * The start function for CurrentChungus
