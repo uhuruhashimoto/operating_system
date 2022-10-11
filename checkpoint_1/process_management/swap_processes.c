@@ -1,13 +1,16 @@
 #include "swap_processes.h"
 #include "../data_structures/pcb.h"
+// TODO -- import KernelContext
 
 /*
  * This function does the actual heavy lifting of switching kernel contexts
+ * It will clear the TLB, swap register information
  */
 KernelContext *KCSwitch( KernelContext *kc_in,
                          void *curr pcb p,
                          void *next pcb p) {
-
+  // copy registers, execution loc into kc_in
+  // return kc_in
 }
 
 /*
@@ -20,7 +23,11 @@ kc_in.
 KernelContext *KCCopy( KernelContext *kc_in,
                        void *new_pcb_p,
                        void *not_used) {
-
+  // copy registers, execution loc into kc_in
+  // create a new copy of kc_in
+  // copy frames over
+  // place on the new PCB
+  // return kc_in
 }
 
 /*
@@ -30,9 +37,24 @@ KernelContext *KCCopy( KernelContext *kc_in,
  *  Loads registers from the process's registers
  *  Sets the execution location
  *  changes the active page table
+ *
+ *  Returns:
+ *    the old pcb
  */
 int swap_in_process(pcb_t* pcb) {
-  // TODO -- clear the TLB
+  // remove the running pcb
 
-  // TODO --
+  // TODO -- check if the pcb has a NULL KernelContext
+  // kc_in is the kernel context of the running process
+  // if so:
+  //  return ERROR if kc_in is NULL
+  //  call KCCopy within KernelContextSwitch
+  // otherwise:
+  //  call KCSwitch KernelContextSwitch
+
+  // put the return value of KernelContextSwitch back onto the running process
+  // put the new pcb into the running state
+  // write the current kernel context into registers
+  // set up current page table (?)
+  // return the old pcb
 }

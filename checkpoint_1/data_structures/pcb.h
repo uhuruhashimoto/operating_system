@@ -7,12 +7,13 @@
 
 #include "stdbool.h"
 // TODO -- include user context
+// TODO -- include kernel context
 
 typedef struct pcb {
   int pid;                                             // the process id
   // uspace: some way to store frames (linked list?)
   // uctxt: user context
-  // kctext: kernel context
+  KernelContext kctext;
   // kstack: some way to store frames (linked list?)
 
   bool hasExited;                                      // whether the process is dead yet
