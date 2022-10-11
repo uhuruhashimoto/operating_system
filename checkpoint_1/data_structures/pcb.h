@@ -22,4 +22,6 @@ typedef struct pcb {
 } pcb_t;
 
 
+// TODO -- create an idle_pcb object
+
 #endif //CURRENT_CHUNGUS_PCB

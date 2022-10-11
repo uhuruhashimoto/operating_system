@@ -16,8 +16,15 @@ int add_to_queue(queue_t* queue, pcb_t* pcb);
 
 /*
  * Removes a PCB from the front of the queue
+ *  For use with pipes, terminals and other things we can block on
  */
-pcb_t* remove_from_queue(queue_t* queue,);
+pcb_t* remove_from_queue(queue_t* queue);
+
+/*
+ * Removes a PCB from the front of the queue, and swaps in an idle PCB if queue is empty
+ *  For use with the ready queue
+ */
+pcb_t* SAFE_remove_from_queue(queue_t* queue);
 
 
 #endif //CURRENT_CHUNGUS_CIRCULAR_QUEUE

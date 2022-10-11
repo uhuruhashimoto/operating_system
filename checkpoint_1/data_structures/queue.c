@@ -1,6 +1,5 @@
 #include "queue.h"
 #include "pcb.h"
-// TODO -- import the ready_queue global
 
 typedef struct queue {
   pcb_t* head;
@@ -30,4 +29,17 @@ pcb_t* remove_from_queue(queue_t* queue)
   // get the PCB from the front of the ready queue
   // move the head of the ready queue
   // return the PCB
+}
+
+/*
+ * Removes a PCB from the front of the queue, and swaps in an idle PCB if queue is empty
+ *  For use with the ready queue
+ */
+pcb_t* SAFE_remove_from_queue(queue_t* queue)
+{
+  pcb_t* pcb = remove_from_queue(queue);
+  if (pcb == NULL) {
+    // TODO -- set pcb to be an idle pcb
+  }
+  return pcb;
 }

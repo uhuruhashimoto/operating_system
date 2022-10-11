@@ -1,5 +1,8 @@
 #include "trap_handlers.h"
+#include "syscalls/io_syscalls.h"
+#include "syscalls/ipc_syscalls.h"
 #include "syscalls/process_syscalls.h"
+#include "syscalls/sync_syscalls.h"
 
 /*
  * Handle traps to the kernel
@@ -71,30 +74,47 @@ void handle_trap_unhandled() {
 /*
  * Abort the current user process
  */
-void handle_trap_illegal();
+void handle_trap_illegal() {
+  // abort the current process
+  // get the next process from the ready queue
+}
 
 /*
  * Enlarges the user memory if it's an implicit request for more memory
  * otherwise kills the process
  */
-void handle_trap_memory();
+void handle_trap_memory() {
+  // implicit request for more memory -- stack, not the heap
+  // check if the address being touched is one page or less away from the top of the stack
+  // if so:
+  //    set the brk to be a page lower
+  //    return
+  // otherwise:
+  //  abort the process
+  //  run the next process on the ready queue
+}
 
 /*
  * Aborts current user process
  */
-void handle_trap_math();
+void handle_trap_math() {
+  // abort the user process
+  // run the next process on the ready queue
+}
 
 /*
  * Read a line from a terminal
  */
-void handle_trap_tty_receive();
+void handle_trap_tty_receive() {
+  // TODO -- get args from the registers
+  TtyRead();
+}
 
 /*
  * Write a line to a terminal
  */
-void handle_trap_tty_transmit();
+void handle_trap_tty_transmit() {
+  // TODO -- get args from the registers
+  TtyWrite();
+}
 
-/*
- * Handles all other traps
- */
-void handle_trap_unhandled();
