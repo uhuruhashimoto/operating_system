@@ -61,3 +61,40 @@ void handle_trap_unhandled() {
   // TODO -- log something (maybe trap id?)
   // TODO -- return to user execution
 }
+
+/***************** FUTURE HANDLERS *********************/
+/*
+ * These will be implemented after Checkpoint 1... but we're still writing pseudocode for it!
+ */
+
+
+/*
+ * Abort the current user process
+ */
+void handle_trap_illegal();
+
+/*
+ * Enlarges the user memory if it's an implicit request for more memory
+ * otherwise kills the process
+ */
+void handle_trap_memory();
+
+/*
+ * Aborts current user process
+ */
+void handle_trap_math();
+
+/*
+ * Read a line from a terminal
+ */
+void handle_trap_tty_receive();
+
+/*
+ * Write a line to a terminal
+ */
+void handle_trap_tty_transmit();
+
+/*
+ * Handles all other traps
+ */
+void handle_trap_unhandled();

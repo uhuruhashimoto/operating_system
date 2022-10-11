@@ -13,6 +13,7 @@ void KernelStart(char *cmd args[],
                  unsigned int pmem size,
                  UserContext *uctxt) {
   // TODO -- VIRTUAL MEMORY
+  //  make sure that the page table keeps the current mapping of the kernel process space to physical memory
 
   // TODO -- TRAP HANDLERS
   // write base pointer of trap handlers to REG_VECTOR_BASE (how?)
