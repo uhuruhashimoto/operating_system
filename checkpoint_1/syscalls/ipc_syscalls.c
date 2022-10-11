@@ -98,3 +98,13 @@ int PipeWrite(int pipe_id, void *buf, int len)
   // put any processes waiting on the pipe back into the ready queue
   // return ERROR or the number of bytes written
 }
+
+/*
+* Kill pipe by pipe id, and any queued children waiting for pipe input. If necessary, 
+* we could specify a kill/don't kill option in our input args.
+*/
+int PipeKill(int pipe_id, int kill_children) {
+  // free pipe buffer
+  // kill children and remove queue data structure
+  // return error code
+}

@@ -30,4 +30,10 @@ buffer. In case of any error, the value ERROR is returned. Otherwise, return the
  */
 int PipeWrite(int pipe id, void *buf, int len);
 
+/*
+* Kill pipe by pipe id, and any queued children waiting for pipe input. If necessary, 
+* we could specify a kill/don't kill option in our input args.
+*/
+int PipeKill(int pipe_id, int kill_children);
+
 #endif //CURRENT_CHUNGUS_IPC_SYSCALL_HANDLERS
