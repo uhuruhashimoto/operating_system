@@ -1,8 +1,8 @@
 #include "trap_handlers.h"
-#include "syscalls/io_syscalls.h"
-#include "syscalls/ipc_syscalls.h"
-#include "syscalls/process_syscalls.h"
-#include "syscalls/sync_syscalls.h"
+#include "../syscalls/io_syscalls.h"
+#include "../syscalls/ipc_syscalls.h"
+#include "../syscalls/process_syscalls.h"
+#include "../syscalls/sync_syscalls.h"
 
 /*
  * Handle traps to the kernel

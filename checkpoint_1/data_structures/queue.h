@@ -2,8 +2,8 @@
 // Created by smooth_operator on 10/8/22.
 //
 
-#ifndef CURRENT_CHUNGUS_CIRCULAR_QUEUE
-#define CURRENT_CHUNGUS_CIRCULAR_QUEUE
+#ifndef CURRENT_CHUNGUS_QUEUE
+#define CURRENT_CHUNGUS_QUEUE
 
 #include "pcb.h"
 
@@ -27,4 +27,4 @@ pcb_t* remove_from_queue(queue_t* queue);
 pcb_t* SAFE_remove_from_queue(queue_t* queue);
 
 
-#endif //CURRENT_CHUNGUS_CIRCULAR_QUEUE
+#endif //CURRENT_CHUNGUS_QUEUE

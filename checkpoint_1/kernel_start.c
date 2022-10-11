@@ -1,5 +1,5 @@
 #include "kernel_start.h"
-#include "trap_handlers.h"
+#include "trap_handlers/trap_handlers.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 
