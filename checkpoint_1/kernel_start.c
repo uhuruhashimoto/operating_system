@@ -18,8 +18,8 @@
 
 
 bool vmem_enabled = False;
-pte_t **page_table_reg_1[VMEM_1_SIZE / PAGESIZE];
-pte_t **page_table_reg_0[VMEM_0_SIZE / PAGESIZE];
+pte_t page_table_reg_1[VMEM_1_SIZE / PAGESIZE];
+pte_t page_table_reg_0[VMEM_0_SIZE / PAGESIZE];
 unsigned char **frame_table; 
 
 /*
@@ -34,7 +34,9 @@ void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
   // and move the brk accordingly
   int num_total_frames = pmem_size / PAGESIZE;
   frame_table = malloc(sizeof(unsigned char) * num_total_frames);
-  SetKernelBrk(&frame_table[num_total_frames - 1]);
+  if (SetKernelBrk(&frame_table[num_total_frames - 1]) == ERROR) {
+    //traceprint and exit with error code
+  }
 
   // create kernel page table: store all kernel data/stack/heap/text such
   // that its virtual address points to its identical physical address
