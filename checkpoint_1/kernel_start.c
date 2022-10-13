@@ -9,18 +9,19 @@
 * (See section 2.2.6, p. 22 of Yalnix Manual)
 */
 
-// another option: mmap pages to put the region 1 page table wherever we want in physical memory?
-
 #include "kernel_start.h"
 #include "trap_handlers/trap_handlers.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 
+extern void *_kernel_data_start;
+extern void *_kernel_data_end;
+extern void *_kernel_orig_brk;
 
+pte_t *region_0_page_table;
+pte_t *region_1_page_table;
+unsigned char *frame_table; 
 bool vmem_enabled = False;
-pte_t page_table_reg_1[VMEM_1_SIZE / PAGESIZE];
-pte_t page_table_reg_0[VMEM_0_SIZE / PAGESIZE];
-unsigned char **frame_table; 
 
 /*
  * Behavior:
@@ -29,64 +30,40 @@ unsigned char **frame_table;
  *  Instantiate an idlePCB
  */
 void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
-
-  // assuming page size and frame size are the same, set up bit vector using malloc,
-  // and move the brk accordingly
-  int num_total_frames = pmem_size / PAGESIZE;
-  frame_table = malloc(sizeof(unsigned char) * num_total_frames);
-  if (SetKernelBrk(&frame_table[num_total_frames - 1]) == ERROR) {
-    //traceprint and exit with error code
-  }
-
-  // create kernel page table: store all kernel data/stack/heap/text such
-  // that its virtual address points to its identical physical address
-  int which_kernel_page;        
-  int kernel_exe_val = 0;         // exe val for kernel pages
-  int kernel_text_read_val = 1;   // read enabled for kernel text
-  int kernel_text_write_val = 0;  // write disabled for kernel text
-  int kernel_heap_read_val = 1;   // read enabled for kernel heap
-  int kernel_heap_write_val = 1;  // write enabled for kernel heap
-  int user_stack_read_val = 1;
-  int user_stack_write_val = 1;
-  int user_stack_exe_val = 0;
+  // define memory geometry, adding an extra page if necessary to map entire region
+  int page_table_size = UP_TO_PAGE(pmem_size) << PAGESHIFT;
+  int beginning_page = UP_TO_PAGE(PMEM_BASE) << PAGESHIFT;
+  int kernel_text_end_page = UP_TO_PAGE(_kernel_orig_brk) << PAGESHIFT;
+  int first_user_page = DOWN_TO_PAGE(&region_1_page_table) << PAGESHIFT;
+  int new_brk_page;
   pte_t kernel_page;
-
-  //store kernel text
-  int kernel_text_end = (_kernel_orig_brk + sizeof(frame_table)) / PAGESIZE;
-  while (which_kernel_page < kernel_text_end) {
-    kernel_page -> valid = 1;
-    kernel_page -> prot[0] = kernel_text_read_val;
-    kernel_page -> prot[1] = kernel_text_write_val;
-    kernel_page -> prot[2] = kernel_exe_val;
-    kernel_page -> pfn = &page_table_reg_0[which_kernel_page];
-    page_table_reg_0[which_kernel_page] = kernel_page;
-    frame_table[which_kernel_page] = 1;
-    which_kernel_page += PAGESIZE;
-  }
-
-  //store kernel heap
-  int kernel_heap_end = (_kernel_data_end - _kernel_data_start) / PAGESIZE;
-  while (which_kernel_page < kernel_heap_end) {
-    kernel_page -> valid = 1;
-    kernel_page -> prot[0] = kernel_heap_read_val;
-    kernel_page -> prot[1] = kernel_heap_write_val;
-    kernel_page -> prot[2] = kernel_exe_val;
-    kernel_page -> pfn = &page_table_reg_0[which_kernel_page];
-    page_table_reg_0[which_kernel_page] = kernel_page;
-    frame_table[which_kernel_page] = 1;
-    which_kernel_page += PAGESIZE;
-  }
-
-  // create user page table with one page
   pte_t user_page;
-  int which_page_in_memory = UP_TO_PAGE(&page_table_reg_1) / PAGESIZE;
+
+  //allocate structures and update brk
+  region_0_page_table = malloc(sizeof(pte_t) * page_table_size);
+  region_1_page_table  = malloc(sizeof(pte_t) * page_table_size);
+
+  // set the brk, making the assumption that both page tables are allocated on the heap, which
+  // grows upwards. Thus, the top would be at the end of the most recently allocated structure.
+  if (SetKernelBrk(&region_1_page_table[page_table_size - 1]) == ERROR) {
+    TracePrint("Error moving the brk to %p\n", &region_1_page_table[page_table_size - 1]);
+    exit(ERROR);
+  }
+
+  //Define kernel text permissions as R-X, and heap as RW.
+  new_brk_page = DOWN_TO_PAGE(&region_1_page_table[page_table_size - 1]) << PAGESHIFT;
+  for (int page_ind = 0; page_ind < new_brk_page; page_ind++) {
+      kernel_page -> valid = 1;
+      frame_table[beginning_page + page_index] = 1;
+      kernel_page -> prot = (page_ind < kernel_text_end_page) ? (PROT_READ | PROT_EXE) : (PROT_READ | PROT_WRITE);
+      kernel_page -> pfn = &region_0_page_table[page_ind];
+  }
+
+  // write a single page to the page table
   user_page -> valid = 1;
-  user_page -> prot[0] = user_stack_read_val;
-  user_page -> prot[1] = user_stack_write_val;
-  user_page -> prot[2] = user_stack_exe_val;
-  user_page -> pfn = &page_table_reg_1[0];
-  frame_table[which_page_in_memory] = 1;
-  page_table_reg_0[0] = user_page;
+  frame_table[first_user_page] = 1;
+  user_page -> prot = (PROT_READ | PROT_WRITE);
+  user_page -> pfn = &region_1_page_table[first_user_page];
 
   // update registers
   WriteRegister(REG_PTRBR0, &page_table_reg_0);
@@ -97,7 +74,7 @@ void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
   // turn on virtual memory permanently
   WriteRegister(REG_VM_ENABLE, 1);
 
-  // TODO -- TRAP HANDLERS
+  // TRAP HANDLERS
   // write base pointer of trap handlers to REG_VECTOR_BASE (how?)
   // set up trap handler array
   trap_handler[TRAP_VECTOR_SIZE];
@@ -121,7 +98,13 @@ void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
 
 }
 
+/*
+* Set the kernel brk based on whether or not virtual memory is enabled. This will be a syscall used by malloc and other
+* higher-level user/library dynamic allocation calls.
+* In case of any error, the value ERROR is returned.
+*/
 int SetKernelBrk(void *addr) {
   //if vmem is not enabled, set the brk to the specified address above _kernel_origin_brk
   //otherwise, set the brk assuming the address is virtual (a normal brk syscall)
+  return 0
 }
