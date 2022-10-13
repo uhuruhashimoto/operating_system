@@ -5,7 +5,7 @@
 * address and the virtual address are identical; that is, some offset from PMEM_BASE.
 * 
 * We store our page tables as globals (above the stack) and update the registers that tell the MMU 
-* where to find it. Under it, we keep track of a frame table - a bit vector that tracks which frames are mapped.
+* where to find them. We also keep track of a frame table - a bit vector that tracks which frames are mapped.
 * (See section 2.2.6, p. 22 of Yalnix Manual)
 */
 
@@ -40,22 +40,52 @@ void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
 
   // create kernel page table: store all kernel data/stack/heap/text such
   // that its virtual address points to its identical physical address
-  int which_kernel_page;
-  int num_kernel_pages = (_kernel_data_end - _kernel_data_start) / PAGESIZE;
-  while (which_kernel_page < num_kernel_pages) {
-    pte_t kernel_page;
+  int which_kernel_page;        
+  int kernel_exe_val = 0;         // exe val for kernel pages
+  int kernel_text_read_val = 1;   // read enabled for kernel text
+  int kernel_text_write_val = 0;  // write disabled for kernel text
+  int kernel_heap_read_val = 1;   // read enabled for kernel heap
+  int kernel_heap_write_val = 1;  // write enabled for kernel heap
+  int user_stack_read_val = 1;
+  int user_stack_write_val = 1;
+  int user_stack_exe_val = 0;
+  pte_t kernel_page;
+
+  //store kernel text
+  int kernel_text_end = (_kernel_orig_brk + sizeof(frame_table)) / PAGESIZE;
+  while (which_kernel_page < kernel_text_end) {
     kernel_page -> valid = 1;
-    kernel_page -> prot = 101;
+    kernel_page -> prot[0] = kernel_text_read_val;
+    kernel_page -> prot[1] = kernel_text_write_val;
+    kernel_page -> prot[2] = kernel_exe_val;
     kernel_page -> pfn = &page_table_reg_0[which_kernel_page];
     page_table_reg_0[which_kernel_page] = kernel_page;
+    frame_table[which_kernel_page] = 1;
+    which_kernel_page += PAGESIZE;
+  }
+
+  //store kernel heap
+  int kernel_heap_end = (_kernel_data_end - _kernel_data_start) / PAGESIZE;
+  while (which_kernel_page < kernel_heap_end) {
+    kernel_page -> valid = 1;
+    kernel_page -> prot[0] = kernel_heap_read_val;
+    kernel_page -> prot[1] = kernel_heap_write_val;
+    kernel_page -> prot[2] = kernel_exe_val;
+    kernel_page -> pfn = &page_table_reg_0[which_kernel_page];
+    page_table_reg_0[which_kernel_page] = kernel_page;
+    frame_table[which_kernel_page] = 1;
     which_kernel_page += PAGESIZE;
   }
 
   // create user page table with one page
   pte_t user_page;
+  int which_page_in_memory = UP_TO_PAGE(&page_table_reg_1) / PAGESIZE;
   user_page -> valid = 1;
-  user_page -> prot = 101;
-  user_page -> pfn = &page_table_reg_0[0];
+  user_page -> prot[0] = user_stack_read_val;
+  user_page -> prot[1] = user_stack_write_val;
+  user_page -> prot[2] = user_stack_exe_val;
+  user_page -> pfn = &page_table_reg_1[0];
+  frame_table[which_page_in_memory] = 1;
   page_table_reg_0[0] = user_page;
 
   // update registers
