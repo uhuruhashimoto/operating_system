@@ -20,7 +20,7 @@ process). If the length of the next available input line is shorter than len byt
 to the calling process as are available in the input line; On success, the number of bytes actually copied into the
 calling process’s buffer is returned; in case of any error, the value ERROR is returned.
  */
-int TtyRead(int tty_id, void *buf, int len)
+int handle_TtyRead(int tty_id, void *buf, int len)
 {
   // if there is no available line on the terminal, block the calling process and wait for a line from terminal
 
@@ -37,7 +37,7 @@ terminal. On success, the number of bytes written (len) is returned; in case of 
 returned.
 Calls to TtyWrite for more than TERMINAL MAX LINE bytes should be supported.
  */
-int TtyWrite(int tty_id, void *buf, int len)
+int handle_TtyWrite(int tty_id, void *buf, int len)
 {
   // block the calling process
 

@@ -1,7 +1,7 @@
 /*
  * Fork the process and create a new, separate address space
  */
-int Fork(void)
+int handle_Fork(void)
 {
   // creates a new PID for the new process, coping over execution location
   // copy used pages of old process to the new process
@@ -15,7 +15,7 @@ int Fork(void)
  * filename is the process to be executed
  * argvec is a null-terminated list of pointers to argument strings
  */
-int Exec(char *filename, char **argvec)
+int handle_Exec(char *filename, char **argvec)
 {
   // wipe out the page table for the old process
   // load the ELF file from *filename
@@ -28,7 +28,7 @@ int Exec(char *filename, char **argvec)
  * all other resources are freed
  * Orphaned processes will not store the status, free everything instead
  */
-void Exit(int status)
+void handle_Exit(int status)
 {
   // wipe out the page table for the process
   // free all other resources
@@ -44,7 +44,7 @@ void Exit(int status)
  * ERROR if calling process has no remaining children, alive or dead
  * otherwise waits until next child exits
  */
-int Wait(int *status_ptr)
+int handle_Wait(int *status_ptr)
 {
   // check child processes on the PCB
   // return ERROR immediately if no remaining children, alive or dead
@@ -57,7 +57,7 @@ int Wait(int *status_ptr)
 /*
  * Gets the PID of the calling process
  */
-int GetPid(void)
+int handle_GetPid(void)
 {
   // get the PID off the PCB
 }
@@ -66,7 +66,7 @@ int GetPid(void)
  * Sets the brk
  * ERROR on failure, 0 on success
  */
-int Brk(void *addr)
+int handle_Brk(void *addr)
 {
   // Rounds the brk up to the next page
   // create valid pages in the page table for all new memory below the brk
@@ -80,7 +80,7 @@ completion of the delay, the value 0 is returned.
 If clock ticks is 0, return is immediate. If clock ticks is less than 0, time travel is not carried out, and
 ERROR is returned instead.
  */
-int Delay(int clock_ticks)
+int handle_Delay(int clock_ticks)
 {
   // return ERROR if clock_ticks is negative
   // return 0 if clock_ticks is zero

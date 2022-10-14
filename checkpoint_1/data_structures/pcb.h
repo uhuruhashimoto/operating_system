@@ -11,15 +11,19 @@
 
 typedef struct pcb {
   int pid;                                             // the process id
-  // uspace: some way to store frames (linked list?)
+  // uspace: some way to store pages (linked list?)
   // uctxt: user context
   KernelContext kctext;
-  // kstack: some way to store frames (linked list?)
+  // kstack: some way to store pages (linked list?)
 
   bool hasExited;                                      // whether the process is dead yet
   int rc;                                              // the return code of the process
   pcb_t* next_pcb;                                     // the next pcb in the queue
   pcb_t* prev_pcb;                                     // the previous pcb in the queue
+
+  pcb_t* children;                                     // null unless there are children
+  int num_children;                                    // 0 unless there are children
+  pcb_t* parent;                                       // the parent, if any
 } pcb_t;
 
 

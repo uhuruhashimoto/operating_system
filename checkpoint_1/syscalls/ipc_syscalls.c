@@ -63,7 +63,7 @@ pcb_t* unblock_pcb_on_pipe(int pipe_id)
  * Create a new pipe; save its identifier at *pipe idp. (See the header files for the length of the pipe’s internal
 buffer.) In case of any error, the value ERROR is returned.
  */
-int PipeInit(int *pipe_idp)
+int handle_PipeInit(int *pipe_idp)
 {
   // create a buffer for the pipe
   // store the pipe buffer *somewhere*
@@ -78,7 +78,7 @@ semantics:
 plen − len bytes in the pipe.
 In case of any error, the value ERROR is returned. Otherwise, the return value is the number of bytes read.
  */
-int PipeRead(int pipe_id, void *buf, int len)
+int handle_PipeRead(int pipe_id, void *buf, int len)
 {
   // if the pipe is empty, block the caller:
   //   put the caller in the blocked queue of the pipe
@@ -91,7 +91,7 @@ int PipeRead(int pipe_id, void *buf, int len)
 appended to the sequence of unread bytes currently in the pipe.) Return as soon as you get the bytes into the
 buffer. In case of any error, the value ERROR is returned. Otherwise, return the number of bytes written.
  */
-int PipeWrite(int pipe_id, void *buf, int len)
+int handle_PipeWrite(int pipe_id, void *buf, int len)
 {
   // checks to see if the buffer has enough free space
   // write all the bytes into the buffer, checking return code
@@ -103,7 +103,7 @@ int PipeWrite(int pipe_id, void *buf, int len)
 * Kill pipe by pipe id, and any queued children waiting for pipe input. If necessary, 
 * we could specify a kill/don't kill option in our input args.
 */
-int PipeKill(int pipe_id, int kill_children) {
+int handle_PipeKill(int pipe_id, int kill_children) {
   // free pipe buffer
   // kill children and remove queue data structure
   // return error code
