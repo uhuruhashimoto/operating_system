@@ -14,29 +14,30 @@ void handle_trap_kernel() {
   // TODO -- get args from the registers
 
   // switch based on the trap type
+  // TODO -- write registers with return codes
   switch (trap_type) {
 
     // process syscalls
     case YALNIX_FORK:
-      Fork();
+      handle_Fork();
       break;
     case YALNIX_EXEC:
-      Exec();
+      handle_Exec();
       break;
     case YALNIX_EXIT:
-      Exit();
+      handle_Exit();
       break;
     case YALNIX_WAIT:
-      Wait();
+      handle_Wait();
       break;
     case YALNIX_GETPID:
-      GetPid();
+      handle_GetPid();
       break;
     case YALNIX_BRK:
-      Brk();
+      handle_Brk();
       break;
     case YALNIX_DELAY:
-      Delay();
+      handle_Delay();
       break;
 
     // TODO -- what other kernel syscalls do we need to handle?
@@ -55,6 +56,11 @@ void handle_trap_clock() {
   // if so, saves the current user context
   // clears the TLB
   // calls load_next_user_process
+
+  // handle Delay:
+  //  go through all processes in the delay queue
+  //  decrement their delays
+  //  if any process gets a delay of 0, put it back into the ready queue
 }
 
 /*

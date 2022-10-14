@@ -40,9 +40,11 @@ Calls to TtyWrite for more than TERMINAL MAX LINE bytes should be supported.
 int handle_TtyWrite(int tty_id, void *buf, int len)
 {
   // block the calling process
+  // wait to acquire the write_lock on the tty
 
-  // write len bytes from the buf to the terminal
+  // loop until there are no more unconsumed bytes in the buf
+  //  write TERMINAL_MAX_LINE bytes from the buf to the terminal
 
-  // unblock the calling process
+  // unblock the calling process (place on the ready queue)
   // return the number of bytes written
 }

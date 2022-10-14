@@ -4,6 +4,7 @@
 int handle_Fork(void)
 {
   // creates a new PID for the new process, coping over execution location
+  // create new P1 page table
   // copy used pages of old process to the new process
   // finagle the return codes
   // sticks the new process in the ready queue
@@ -69,7 +70,10 @@ int handle_GetPid(void)
 int handle_Brk(void *addr)
 {
   // Rounds the brk up to the next page
-  // create valid pages in the page table for all new memory below the brk
+  // if increasing the size of the brk:
+  //  create valid pages in the page table for all new memory below the brk
+  // else:
+  //  invalidates pages on the page table above the brk
   // sets the brk on the PCB
   // ERROR on failure, 0 on success
 }
@@ -84,6 +88,6 @@ int handle_Delay(int clock_ticks)
 {
   // return ERROR if clock_ticks is negative
   // return 0 if clock_ticks is zero
-  // otherwise, block the process for clock_ticks (put in blocked store)
+  // otherwise, block the process for clock_ticks (put in delay queue)
   // return 0
 }
