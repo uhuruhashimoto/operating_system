@@ -46,7 +46,8 @@ void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
   into the page table with self-referential addresses.
   */
   int beginning_page = UP_TO_PAGE(PMEM_BASE) << PAGESHIFT;
-  for (int page_ind = 0; page_ind < _kernel_orig_brk; page_ind++) {
+  int num_kernel_pages = UP_TO_PAGE(_kernel_orig_brk) / PAGESIZE;
+  for (int page_ind = 0; page_ind < num_kernel_pages; page_ind++) {
       kernel_page -> valid = 1;
       frame_table[beginning_page + page_index] = 1;
       kernel_page -> prot = (page_ind < kernel_text_end_page) ? (PROT_READ | PROT_EXE) : (PROT_READ | PROT_WRITE);
