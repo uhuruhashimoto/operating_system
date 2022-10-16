@@ -16,18 +16,18 @@
 *
 * We use the provided pmem size to keep track of a frame table - a bit vector that tracks which frames are mapped.
 */
-
+#include <stdlib.h>
 #include <ykernel.h>
 #include "kernel_start.h"
 #include "trap_handlers/trap_handlers.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
-#define ERROR -1
 
 extern void *_kernel_data_start;
 extern void *_kernel_data_end;
 extern void *_kernel_orig_brk;
 int vmem_on = 0;
+int *kernel_brk = (int *)_kernel_orig_brk;
 
 /*
  * Behavior:
@@ -151,12 +151,16 @@ int SetKernelBrk(void *addr) {
     if (addr > _kernel_data_end) {
       return ERROR;
     }
-    intptr_t increment = addr - _kernel_orig_brk;
-    //sbrk returns (void *) 0 if successful, and -1 if unsuccessful
-    return *sbrk(increment);
+    int increment = addr - _kernel_orig_brk;
+    TracePrintf(1, "In physical memory, incrementing kbrk by %d\n", increment);
+    kernel_brk += increment;
+    TracePrintf(1, "In physical memory, incrementing brk to %p\n", addr);
+    return 0;
   }
   //otherwise, set the brk assuming the address is virtual (a normal brk syscall)
   else {
-    return brk(addr);
+    TracePrintf(1, "In virtual memory, incrementing brk to %p\n", addr);
+    //TODO:
+    return ERROR; 
   }
 }
