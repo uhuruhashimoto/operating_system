@@ -1,4 +1,5 @@
 // Virtual Memory specifics
+// (See section 2.2.6, p. 22 of Yalnix Manual)
 /*
 * Our system uses two page tables, one in region 0 (kernel access) and one in region 1 (user access) to give 
 * the kernel the illusion that each process has the full amount of VIRTUAL memory. 
@@ -14,7 +15,6 @@
 * region 1 page table is when the process is run (and the TLB will be flushed). 
 *
 * We use the provided pmem size to keep track of a frame table - a bit vector that tracks which frames are mapped.
-* (See section 2.2.6, p. 22 of Yalnix Manual)
 */
 
 #include <ykernel.h>
@@ -22,10 +22,12 @@
 #include "trap_handlers/trap_handlers.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
+#define ERROR -1
 
 extern void *_kernel_data_start;
 extern void *_kernel_data_end;
 extern void *_kernel_orig_brk;
+int vmem_on = 0;
 
 /*
  * Behavior:
@@ -109,6 +111,7 @@ void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
 
   // turn on virtual memory permanently
   WriteRegister(REG_VM_ENABLE, 1);
+  vmem_on = 1;
 
   // TRAP HANDLERS
   // write base pointer of trap handlers to REG_VECTOR_BASE (how?)
@@ -144,6 +147,16 @@ void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
 */
 int SetKernelBrk(void *addr) {
   //if vmem is not enabled, set the brk to the specified address above _kernel_origin_brk (hit by kernel malloc)
+  if (!vmem_on) {
+    if (addr > _kernel_data_end) {
+      return ERROR;
+    }
+    intptr_t increment = addr - _kernel_orig_brk;
+    //sbrk returns (void *) 0 if successful, and -1 if unsuccessful
+    return *sbrk(increment);
+  }
   //otherwise, set the brk assuming the address is virtual (a normal brk syscall)
-  return 0
+  else {
+    return brk(addr);
+  }
 }
