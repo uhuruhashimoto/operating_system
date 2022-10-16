@@ -34,27 +34,74 @@ extern void *_kernel_orig_brk;
  *  Instantiate an idlePCB
  */
 void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
-  pte_t kernel_page;
   // We use macros to calculate page table size, and provided memory size to calculate frame table size
+  int frame_table_size = UP_TO_PAGE(pmem_size) / PAGESIZE;
   pte_t *region_0_page_table = malloc(sizeof(pte_t) * UP_TO_PAGE(VMEM_0_SIZE)));
   pte_t *region_1_page_table = malloc(sizeof(pte_t) * UP_TO_PAGE(VMEM_1_SIZE));
-  int *frame_table = malloc(sizeof(int) * UP_TO_PAGE(pmem_size) / PAGESIZE );
+  int *frame_table = malloc(sizeof(int) * frame_table_size);
   
   /*
   To map the kernel memory into its region 0 page table, we break 
   its text and heap into PAGESIZE-length chunks, and put them
   into the page table with self-referential addresses.
-  */
-  int beginning_page = UP_TO_PAGE(PMEM_BASE) << PAGESHIFT;
-  int num_kernel_pages = UP_TO_PAGE(_kernel_orig_brk) / PAGESIZE;
-  for (int page_ind = 0; page_ind < num_kernel_pages; page_ind++) {
-      kernel_page -> valid = 1;
-      frame_table[beginning_page + page_index] = 1;
-      kernel_page -> prot = (page_ind < kernel_text_end_page) ? (PROT_READ | PROT_EXE) : (PROT_READ | PROT_WRITE);
-      kernel_page -> pfn = &region_0_page_table[page_ind];
-  }
 
-  //TODO: do we need to write the stack and globals too? I'm not sure; up to the brk might be fine.
+  Their permissions are as follows, towards foxes (bottom up):
+  kernel text: valid, RX, frame 1
+  kernel heap: valid, RW, frame 1
+  -- empty space -- , frame 0
+  kernel stack: valid, RW,  frame 1
+  kernel globals: valid, RW, frame 1
+  --- more empty space -- , frame 0
+
+  We find the new brk page by dereferencing the last entry of our frame table 
+  (the last data structure on the heap).
+  We find the kernel stack address by creating a local and dereferencing it.
+  */
+
+  int page_ind;
+  pte_t kernel_page;
+  int beginning_page = UP_TO_PAGE(PMEM_BASE) << PAGESHIFT;
+  int kernel_text_end_page = UP_TO_PAGE(_kernel_orig_brk) << PAGESHIFT; 
+  int kernel_brk_end_page = UP_TO_PAGE(&frame_table[frame_table_size-1]) << PAGESHIFT;
+  int last_kernel_page = UP_TO_PAGE(_kernel_data_end) << PAGESHIFT;
+  int *stack_addr;
+  *stack_addr = UP_TO_PAGE(&stack_addr) << PAGESHIFT;
+  for (page_ind = beginning_page; page_ind < num_kernel_pages; page_ind++) {
+      // Kernel text and anything under it
+      if (page_ind <= kernel_text_end_page) {
+        frame_table[beginning_page + page_index] = 1;
+        kernel_page -> valid = 1;
+        kernel_page -> prot = (PROT_READ | PROT_EXE);
+        kernel_page -> pfn = &region_0_page_table[page_ind];
+        region_0_page_table[page_ind] = kernel_page;
+      }
+      // Kernel heap
+      else if (page_ind > kernel_text_end_page && page_ind <= kernel_brk_end_page) {
+        frame_table[beginning_page + page_index] = 1;
+        kernel_page -> valid = 1;
+        kernel_page -> prot = (PROT_READ | PROT_WRITE);
+        kernel_page -> pfn = &region_0_page_table[page_ind];
+        region_0_page_table[page_ind] = kernel_page;
+
+      } 
+      // Empty space (still kernel memory)
+      else if (page_ind > kernel_brk_end_page && page_ind <= *stack_addr) {
+        frame_table[beginning_page + page_index] = 0;
+      } 
+      // Kernel stack and globals
+      else if (page_ind > *stack_addr && page_ind <= last_kernel_page) {
+        frame_table[beginning_page + page_index] = 1;
+        kernel_page -> valid = 1;
+        kernel_page -> prot = (PROT_READ | PROT_WRITE);
+        kernel_page -> pfn = &region_0_page_table[page_ind];
+        region_0_page_table[page_ind] = kernel_page;
+
+      } 
+      // Empty space
+      else if (page_ind > last_kernel_page && page_ind <= frame_table_size) {
+        frame_table[beginning_page + page_index] = 0;
+      } 
+  }
 
   // update registers
   WriteRegister(REG_PTRBR0, &page_table_reg_0);
@@ -80,11 +127,13 @@ void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
     trap_handler[i] = &handle_trap_tty_unhandled;
   }
 
-  // TODO -- allocate memory for the ready queue
-
-  //TODO: create idle PCB and its page table, and write it to the correct registers (and store its PCB, and
-  //page table, in the heap)
-  // Then stick the idle PCB into the running_process global
+  // TODO: Before initializing an idle page, we need to set up our data structures (both our PCBs and 
+  // their running, ready, blocked, and defunct "queues"). These will be laid out as follows: 
+  // Running: global
+  // Ready: queue
+  // Blocked: multiple queues and pipes
+  // Defunct: some kind of linked list-like structure (analogous to the one we'll use to count ticks
+  // on PCBs for our clock Delay syscall).
 
 }
 
@@ -94,7 +143,7 @@ void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
 * In case of any error, the value ERROR is returned.
 */
 int SetKernelBrk(void *addr) {
-  //if vmem is not enabled, set the brk to the specified address above _kernel_origin_brk
+  //if vmem is not enabled, set the brk to the specified address above _kernel_origin_brk (hit by kernel malloc)
   //otherwise, set the brk assuming the address is virtual (a normal brk syscall)
   return 0
 }
