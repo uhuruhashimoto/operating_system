@@ -16,18 +16,17 @@
 *
 * We use the provided pmem size to keep track of a frame table - a bit vector that tracks which frames are mapped.
 */
-#include <stdlib.h>
 #include <ykernel.h>
 #include "kernel_start.h"
 #include "trap_handlers/trap_handlers.h"
-#include "data_structures/pcb.h"
-#include "data_structures/queue.h"
+// #include "data_structures/pcb.h"
+// #include "data_structures/queue.h"
 
 extern void *_kernel_data_start;
 extern void *_kernel_data_end;
 extern void *_kernel_orig_brk;
 int vmem_on = 0;
-int *kernel_brk = (int *)_kernel_orig_brk;
+int *kernel_brk; 
 
 /*
  * Behavior:
@@ -35,10 +34,22 @@ int *kernel_brk = (int *)_kernel_orig_brk;
  *  Set up trap handlers
  *  Instantiate an idlePCB
  */
-void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
+void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
+  TracePrintf(1, "Kernel data start is %p\n", _kernel_data_start);
+  TracePrintf(1, "Kernel text end is %p\n", &KernelStart);
+  TracePrintf(1, "Kernel orig brk is %p\n", _kernel_orig_brk);
+  TracePrintf(1, "Kernel data end is %p\n", _kernel_data_end);
+
+  TracePrintf(1, "PMEM Base: %p\n", PMEM_BASE);
+  TracePrintf(1, "Pmem size: %x\n", pmem_size);
+  TracePrintf(1, "BITS: %d\n", PAGESHIFT);
+  TracePrintf(1, "Size of page table: %d\n", (pmem_size >> PAGESHIFT) * 4);
+  TracePrintf(1, "Bytes needed bit field: %d\n", (pmem_size >> PAGESHIFT) / 8);
+  int *i = malloc(sizeof(int));
   // We use macros to calculate page table size, and provided memory size to calculate frame table size
+  kernel_brk = _kernel_orig_brk;
   int frame_table_size = UP_TO_PAGE(pmem_size) / PAGESIZE;
-  pte_t *region_0_page_table = malloc(sizeof(pte_t) * UP_TO_PAGE(VMEM_0_SIZE)));
+  pte_t *region_0_page_table = malloc(sizeof(pte_t) * UP_TO_PAGE(VMEM_0_SIZE));
   pte_t *region_1_page_table = malloc(sizeof(pte_t) * UP_TO_PAGE(VMEM_1_SIZE));
   int *frame_table = malloc(sizeof(int) * frame_table_size);
   
@@ -68,46 +79,49 @@ void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
   int last_kernel_page = UP_TO_PAGE(_kernel_data_end) << PAGESHIFT;
   int *stack_addr;
   *stack_addr = UP_TO_PAGE(&stack_addr) << PAGESHIFT;
-  for (page_ind = beginning_page; page_ind < num_kernel_pages; page_ind++) {
+  for (page_ind = beginning_page; page_ind < last_kernel_page; page_ind++) {
       // Kernel text and anything under it
       if (page_ind <= kernel_text_end_page) {
-        frame_table[beginning_page + page_index] = 1;
-        kernel_page -> valid = 1;
-        kernel_page -> prot = (PROT_READ | PROT_EXE);
-        kernel_page -> pfn = &region_0_page_table[page_ind];
+        frame_table[page_ind] = 1;
+        kernel_page.valid = 1;
+        kernel_page.prot = (PROT_READ | PROT_EXEC);
+        kernel_page.pfn = page_ind; 
         region_0_page_table[page_ind] = kernel_page;
       }
       // Kernel heap
       else if (page_ind > kernel_text_end_page && page_ind <= kernel_brk_end_page) {
-        frame_table[beginning_page + page_index] = 1;
-        kernel_page -> valid = 1;
-        kernel_page -> prot = (PROT_READ | PROT_WRITE);
-        kernel_page -> pfn = &region_0_page_table[page_ind];
+        frame_table[page_ind] = 1;
+        kernel_page.valid = 1;
+        kernel_page.prot = (PROT_READ | PROT_WRITE);
+        kernel_page.pfn = page_ind;
         region_0_page_table[page_ind] = kernel_page;
 
       } 
       // Empty space (still kernel memory)
       else if (page_ind > kernel_brk_end_page && page_ind <= *stack_addr) {
-        frame_table[beginning_page + page_index] = 0;
+        frame_table[page_ind] = 0;
+        kernel_page.valid = 0;
+        kernel_page.pfn = page_ind;
+        region_0_page_table[page_ind] = kernel_page;
       } 
       // Kernel stack and globals
       else if (page_ind > *stack_addr && page_ind <= last_kernel_page) {
-        frame_table[beginning_page + page_index] = 1;
-        kernel_page -> valid = 1;
-        kernel_page -> prot = (PROT_READ | PROT_WRITE);
-        kernel_page -> pfn = &region_0_page_table[page_ind];
+        frame_table[page_ind] = 1;
+        kernel_page.valid = 1;
+        kernel_page.prot = (PROT_READ | PROT_WRITE);
+        kernel_page.pfn = page_ind;
         region_0_page_table[page_ind] = kernel_page;
 
       } 
       // Empty space
       else if (page_ind > last_kernel_page && page_ind <= frame_table_size) {
-        frame_table[beginning_page + page_index] = 0;
+        frame_table[page_ind] = 0;
       } 
   }
 
   // update registers
-  WriteRegister(REG_PTRBR0, &page_table_reg_0);
-  WriteRegister(REG_PTLR0, num_kernel_pages);
+  WriteRegister(REG_PTBR0, (int) region_0_page_table);
+  WriteRegister(REG_PTLR0, last_kernel_page);
 
   // turn on virtual memory permanently
   WriteRegister(REG_VM_ENABLE, 1);
@@ -116,19 +130,19 @@ void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
   // TRAP HANDLERS
   // write base pointer of trap handlers to REG_VECTOR_BASE (how?)
   // set up trap handler array
-  trap_handler[TRAP_VECTOR_SIZE];
-  trap_handler[TRAP_KERNEL] = &handle_trap_kernel;
-  trap_handler[TRAP_CLOCK] = &handle_trap_clock;
-  trap_handler[TRAP_ILLEGAL] = &handle_trap_illegal;
-  trap_handler[TRAP_MEMORY] = &handle_trap_memory;
-  trap_handler[TRAP_MATH] = &handle_trap_math;
-  trap_handler[TRAP_TTY_RECEIVE] = &handle_trap_tty_receive;
-  trap_handler[TRAP_TTY_TRANSMIT] = &handle_trap_tty_transmit;
-  trap_handler[TRAP_DISK] = &handle_trap_tty_unhandled;
-  // handle all other slots in the trap vector
-  for (int i=8; i<16; i++) {
-    trap_handler[i] = &handle_trap_tty_unhandled;
-  }
+  // trap_handler[TRAP_VECTOR_SIZE];
+  // trap_handler[TRAP_KERNEL] = &handle_trap_kernel;
+  // trap_handler[TRAP_CLOCK] = &handle_trap_clock;
+  // trap_handler[TRAP_ILLEGAL] = &handle_trap_illegal;
+  // trap_handler[TRAP_MEMORY] = &handle_trap_memory;
+  // trap_handler[TRAP_MATH] = &handle_trap_math;
+  // trap_handler[TRAP_TTY_RECEIVE] = &handle_trap_tty_receive;
+  // trap_handler[TRAP_TTY_TRANSMIT] = &handle_trap_tty_transmit;
+  // trap_handler[TRAP_DISK] = &handle_trap_tty_unhandled;
+  // // handle all other slots in the trap vector
+  // for (int i=8; i<16; i++) {
+  //   trap_handler[i] = &handle_trap_tty_unhandled;
+  // }
 
   // TODO: Before initializing an idle page, we need to set up our data structures (both our PCBs and 
   // their running, ready, blocked, and defunct "queues"). These will be laid out as follows: 
@@ -146,6 +160,7 @@ void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
 * In case of any error, the value ERROR is returned.
 */
 int SetKernelBrk(void *addr) {
+ TracePrintf(1, "At beginning of SetKernelBrk, addr is %p\n", addr); 
   //if vmem is not enabled, set the brk to the specified address above _kernel_origin_brk (hit by kernel malloc)
   if (!vmem_on) {
     if (addr > _kernel_data_end) {
