@@ -27,7 +27,7 @@ extern void *_kernel_data_start;
 extern void *_kernel_data_end;
 extern void *_kernel_orig_brk;
 int vmem_on = 0;
-int *kernel_brk; 
+int *current_kernel_brk; 
 
 /*
  * Behavior:
@@ -53,82 +53,60 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   int *frame_table = malloc(sizeof(int) * frame_table_size);
   pte_t *region_0_page_table = malloc(sizeof(pte_t) * page_table_reg_0_size);
   pte_t *region_1_page_table = malloc(sizeof(pte_t) * page_table_reg_1_size);
+  pte_t kernel_page;
+  int *addr;
 
+  int num_ktext_pages = UP_TO_PAGE(_kernel_data_start - PMEM_BASE) / PAGESIZE - 1;
+  int num_kdata_pages = UP_TO_PAGE(_kernel_data_end - PMEM_BASE) / PAGESIZE;
+  int num_kstack_start_page = UP_TO_PAGE(KERNEL_STACK_BASE - PMEM_BASE) / PAGESIZE;
+  int num_total_kernel_pages = UP_TO_PAGE(VMEM_0_SIZE) / PAGESIZE;
+  TracePrintf(1, "Total number of kernel pages: %d\n", num_total_kernel_pages);
+  for (int pageind = 0; pageind < frame_table_size; pageind++) {
+    addr = (int *) (PMEM_BASE + PAGESIZE * pageind);
+    // Kernel text is implied to exist from the physical base (NULL) until kernel data begins
+    if (pageind < num_ktext_pages) {
+      frame_table[pageind] = 1;
+      kernel_page.valid = 1;
+      kernel_page.prot = (PROT_READ | PROT_EXEC);
+      kernel_page.pfn = pageind; 
+      region_0_page_table[pageind] = kernel_page;
+    }
+    // After text, we give data RW permissions
+    else if (pageind >= num_ktext_pages && pageind < num_kdata_pages) {
+     frame_table[pageind] = 1;
+      kernel_page.valid = 1;
+      kernel_page.prot = (PROT_READ | PROT_WRITE);
+      kernel_page.pfn = pageind; 
+      region_0_page_table[pageind] = kernel_page; 
+    }
+    // Until the stack, we add invalid pages to give the kernel the illusion of the whole reg. 0 memory space
+    else if (pageind >= num_kdata_pages && pageind < num_kstack_start_page) {
+      frame_table[pageind] = 1;
+      kernel_page.valid = 0;
+      kernel_page.pfn = pageind; 
+      region_0_page_table[pageind] = kernel_page;  
+    }
+    // then we mark the stack as valid 
+    else if (pageind >= num_kstack_start_page && pageind < num_total_kernel_pages) {
+      frame_table[pageind] = 1;
+      kernel_page.valid = 1;
+       kernel_page.prot = (PROT_READ | PROT_WRITE);
+      kernel_page.pfn = pageind; 
+      region_0_page_table[pageind] = kernel_page; 
+    }
+    // then we map the remainder of free physical frames
+    else {
+      frame_table[pageind] = 0;
+    }
+  }
 
-  
-  // /*
-  // To map the kernel memory into its region 0 page table, we break 
-  // its text and heap into PAGESIZE-length chunks, and put them
-  // into the page table with self-referential addresses.
+  // update registers
+  WriteRegister(REG_PTBR0, (int) region_0_page_table);
+  WriteRegister(REG_PTLR0, num_total_kernel_pages);
 
-  // Their permissions are as follows, towards foxes (bottom up):
-  // kernel text: valid, RX, frame 1
-  // kernel heap: valid, RW, frame 1
-  // -- empty space -- , frame 0
-  // kernel stack: valid, RW,  frame 1
-  // kernel globals: valid, RW, frame 1
-  // --- more empty space -- , frame 0
-
-  // We find the new brk page by dereferencing the last entry of our frame table 
-  // (the last data structure on the heap).
-  // We find the kernel stack address by creating a local and dereferencing it.
-  // */
-
-  // int page_ind;
-  // pte_t kernel_page;
-  // int beginning_page = UP_TO_PAGE(PMEM_BASE) << PAGESHIFT;
-  // int kernel_text_end_page = UP_TO_PAGE(_kernel_orig_brk) << PAGESHIFT; 
-  // int kernel_brk_end_page = UP_TO_PAGE(&frame_table[frame_table_size-1]) << PAGESHIFT;
-  // int last_kernel_page = UP_TO_PAGE(_kernel_data_end) << PAGESHIFT;
-  // int *stack_addr;
-  // *stack_addr = UP_TO_PAGE(&stack_addr) << PAGESHIFT;
-  // for (page_ind = beginning_page; page_ind < last_kernel_page; page_ind++) {
-  //     // Kernel text and anything under it
-  //     if (page_ind <= kernel_text_end_page) {
-  //       frame_table[page_ind] = 1;
-  //       kernel_page.valid = 1;
-  //       kernel_page.prot = (PROT_READ | PROT_EXEC);
-  //       kernel_page.pfn = page_ind; 
-  //       region_0_page_table[page_ind] = kernel_page;
-  //     }
-  //     // Kernel heap
-  //     else if (page_ind > kernel_text_end_page && page_ind <= kernel_brk_end_page) {
-  //       frame_table[page_ind] = 1;
-  //       kernel_page.valid = 1;
-  //       kernel_page.prot = (PROT_READ | PROT_WRITE);
-  //       kernel_page.pfn = page_ind;
-  //       region_0_page_table[page_ind] = kernel_page;
-
-  //     } 
-  //     // Empty space (still kernel memory)
-  //     else if (page_ind > kernel_brk_end_page && page_ind <= *stack_addr) {
-  //       frame_table[page_ind] = 0;
-  //       kernel_page.valid = 0;
-  //       kernel_page.pfn = page_ind;
-  //       region_0_page_table[page_ind] = kernel_page;
-  //     } 
-  //     // Kernel stack and globals
-  //     else if (page_ind > *stack_addr && page_ind <= last_kernel_page) {
-  //       frame_table[page_ind] = 1;
-  //       kernel_page.valid = 1;
-  //       kernel_page.prot = (PROT_READ | PROT_WRITE);
-  //       kernel_page.pfn = page_ind;
-  //       region_0_page_table[page_ind] = kernel_page;
-
-  //     } 
-  //     // Empty space
-  //     else if (page_ind > last_kernel_page && page_ind <= frame_table_size) {
-  //       frame_table[page_ind] = 0;
-  //     } 
-  // }
-
-  // // update registers
-  // WriteRegister(REG_PTBR0, (int) region_0_page_table);
-  // WriteRegister(REG_PTLR0, last_kernel_page);
-
-  // // turn on virtual memory permanently
-  // WriteRegister(REG_VM_ENABLE, 1);
-  // vmem_on = 1;
+  // turn on virtual memory permanently
+  WriteRegister(REG_VM_ENABLE, 1);
+  vmem_on = 1;
 
   // // TRAP HANDLERS
   // // write base pointer of trap handlers to REG_VECTOR_BASE (how?)
@@ -172,14 +150,14 @@ int SetKernelBrk(void *addr) {
   // //TODO: check if we have enough memory left to allocate
   // // if vmem is not enabled, set the brk to the specified address above _kernel_origin_brk (hit by kernel malloc)
   // if (!vmem_on) {
-  //   kernel_brk = UP_TO_PAGE(_kernel_orig_brk + PAGESIZE);
-  //   TracePrintf(1, "In physical memory, increasing brk to %p\n", kernel_brk);
+  //   current_kernel_brk = UP_TO_PAGE(_kernel_orig_brk + PAGESIZE);
+  //   TracePrintf(1, "In physical memory, increasing brk to %p\n", current_kernel_brk);
   //   return 0;
   // }
   // //otherwise, set the brk assuming the address is virtual (a normal brk syscall)
   // else {
   //   TracePrintf(1, "In virtual memory, incrementing brk to %p\n", addr);
-  //   kernel_brk = UP_TO_PAGE(addr);
+  //   current_kernel_brk = UP_TO_PAGE(addr);
   //   return 0;
   // }
 }

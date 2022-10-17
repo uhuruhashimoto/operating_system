@@ -2,8 +2,8 @@
 // Created by smooth_operator on 10/8/22.
 //
 
-#ifndef CURRENT_CHUNGUS_KERNEL_START_H
-#define CURRENT_CHUNGUS_KERNEL_START_H
+// #ifndef CURRENT_CHUNGUS_KERNEL_START_H
+// #define CURRENT_CHUNGUS_KERNEL_START_H
 
 #include <ykernel.h>
 
@@ -26,4 +26,4 @@ void KernelStart(char *cmd_args[],
 */
 int SetKernelBrk(void *addr);
 
-#endif //CURRENT_CHUNGUS_KERNEL_START_H
+// #endif //CURRENT_CHUNGUS_KERNEL_START_H
