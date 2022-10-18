@@ -20,7 +20,7 @@
 #include <ykernel.h>
 #include "kernel_start.h"
 // #include "trap_handlers/trap_handlers.h"
-// #include "data_structures/pcb.h"
+#include "data_structures/pcb.h"
 // #include "data_structures/queue.h"
 
 extern void *_kernel_data_start;
@@ -160,4 +160,12 @@ int SetKernelBrk(void *addr) {
   //   current_kernel_brk = UP_TO_PAGE(addr);
   //   return 0;
   // }
+}
+
+// Idle PCB code (part of kernel text)
+void DoIdle(void) {
+  while(1) {
+    TracePrintf(1,"DoIdle\n");
+    Pause();
+  } 
 }
