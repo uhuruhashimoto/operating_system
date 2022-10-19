@@ -143,11 +143,15 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   uctxt -> pc = &DoIdle;
   uctxt -> sp = &region_1_page_table[page_table_reg_1_size -1];
   uctxt -> ebp =&region_1_page_table[page_table_reg_1_size -1]; 
-  int pid = helper_new_pid(region_0_page_table);
+  int pid = helper_new_pid(region_1_page_table);
   pcb_t *idle_pcb = create_pcb(pid, kernel_stack, region_1_page_table, uctxt, &kctxt);
+  running_process = idle_pcb;
 
-  //TODO: when we return to userland, got to the idle process
-
+  // update registers
+  WriteRegister(REG_PTBR1, (int) region_1_page_table);
+  WriteRegister(REG_PTLR1, page_table_reg_1_size);
+  // when we return to userland, got to the idle process
+  return;
 }
 
 /*
