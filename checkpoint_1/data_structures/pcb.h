@@ -28,12 +28,11 @@ typedef struct pcb {
 
   bool hasExited;                                      // whether the process is dead yet
   int rc;                                              // the return code of the process
-  pcb_t* next_pcb;                                     // the next pcb in the queue
-  pcb_t* prev_pcb;                                     // the previous pcb in the queue
-
-  pcb_t* children;                                     // null unless there are children
+  struct pcb *next_pcb;                                     // the next pcb in the queue
+  struct pcb *prev_pcb;                                     // the previous pcb in the queue
+  struct pcb *children;                                     // null unless there are children
   int num_children;                                    // 0 unless there are children
-  pcb_t* parent;                                       // the parent, if any
+  struct pcb *parent;                                       // the parent, if any
 } pcb_t;
 
 #endif //CURRENT_CHUNGUS_PCB
