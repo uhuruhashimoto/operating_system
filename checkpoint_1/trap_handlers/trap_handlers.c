@@ -1,3 +1,4 @@
+#include <hardware.h>
 #include "trap_handlers.h"
 #include "../syscalls/io_syscalls.h"
 #include "../syscalls/ipc_syscalls.h"
@@ -7,37 +8,32 @@
 /*
  * Handle traps to the kernel
  */
-void handle_trap_kernel() {
-  // TODO -- get user context global
+void handle_trap_kernel(UserContext* context) {
   int trap_type = context->code;
 
-  // TODO -- get args from the registers
-
   // switch based on the trap type
-  // TODO -- write registers with return codes
   switch (trap_type) {
-
     // process syscalls
     case YALNIX_FORK:
       handle_Fork();
       break;
     case YALNIX_EXEC:
-      handle_Exec();
+      handle_Exec(context->regs[0], context->regs[1]);
       break;
     case YALNIX_EXIT:
-      handle_Exit();
+      handle_Exit(context->regs[0]);
       break;
     case YALNIX_WAIT:
-      handle_Wait();
+      handle_Wait(context->regs[0]);
       break;
     case YALNIX_GETPID:
       handle_GetPid();
       break;
     case YALNIX_BRK:
-      handle_Brk();
+      handle_Brk(context->regs[0]);
       break;
     case YALNIX_DELAY:
-      handle_Delay();
+      handle_Delay(context->regs[0]);
       break;
 
     // TODO -- what other kernel syscalls do we need to handle?
@@ -50,7 +46,7 @@ void handle_trap_kernel() {
 /*
  * Handle traps to clock -- starts the next process in the ready queue
  */
-void handle_trap_clock() {
+void handle_trap_clock(UserContext* context) {
   // TODO -- check if there is another process in the ready queue
   // if not, return to the running user process
   // if so, saves the current user context
@@ -58,7 +54,7 @@ void handle_trap_clock() {
   // calls load_next_user_process
 
   // handle Delay:
-  //  go through all processes in the delay queue
+  //  go through all processes in the delay data structure
   //  decrement their delays
   //  if any process gets a delay of 0, put it back into the ready queue
 }
@@ -66,7 +62,7 @@ void handle_trap_clock() {
 /*
  * Handles all other traps
  */
-void handle_trap_unhandled() {
+void handle_trap_unhandled(UserContext* context) {
   // TODO -- log something (maybe trap id?)
   // TODO -- return to user execution
 }
@@ -80,7 +76,7 @@ void handle_trap_unhandled() {
 /*
  * Abort the current user process
  */
-void handle_trap_illegal() {
+void handle_trap_illegal(UserContext* context) {
   // abort the current process
   // get the next process from the ready queue
 }
@@ -89,7 +85,7 @@ void handle_trap_illegal() {
  * Enlarges the user memory if it's an implicit request for more memory
  * otherwise kills the process
  */
-void handle_trap_memory() {
+void handle_trap_memory(UserContext* context) {
   // implicit request for more memory -- stack, not the heap
   // check if the address being touched is one page or less away from the top of the stack
   // if so:
@@ -103,24 +99,26 @@ void handle_trap_memory() {
 /*
  * Aborts current user process
  */
-void handle_trap_math() {
+void handle_trap_math(UserContext* context) {
   // abort the user process
   // run the next process on the ready queue
 }
 
 /*
- * Read a line from a terminal
+ * Hardware detected a new line in the terminal
  */
-void handle_trap_tty_receive() {
-  // TODO -- get args from the registers
-  TtyRead();
+void handle_trap_tty_receive(UserContext* context) {
+  int tty_id = context->code;
+  // read input from terminal with TtyReceive
+  // save into a terminal buffer
+  // wake up waiting read processes
 }
 
 /*
- * Write a line to a terminal
+ * A line being written to the terminal has completed
  */
-void handle_trap_tty_transmit() {
-  // TODO -- get args from the registers
-  TtyWrite();
+void handle_trap_tty_transmit(UserContext* context) {
+  int tty_id = context->code;
+  //
 }
 

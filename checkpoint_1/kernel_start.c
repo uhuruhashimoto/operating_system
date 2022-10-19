@@ -19,7 +19,7 @@
 
 #include <ykernel.h>
 #include "kernel_start.h"
-// #include "trap_handlers/trap_handlers.h"
+#include "trap_handlers/trap_handlers.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 
@@ -27,7 +27,10 @@ extern void *_kernel_data_start;
 extern void *_kernel_data_end;
 extern void *_kernel_orig_brk;
 int vmem_on = 0;
-int *current_kernel_brk; 
+int *current_kernel_brk;
+
+//
+trap_handler[TRAP_VECTOR_SIZE];
 
 /*
  * Behavior:
@@ -58,6 +61,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   int num_kdata_pages = UP_TO_PAGE(_kernel_data_end - PMEM_BASE) / PAGESIZE;
   int num_kstack_start_page = UP_TO_PAGE(KERNEL_STACK_BASE - PMEM_BASE) / PAGESIZE;
   int num_total_kernel_pages = UP_TO_PAGE(VMEM_0_SIZE) / PAGESIZE;
+
   TracePrintf(1, "Total number of kernel pages: %d\n", num_total_kernel_pages);
   for (int pageind = 0; pageind < frame_table_size; pageind++) {
     addr = (int *) (PMEM_BASE + PAGESIZE * pageind);
@@ -106,22 +110,23 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   WriteRegister(REG_VM_ENABLE, 1);
   vmem_on = 1;
 
-  // // TRAP HANDLERS
-  // // write base pointer of trap handlers to REG_VECTOR_BASE (how?)
-  // // set up trap handler array
-  // // trap_handler[TRAP_VECTOR_SIZE];
-  // // trap_handler[TRAP_KERNEL] = &handle_trap_kernel;
-  // // trap_handler[TRAP_CLOCK] = &handle_trap_clock;
-  // // trap_handler[TRAP_ILLEGAL] = &handle_trap_illegal;
-  // // trap_handler[TRAP_MEMORY] = &handle_trap_memory;
-  // // trap_handler[TRAP_MATH] = &handle_trap_math;
-  // // trap_handler[TRAP_TTY_RECEIVE] = &handle_trap_tty_receive;
-  // // trap_handler[TRAP_TTY_TRANSMIT] = &handle_trap_tty_transmit;
-  // // trap_handler[TRAP_DISK] = &handle_trap_tty_unhandled;
-  // // // handle all other slots in the trap vector
-  // // for (int i=8; i<16; i++) {
-  // //   trap_handler[i] = &handle_trap_tty_unhandled;
-  // // }
+  // TRAP HANDLERS
+  // set up trap handler array
+  trap_handler[TRAP_KERNEL] = &handle_trap_kernel;
+  trap_handler[TRAP_CLOCK] = &handle_trap_clock;
+  trap_handler[TRAP_ILLEGAL] = &handle_trap_illegal;
+  trap_handler[TRAP_MEMORY] = &handle_trap_memory;
+  trap_handler[TRAP_MATH] = &handle_trap_math;
+  trap_handler[TRAP_TTY_RECEIVE] = &handle_trap_tty_receive;
+  trap_handler[TRAP_TTY_TRANSMIT] = &handle_trap_tty_transmit;
+  trap_handler[TRAP_DISK] = &handle_trap_tty_unhandled;
+  // handle all other slots in the trap vector
+  for (int i=8; i<16; i++) {
+    trap_handler[i] = &handle_trap_tty_unhandled;
+  }
+  // write base pointer of trap handlers to REG_VECTOR_BASE
+  WriteRegister(REG_VECTOR_BASE, (int)trap_handler);
+
 
   // // TODO: Before initializing an idle page, we need to set up our data structures (both our PCBs and 
   // // their running, ready, blocked, and defunct "queues"). These will be laid out as follows: 

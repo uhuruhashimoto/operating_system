@@ -1,11 +1,4 @@
 #include "io_syscalls.h"
-#include "../data_structures/queue.h"
-
-// TODO -- should I be storing terminal information here or elsewhere...?
-typedef struct tty {
-  int id;
-  queue_t* blocked_reads;
-} tty_t;
 
 // TODO -- function to create new tty objects
 

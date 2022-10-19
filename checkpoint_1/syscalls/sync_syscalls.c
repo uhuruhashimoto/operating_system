@@ -34,7 +34,6 @@ returned.
  */
 int CvarInit(int *cvar_idp) {
     // create a condition variable, storing its value somewhere in the data structure that will be checked by cvar_wait
-    // TODO: Question: it should also have an associated lock, somehow (do we need to tie them together in a data structure?)
 }
 
 /*
