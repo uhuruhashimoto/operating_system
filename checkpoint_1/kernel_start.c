@@ -16,10 +16,10 @@
 *
 * We use the provided pmem size to keep track of a frame table - a bit vector that tracks which frames are mapped.
 */
-#include <stdlib.h>
+
 #include <ykernel.h>
 #include "kernel_start.h"
-#include "trap_handlers/trap_handlers.h"
+// #include "trap_handlers/trap_handlers.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 
@@ -27,7 +27,7 @@ extern void *_kernel_data_start;
 extern void *_kernel_data_end;
 extern void *_kernel_orig_brk;
 int vmem_on = 0;
-int *kernel_brk = (int *)_kernel_orig_brk;
+int *current_kernel_brk; 
 
 /*
  * Behavior:
@@ -35,109 +35,123 @@ int *kernel_brk = (int *)_kernel_orig_brk;
  *  Set up trap handlers
  *  Instantiate an idlePCB
  */
-void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
-  // We use macros to calculate page table size, and provided memory size to calculate frame table size
-  int frame_table_size = UP_TO_PAGE(pmem_size) / PAGESIZE;
-  pte_t *region_0_page_table = malloc(sizeof(pte_t) * UP_TO_PAGE(VMEM_0_SIZE)));
-  pte_t *region_1_page_table = malloc(sizeof(pte_t) * UP_TO_PAGE(VMEM_1_SIZE));
+void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
+  TracePrintf(1, "Kernel data start is %p\n", _kernel_data_start);
+  TracePrintf(1, "Kernel orig brk is %p\n", _kernel_orig_brk);
+  TracePrintf(1, "Kernel data end is %p\n", _kernel_data_end);
+
+  TracePrintf(1, "PMEM Base: %p\n", PMEM_BASE);
+  TracePrintf(1, "Pmem size: %x\n", pmem_size);
+  TracePrintf(1, "BITS: %d\n", PAGESHIFT);
+  TracePrintf(1, "Size of page table in bytes: %d\n", (pmem_size >> PAGESHIFT) * 4);
+  TracePrintf(1, "Bytes needed bit field: %d\n", (pmem_size >> PAGESHIFT) / 8);
+  TracePrintf(1, "Size of Region 0 is %d\n", VMEM_0_SIZE);
+
+  int frame_table_size = UP_TO_PAGE(pmem_size) >> PAGESHIFT;
+  int page_table_reg_0_size = UP_TO_PAGE(VMEM_0_SIZE) >> PAGESHIFT;
   int *frame_table = malloc(sizeof(int) * frame_table_size);
-  
-  /*
-  To map the kernel memory into its region 0 page table, we break 
-  its text and heap into PAGESIZE-length chunks, and put them
-  into the page table with self-referential addresses.
-
-  Their permissions are as follows, towards foxes (bottom up):
-  kernel text: valid, RX, frame 1
-  kernel heap: valid, RW, frame 1
-  -- empty space -- , frame 0
-  kernel stack: valid, RW,  frame 1
-  kernel globals: valid, RW, frame 1
-  --- more empty space -- , frame 0
-
-  We find the new brk page by dereferencing the last entry of our frame table 
-  (the last data structure on the heap).
-  We find the kernel stack address by creating a local and dereferencing it.
-  */
-
-  int page_ind;
+  pte_t *region_0_page_table = malloc(sizeof(pte_t) * page_table_reg_0_size);
   pte_t kernel_page;
-  int beginning_page = UP_TO_PAGE(PMEM_BASE) << PAGESHIFT;
-  int kernel_text_end_page = UP_TO_PAGE(_kernel_orig_brk) << PAGESHIFT; 
-  int kernel_brk_end_page = UP_TO_PAGE(&frame_table[frame_table_size-1]) << PAGESHIFT;
-  int last_kernel_page = UP_TO_PAGE(_kernel_data_end) << PAGESHIFT;
-  int *stack_addr;
-  *stack_addr = UP_TO_PAGE(&stack_addr) << PAGESHIFT;
-  for (page_ind = beginning_page; page_ind < num_kernel_pages; page_ind++) {
-      // Kernel text and anything under it
-      if (page_ind <= kernel_text_end_page) {
-        frame_table[beginning_page + page_index] = 1;
-        kernel_page -> valid = 1;
-        kernel_page -> prot = (PROT_READ | PROT_EXE);
-        kernel_page -> pfn = &region_0_page_table[page_ind];
-        region_0_page_table[page_ind] = kernel_page;
-      }
-      // Kernel heap
-      else if (page_ind > kernel_text_end_page && page_ind <= kernel_brk_end_page) {
-        frame_table[beginning_page + page_index] = 1;
-        kernel_page -> valid = 1;
-        kernel_page -> prot = (PROT_READ | PROT_WRITE);
-        kernel_page -> pfn = &region_0_page_table[page_ind];
-        region_0_page_table[page_ind] = kernel_page;
+  int *addr;
 
-      } 
-      // Empty space (still kernel memory)
-      else if (page_ind > kernel_brk_end_page && page_ind <= *stack_addr) {
-        frame_table[beginning_page + page_index] = 0;
-      } 
-      // Kernel stack and globals
-      else if (page_ind > *stack_addr && page_ind <= last_kernel_page) {
-        frame_table[beginning_page + page_index] = 1;
-        kernel_page -> valid = 1;
-        kernel_page -> prot = (PROT_READ | PROT_WRITE);
-        kernel_page -> pfn = &region_0_page_table[page_ind];
-        region_0_page_table[page_ind] = kernel_page;
-
-      } 
-      // Empty space
-      else if (page_ind > last_kernel_page && page_ind <= frame_table_size) {
-        frame_table[beginning_page + page_index] = 0;
-      } 
+  int num_ktext_pages = UP_TO_PAGE(_kernel_data_start - PMEM_BASE) / PAGESIZE - 1;
+  int num_kdata_pages = UP_TO_PAGE(_kernel_data_end - PMEM_BASE) / PAGESIZE;
+  int num_kstack_start_page = UP_TO_PAGE(KERNEL_STACK_BASE - PMEM_BASE) / PAGESIZE;
+  int num_total_kernel_pages = UP_TO_PAGE(VMEM_0_SIZE) / PAGESIZE;
+  TracePrintf(1, "Total number of kernel pages: %d\n", num_total_kernel_pages);
+  for (int pageind = 0; pageind < frame_table_size; pageind++) {
+    addr = (int *) (PMEM_BASE + PAGESIZE * pageind);
+    // Kernel text is implied to exist from the physical base (NULL) until kernel data begins
+    if (pageind < num_ktext_pages) {
+      frame_table[pageind] = 1;
+      kernel_page.valid = 1;
+      kernel_page.prot = (PROT_READ | PROT_EXEC);
+      kernel_page.pfn = pageind; 
+      region_0_page_table[pageind] = kernel_page;
+    }
+    // After text, we give data RW permissions
+    else if (pageind >= num_ktext_pages && pageind < num_kdata_pages) {
+     frame_table[pageind] = 1;
+      kernel_page.valid = 1;
+      kernel_page.prot = (PROT_READ | PROT_WRITE);
+      kernel_page.pfn = pageind; 
+      region_0_page_table[pageind] = kernel_page; 
+    }
+    // Until the stack, we add invalid pages to give the kernel the illusion of the whole reg. 0 memory space
+    else if (pageind >= num_kdata_pages && pageind < num_kstack_start_page) {
+      frame_table[pageind] = 1;
+      kernel_page.valid = 0;
+      kernel_page.pfn = pageind; 
+      region_0_page_table[pageind] = kernel_page;  
+    }
+    // then we mark the stack as valid 
+    else if (pageind >= num_kstack_start_page && pageind < num_total_kernel_pages) {
+      frame_table[pageind] = 1;
+      kernel_page.valid = 1;
+       kernel_page.prot = (PROT_READ | PROT_WRITE);
+      kernel_page.pfn = pageind; 
+      region_0_page_table[pageind] = kernel_page; 
+    }
+    // then we map the remainder of free physical frames
+    else {
+      frame_table[pageind] = 0;
+    }
   }
 
   // update registers
-  WriteRegister(REG_PTRBR0, &page_table_reg_0);
-  WriteRegister(REG_PTLR0, num_kernel_pages);
+  WriteRegister(REG_PTBR0, (int) region_0_page_table);
+  WriteRegister(REG_PTLR0, num_total_kernel_pages);
 
   // turn on virtual memory permanently
   WriteRegister(REG_VM_ENABLE, 1);
   vmem_on = 1;
 
-  // TRAP HANDLERS
-  // write base pointer of trap handlers to REG_VECTOR_BASE (how?)
-  // set up trap handler array
-  trap_handler[TRAP_VECTOR_SIZE];
-  trap_handler[TRAP_KERNEL] = &handle_trap_kernel;
-  trap_handler[TRAP_CLOCK] = &handle_trap_clock;
-  trap_handler[TRAP_ILLEGAL] = &handle_trap_illegal;
-  trap_handler[TRAP_MEMORY] = &handle_trap_memory;
-  trap_handler[TRAP_MATH] = &handle_trap_math;
-  trap_handler[TRAP_TTY_RECEIVE] = &handle_trap_tty_receive;
-  trap_handler[TRAP_TTY_TRANSMIT] = &handle_trap_tty_transmit;
-  trap_handler[TRAP_DISK] = &handle_trap_tty_unhandled;
-  // handle all other slots in the trap vector
-  for (int i=8; i<16; i++) {
-    trap_handler[i] = &handle_trap_tty_unhandled;
+  // // TRAP HANDLERS
+  // // write base pointer of trap handlers to REG_VECTOR_BASE (how?)
+  // // set up trap handler array
+  // // trap_handler[TRAP_VECTOR_SIZE];
+  // // trap_handler[TRAP_KERNEL] = &handle_trap_kernel;
+  // // trap_handler[TRAP_CLOCK] = &handle_trap_clock;
+  // // trap_handler[TRAP_ILLEGAL] = &handle_trap_illegal;
+  // // trap_handler[TRAP_MEMORY] = &handle_trap_memory;
+  // // trap_handler[TRAP_MATH] = &handle_trap_math;
+  // // trap_handler[TRAP_TTY_RECEIVE] = &handle_trap_tty_receive;
+  // // trap_handler[TRAP_TTY_TRANSMIT] = &handle_trap_tty_transmit;
+  // // trap_handler[TRAP_DISK] = &handle_trap_tty_unhandled;
+  // // // handle all other slots in the trap vector
+  // // for (int i=8; i<16; i++) {
+  // //   trap_handler[i] = &handle_trap_tty_unhandled;
+  // // }
+
+  // // TODO: Before initializing an idle page, we need to set up our data structures (both our PCBs and 
+  // // their running, ready, blocked, and defunct "queues"). These will be laid out as follows: 
+  // // Running: global
+  // // Ready: queue
+  // // Blocked: multiple queues and pipes
+  // // Defunct: some kind of linked list-like structure (analogous to the one we'll use to count ticks
+  // // on PCBs for our clock Delay syscall).
+
+  // Create an idle pcb, with PC pointing to the kernel idle function
+  int num_kernel_stack_pages = num_total_kernel_pages - num_kstack_start_page;
+  pte_t *kernel_stack = malloc(sizeof(pte_t) *num_kernel_stack_pages);
+  for (int i=0; i<num_kernel_stack_pages; i++) {
+    kernel_stack[i] = region_0_page_table[i];
   }
+  int page_table_reg_1_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
+  pte_t *region_1_page_table = malloc(sizeof(pte_t) * page_table_reg_1_size);
+  KernelContext kctxt;
+  uctxt -> pc = &DoIdle;
+  uctxt -> sp = &region_1_page_table[page_table_reg_1_size -1];
+  uctxt -> ebp =&region_1_page_table[page_table_reg_1_size -1]; 
+  int pid = helper_new_pid(region_1_page_table);
+  pcb_t *idle_pcb = create_pcb(pid, kernel_stack, region_1_page_table, uctxt, &kctxt);
+  running_process = idle_pcb;
 
-  // TODO: Before initializing an idle page, we need to set up our data structures (both our PCBs and 
-  // their running, ready, blocked, and defunct "queues"). These will be laid out as follows: 
-  // Running: global
-  // Ready: queue
-  // Blocked: multiple queues and pipes
-  // Defunct: some kind of linked list-like structure (analogous to the one we'll use to count ticks
-  // on PCBs for our clock Delay syscall).
-
+  // update registers
+  WriteRegister(REG_PTBR1, (int) region_1_page_table);
+  WriteRegister(REG_PTLR1, page_table_reg_1_size);
+  // when we return to userland, got to the idle process
+  return;
 }
 
 /*
@@ -146,21 +160,31 @@ void KernelStart(char *cmd args[], unsigned int pmem_size, UserContext *uctxt) {
 * In case of any error, the value ERROR is returned.
 */
 int SetKernelBrk(void *addr) {
-  //if vmem is not enabled, set the brk to the specified address above _kernel_origin_brk (hit by kernel malloc)
-  if (!vmem_on) {
-    if (addr > _kernel_data_end) {
-      return ERROR;
-    }
-    int increment = addr - _kernel_orig_brk;
-    TracePrintf(1, "In physical memory, incrementing kbrk by %d\n", increment);
-    kernel_brk += increment;
-    TracePrintf(1, "In physical memory, incrementing brk to %p\n", addr);
-    return 0;
-  }
-  //otherwise, set the brk assuming the address is virtual (a normal brk syscall)
-  else {
-    TracePrintf(1, "In virtual memory, incrementing brk to %p\n", addr);
-    //TODO:
-    return ERROR; 
-  }
+ TracePrintf(1, "At beginning of SetKernelBrk, addr is %p\n", addr); 
+ return 0;
+  // // error out if we don't have enough memory or if our address is invalid
+  // if (addr < _kernel_data_start || addr > _kernel_data_end) {
+  //   return ERROR;
+  // }
+  // //TODO: check if we have enough memory left to allocate
+  // // if vmem is not enabled, set the brk to the specified address above _kernel_origin_brk (hit by kernel malloc)
+  // if (!vmem_on) {
+  //   current_kernel_brk = UP_TO_PAGE(_kernel_orig_brk + PAGESIZE);
+  //   TracePrintf(1, "In physical memory, increasing brk to %p\n", current_kernel_brk);
+  //   return 0;
+  // }
+  // //otherwise, set the brk assuming the address is virtual (a normal brk syscall)
+  // else {
+  //   TracePrintf(1, "In virtual memory, incrementing brk to %p\n", addr);
+  //   current_kernel_brk = UP_TO_PAGE(addr);
+  //   return 0;
+  // }
+}
+
+// Idle PCB code (part of kernel text)
+void DoIdle(void) {
+  while(1) {
+    TracePrintf(1,"DoIdle\n");
+    Pause();
+  } 
 }

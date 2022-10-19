@@ -1,32 +1,60 @@
-//
-// Created by smooth_operator on 10/8/22.
-//
-
 #ifndef CURRENT_CHUNGUS_PCB
 #define CURRENT_CHUNGUS_PCB
 
+#include <ykernel.h>
 #include "stdbool.h"
-// TODO -- include user context
-// TODO -- include kernel context
 
+/*
+* Our pcb stores the following types of info:
+* 0. PID
+* 1. Page table info and contexts
+*     We need to store the user page table. Because the kernel page table
+*     doesn't move, we simply store the new kernel stack.
+* 2. Contexts
+*     We store both user and kernel contexts. 
+* 3. Proc Death Info
+*   We store exit codes and a flag to check whether the process is dead.
+* 4. Proc Parent/Child info
+*   We store parent/child info in the PCB (to respond to process death
+*   by updating the children.)
+* 5. Queue info (embedded)
+*/
 typedef struct pcb {
-  int pid;                                             // the process id
-  // uspace: some way to store pages (linked list?)
-  // uctxt: user context
-  KernelContext kctext;
-  // kstack: some way to store pages (linked list?)
+  int pid;
+  pte_t *kernel_stack;
+  pte_t *region_1_page_table;
+  UserContext *uctxt;
+  KernelContext *kctxt;
 
   bool hasExited;                                      // whether the process is dead yet
   int rc;                                              // the return code of the process
-  pcb_t* next_pcb;                                     // the next pcb in the queue
-  pcb_t* prev_pcb;                                     // the previous pcb in the queue
-
-  pcb_t* children;                                     // null unless there are children
+  struct pcb *next_pcb;                                     // the next pcb in the queue
+  struct pcb *prev_pcb;                                     // the previous pcb in the queue
+  struct pcb *children;                                     // null unless there are children
   int num_children;                                    // 0 unless there are children
-  pcb_t* parent;                                       // the parent, if any
+  struct pcb *parent;                                       // the parent, if any
 } pcb_t;
 
+/*
+* basic setter: create pcb with context/page table info, initializing exit and queue info to 
+* reasonable defaults. 
+*/
+pcb_t *create_pcb(
+  int pid,
+  pte_t *kernel_stack, 
+  pte_t *region_1_page_table, 
+  UserContext *uctxt, 
+  KernelContext *kctxt
+);
 
-// TODO -- create an idle_pcb object
+/*
+ * Adds the PCB to the back of the ready queue
+ */
+int add_to_ready_queue(pcb_t* pcb);
+
+/*
+ * Removes a PCB from the front of the ready queue
+ */
+int remove_from_ready_queue(pcb_t* pcb);
 
 #endif //CURRENT_CHUNGUS_PCB
