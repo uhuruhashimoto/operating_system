@@ -49,10 +49,8 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   int frame_table_size = UP_TO_PAGE(pmem_size) >> PAGESHIFT;
   int page_table_reg_0_size = UP_TO_PAGE(VMEM_0_SIZE) >> PAGESHIFT;
-  int page_table_reg_1_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   int *frame_table = malloc(sizeof(int) * frame_table_size);
   pte_t *region_0_page_table = malloc(sizeof(pte_t) * page_table_reg_0_size);
-  pte_t *region_1_page_table = malloc(sizeof(pte_t) * page_table_reg_1_size);
   pte_t kernel_page;
   int *addr;
 
@@ -132,6 +130,23 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   // // Blocked: multiple queues and pipes
   // // Defunct: some kind of linked list-like structure (analogous to the one we'll use to count ticks
   // // on PCBs for our clock Delay syscall).
+
+  // Create an idle pcb, with PC pointing to the kernel idle function
+  int num_kernel_stack_pages = num_total_kernel_pages - num_kstack_start_page;
+  pte_t *kernel_stack = malloc(sizeof(pte_t) *num_kernel_stack_pages);
+  for (int i=0; i<num_kernel_stack_pages; i++) {
+    kernel_stack[i] = region_0_page_table[i];
+  }
+  int page_table_reg_1_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
+  pte_t *region_1_page_table = malloc(sizeof(pte_t) * page_table_reg_1_size);
+  KernelContext kctxt;
+  uctxt -> pc = &DoIdle;
+  uctxt -> sp = &region_1_page_table[page_table_reg_1_size -1];
+  uctxt -> ebp =&region_1_page_table[page_table_reg_1_size -1]; 
+  int pid = helper_new_pid(region_0_page_table);
+  pcb_t *idle_pcb = create_pcb(pid, kernel_stack, region_1_page_table, uctxt, &kctxt);
+
+  //TODO: when we return to userland, got to the idle process
 
 }
 

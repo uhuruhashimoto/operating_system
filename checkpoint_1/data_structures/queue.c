@@ -4,7 +4,7 @@
 typedef struct queue {
   pcb_t* head;
   pcb_t* tail;
-  int size=0;
+  int size;
 } queue_t;
 
 // TODO -- function to create new queue objects

@@ -23,8 +23,8 @@ typedef struct pcb {
   int pid;
   pte_t *kernel_stack;
   pte_t *region_1_page_table;
-  UserContext uctxt;
-  KernelContext kctxt;
+  UserContext *uctxt;
+  KernelContext *kctxt;
 
   bool hasExited;                                      // whether the process is dead yet
   int rc;                                              // the return code of the process
@@ -34,5 +34,27 @@ typedef struct pcb {
   int num_children;                                    // 0 unless there are children
   struct pcb *parent;                                       // the parent, if any
 } pcb_t;
+
+/*
+* basic setter: create pcb with context/page table info, initializing exit and queue info to 
+* reasonable defaults. 
+*/
+pcb_t *create_pcb(
+  int pid,
+  pte_t *kernel_stack, 
+  pte_t *region_1_page_table, 
+  UserContext *uctxt, 
+  KernelContext *kctxt
+);
+
+/*
+ * Adds the PCB to the back of the ready queue
+ */
+int add_to_ready_queue(pcb_t* pcb);
+
+/*
+ * Removes a PCB from the front of the ready queue
+ */
+int remove_from_ready_queue(pcb_t* pcb);
 
 #endif //CURRENT_CHUNGUS_PCB
