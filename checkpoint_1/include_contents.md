@@ -36,7 +36,7 @@ size of null space to allocate after ARGV
 
 ## yalnix.h
 ```
-defines kernel call numbers for supported kernel calls
+defines kernel SYSCALL call numbers for supported kernel calls
 pipe buffer len
 ```
 

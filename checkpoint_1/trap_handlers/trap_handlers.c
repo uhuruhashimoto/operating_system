@@ -1,4 +1,6 @@
 #include <ykernel.h>
+#include <hardware.h>
+#include <yalnix.h>
 #include "trap_handlers.h"
 #include "../syscalls/io_syscalls.h"
 #include "../syscalls/ipc_syscalls.h"
@@ -37,8 +39,27 @@ void handle_trap_kernel(UserContext* context) {
       handle_Delay(context->regs[0]);
       break;
 
-    // TODO -- what other kernel syscalls do we need to handle?
-    // TODO -- create a default case
+    // TTY Syscalls
+    case YALNIX_TTY_READ:
+      handle_TtyRead(context->regs[0], context->regs[1], context->regs[2]);
+      break;
+    case YALNIX_TTY_WRITE:
+      handle_TtyWrite(context->regs[0], context->regs[1], context->regs[2]);
+      break;
+
+    // TODO -- what are YALNIX_REGISTER etc?
+    // TODO -- what are YALNIX_READ_SECTOR etc?
+
+    // IPC
+    case YALNIX_PIPE_INIT:
+      handle_PipeInit(context->regs[0], context->regs[1]);
+      break;
+    case YALNIX_PIPE_READ:
+      handle_PipeRead(context->regs[0]);
+      break;
+    case YALNIX_PIPE_WRITE:
+      
+
   }
 
   // context->regs[0] = return_val
