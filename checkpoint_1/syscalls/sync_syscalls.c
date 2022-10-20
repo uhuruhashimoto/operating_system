@@ -8,14 +8,14 @@
 /*
  * Create a new lock; save its identifier at *lock idp. In case of any error, the value ERROR is returned.
  */
-int LockInit(int *lock_idp) {
+int handle_LockInit(int *lock_idp) {
    // initialize lock data structure, with fields for user and queue for waiters/procs waiting on the lock 
 }
 
 /*
  * Acquire the lock identified by lock id. In case of any error, the value ERROR is returned.
  */
-int Acquire(int lock_id) {
+int handle_Acquire(int lock_id) {
     // if the lock is free, caller gets the lock
     // otherwise, caller blocks the lock until it's free
 }
@@ -24,7 +24,7 @@ int Acquire(int lock_id) {
  * Release the lock identified by lock id. The caller must currently hold this lock. In case of any error, the value
 ERROR is returned.
  */
-int Release(int lock_id) {
+int handle_Release(int lock_id) {
     // remove the current user from the lock
     // check if anyone else is waiting for it
 }
@@ -33,7 +33,7 @@ int Release(int lock_id) {
  * Create a new condition variable; save its identifier at *cvar idp. In case of any error, the value ERROR is
 returned.
  */
-int CvarInit(int *cvar_idp) {
+int handle_CvarInit(int *cvar_idp) {
     // create a condition variable, storing its value somewhere in the data structure that will be checked by cvar_wait
 }
 
@@ -41,7 +41,7 @@ int CvarInit(int *cvar_idp) {
  * Signal the condition variable identified by cvar id. (Use Mesa-style semantics.) In case of any error, the value
 ERROR is returned.
  */
-int CvarSignal(int cvar_id) {
+int handle_CvarSignal(int cvar_id) {
     // signal one of the waiters on the cvar to wake up, and put it in the queue waiting to run
 }
 
@@ -49,7 +49,7 @@ int CvarSignal(int cvar_id) {
  * Broadcast the condition variable identified by cvar id. (Use Mesa-style semantics.) In case of any error, the
 value ERROR is returned.
  */
-int CvarBroadcast(int cvar_id){
+int handle_CvarBroadcast(int cvar_id){
     // wake up all of the waiters, and put them in the queue waiting to run
 }
 
@@ -60,7 +60,7 @@ re-acquires the lock. (Use Mesa-style semantics.)
 When the lock is finally acquired, the call returns to userland.
 In case of any error, the value ERROR is returned.
  */
-int CvarWait(int cvar_id, int lock_id) {
+int handle_CvarWait(int cvar_id, int lock_id) {
 
 }
 

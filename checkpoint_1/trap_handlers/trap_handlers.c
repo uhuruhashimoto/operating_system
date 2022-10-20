@@ -61,6 +61,38 @@ void handle_trap_kernel(UserContext* context) {
 //      handle_PipeWrite(context->regs[0], context->regs[1], context->regs[2]);
       break;
 
+    // NOP
+    case YALNIX_NOP:
+      // do nothing!
+      break;
+
+    // TODO -- semaphore stuff?
+
+    case YALNIX_LOCK_INIT:
+//      handle_LockInit(context->regs[0]);
+      break;
+    case YALNIX_LOCK_ACQUIRE:
+//      handle_Acquire(context->regs[0]);
+      break;
+    case YALNIX_LOCK_RELEASE:
+//      handle_Release(context->regs[0]);
+      break;
+    case YALNIX_CVAR_INIT:
+//      handle_CvarInit(context->regs[0]);
+      break;
+    case YALNIX_CVAR_SIGNAL:
+//      handle_CvarSignal(context->regs[0]);
+      break;
+    case YALNIX_CVAR_BROADCAST:
+//      handle_CvarBroadcast(context->regs[0]);
+      break;
+    case YALNIX_CVAR_WAIT:
+//      handle_CvarWait(context->regs[0], context->regs[1]);
+      break;
+    // TODO -- YALNIX_RECLAIM
+
+    // TODO -- YALNIX_ABORT
+    // TODO -- YALNIX_BOOT
   }
 
   // context->regs[0] = return_val
