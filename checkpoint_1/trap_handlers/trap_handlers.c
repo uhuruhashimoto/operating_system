@@ -58,7 +58,8 @@ void handle_trap_kernel(UserContext* context) {
       handle_PipeRead(context->regs[0]);
       break;
     case YALNIX_PIPE_WRITE:
-      
+      handle_PipeWrite(context->regs[0], context->regs[1], context->regs[2]);
+      break;
 
   }
 
