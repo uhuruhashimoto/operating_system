@@ -36,6 +36,7 @@ int *current_kernel_brk;
  *  Instantiate an idlePCB
  */
 void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
+  // Complementary Print Statements
   TracePrintf(1, "Kernel data start is %p\n", _kernel_data_start);
   TracePrintf(1, "Kernel orig brk is %p\n", _kernel_orig_brk);
   TracePrintf(1, "Kernel data end is %p\n", _kernel_data_end);
@@ -123,7 +124,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
     trap_handler[i] = &handle_trap_unhandled;
   }
   // write base pointer of trap handlers to REG_VECTOR_BASE
-  WriteRegister(REG_VECTOR_BASE, (int)trap_handler);
+  WriteRegister(REG_VECTOR_BASE, (int) trap_handler);
 
 
   // // TODO: Before initializing an idle page, we need to set up our data structures (both our PCBs and 
@@ -135,23 +136,32 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   // // on PCBs for our clock Delay syscall).
 
   // Create an idle pcb, with PC pointing to the kernel idle function
+  // copy over kernel stack so we can take it with us
   int num_kernel_stack_pages = num_total_kernel_pages - num_kstack_start_page;
   pte_t *kernel_stack = malloc(sizeof(pte_t) *num_kernel_stack_pages);
   for (int i=0; i<num_kernel_stack_pages; i++) {
     kernel_stack[i] = region_0_page_table[i];
   }
+
+  // set up region 1 page table
   int idle_stack_size = 2;
   pte_t idle_page;
   int page_table_reg_1_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   pte_t *region_1_page_table = malloc(sizeof(pte_t) * page_table_reg_1_size);
-
-  // set up stack
-  for (int pageind=0; pageind<idle_stack_size; pageind++) {
-    frame_table[pageind] = 1;
-    idle_page.valid = 1;
-    idle_page.prot = (PROT_READ | PROT_WRITE);
-    idle_page.pfn = pageind; 
-    region_1_page_table[page_table_reg_1_size - (pageind + 1)] = kernel_page; 
+  for (int ind=0; ind<page_table_reg_1_size; ind++) {
+    // set everything under the stack as non-valid (since the text is in the kernel and 
+    // our loop shouldn't use any memory)
+    if (ind < page_table_reg_1_size - idle_stack_size) {
+      idle_page.valid = 0;
+      region_1_page_table[ind] = kernel_page;  
+    }
+    // Here's the stack
+    else {
+      idle_page.valid = 1;
+      idle_page.prot = (PROT_READ | PROT_WRITE);
+      idle_page.pfn = 300 + ind; //TODO: change this
+      region_1_page_table[ind] = kernel_page; 
+    }
   }
   
   KernelContext kctxt;
@@ -166,7 +176,8 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   WriteRegister(REG_PTBR1, (int) region_1_page_table);
   WriteRegister(REG_PTLR1, page_table_reg_1_size);
   // when we return to userland, got to the idle process
-  return;
+  TracePrintf(1, "Leaving KernelStart...\n");
+  return; 
 }
 
 /*
