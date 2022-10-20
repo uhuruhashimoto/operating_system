@@ -5,6 +5,7 @@
 
 #ifndef CURRENT_CHUNGUS_PROCESS_SYSCALL_HANDLERS
 #define CURRENT_CHUNGUS_PROCESS_SYSCALL_HANDLERS
+#include <ykernel.h>
 
 /*
  * Fork the process and create a new, separate address space

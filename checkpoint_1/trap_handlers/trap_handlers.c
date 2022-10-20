@@ -1,4 +1,4 @@
-#include <hardware.h>
+#include <ykernel.h>
 #include "trap_handlers.h"
 #include "../syscalls/io_syscalls.h"
 #include "../syscalls/ipc_syscalls.h"
@@ -10,6 +10,7 @@
  */
 void handle_trap_kernel(UserContext* context) {
   int trap_type = context->code;
+  TracePrintf(1, "Handling kernel trap with code %x\n", trap_type);
 
   // switch based on the trap type
   switch (trap_type) {
@@ -18,19 +19,19 @@ void handle_trap_kernel(UserContext* context) {
       handle_Fork();
       break;
     case YALNIX_EXEC:
-      handle_Exec(context->regs[0], context->regs[1]);
+      // handle_Exec(context->regs[0], context->regs[1]);
       break;
     case YALNIX_EXIT:
       handle_Exit(context->regs[0]);
       break;
     case YALNIX_WAIT:
-      handle_Wait(context->regs[0]);
+      // handle_Wait(context->regs[0]);
       break;
     case YALNIX_GETPID:
       handle_GetPid();
       break;
     case YALNIX_BRK:
-      handle_Brk(context->regs[0]);
+      // handle_Brk(context->regs[0]);
       break;
     case YALNIX_DELAY:
       handle_Delay(context->regs[0]);
@@ -40,13 +41,14 @@ void handle_trap_kernel(UserContext* context) {
     // TODO -- create a default case
   }
 
-  context->regs[0] = return_val
+  // context->regs[0] = return_val
 }
 
 /*
  * Handle traps to clock -- starts the next process in the ready queue
  */
 void handle_trap_clock(UserContext* context) {
+  TracePrintf(1, "Our kernel hit the clock trap\n");
   // TODO -- check if there is another process in the ready queue
   // if not, return to the running user process
   // if so, saves the current user context
@@ -63,6 +65,7 @@ void handle_trap_clock(UserContext* context) {
  * Handles all other traps
  */
 void handle_trap_unhandled(UserContext* context) {
+  TracePrintf(1, "This trap is not yet implemented\n");
   // TODO -- log something (maybe trap id?)
   // TODO -- return to user execution
 }
@@ -77,6 +80,7 @@ void handle_trap_unhandled(UserContext* context) {
  * Abort the current user process
  */
 void handle_trap_illegal(UserContext* context) {
+  TracePrintf(1, "This trap is not yet implemented\n");
   // abort the current process
   // get the next process from the ready queue
 }
@@ -86,6 +90,7 @@ void handle_trap_illegal(UserContext* context) {
  * otherwise kills the process
  */
 void handle_trap_memory(UserContext* context) {
+  TracePrintf(1, "This trap is not yet implemented\n");
   // implicit request for more memory -- stack, not the heap
   // check if the address being touched is one page or less away from the top of the stack
   // if so:
@@ -100,6 +105,7 @@ void handle_trap_memory(UserContext* context) {
  * Aborts current user process
  */
 void handle_trap_math(UserContext* context) {
+  TracePrintf(1, "This trap is not yet implemented\n");
   // abort the user process
   // run the next process on the ready queue
 }
@@ -108,7 +114,8 @@ void handle_trap_math(UserContext* context) {
  * Hardware detected a new line in the terminal
  */
 void handle_trap_tty_receive(UserContext* context) {
-  int tty_id = context->code;
+  TracePrintf(1, "This trap is not yet implemented\n");
+  // int tty_id = context->code;
   // read input from terminal with TtyReceive
   // save into a terminal buffer
   // wake up waiting read processes
@@ -118,7 +125,7 @@ void handle_trap_tty_receive(UserContext* context) {
  * A line being written to the terminal has completed
  */
 void handle_trap_tty_transmit(UserContext* context) {
-  int tty_id = context->code;
-  //
+  TracePrintf(1, "This trap is not yet implemented\n");
+  // int tty_id = context->code;
 }
 

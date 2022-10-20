@@ -5,10 +5,10 @@
 
 #ifndef CURRENT_CHUNGUS_TRAP_HANDLERS
 #define CURRENT_CHUNGUS_TRAP_HANDLERS
+#include <ykernel.h>
+#define NUM_TRAP_FUNCTIONS 16
 
-#include <hardware.h>
-
-typedef void (*trap_handler) (UserContext* context);
+typedef void (*trap_handler_t) (UserContext* context);
 
 /*
  * Handle traps to the kernel

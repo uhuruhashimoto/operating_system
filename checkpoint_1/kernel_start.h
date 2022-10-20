@@ -6,7 +6,7 @@
 #define CURRENT_CHUNGUS_KERNEL_START_H
 
 #include <ykernel.h>
-// #include "trap_handlers/trap_handlers.h"
+#include "trap_handlers/trap_handlers.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 

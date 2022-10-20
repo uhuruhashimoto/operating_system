@@ -5,6 +5,7 @@
 
 #ifndef CURRENT_CHUNGUS_SYNC_SYSCALL_HANDLERS
 #define CURRENT_CHUNGUS_SYNC_SYSCALL_HANDLERS
+#include <ykernel.h>
 
 /*
  * Create a new lock; save its identifier at *lock idp. In case of any error, the value ERROR is returned.

@@ -29,9 +29,6 @@ extern void *_kernel_orig_brk;
 int vmem_on = 0;
 int *current_kernel_brk;
 
-//
-trap_handler[TRAP_VECTOR_SIZE];
-
 /*
  * Behavior:
  *  Set up virtual memory
@@ -112,6 +109,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   // TRAP HANDLERS
   // set up trap handler array
+  trap_handler_t *trap_handler = (trap_handler_t *)malloc(sizeof(trap_handler_t) * NUM_TRAP_FUNCTIONS);
   trap_handler[TRAP_KERNEL] = &handle_trap_kernel;
   trap_handler[TRAP_CLOCK] = &handle_trap_clock;
   trap_handler[TRAP_ILLEGAL] = &handle_trap_illegal;
@@ -119,10 +117,10 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   trap_handler[TRAP_MATH] = &handle_trap_math;
   trap_handler[TRAP_TTY_RECEIVE] = &handle_trap_tty_receive;
   trap_handler[TRAP_TTY_TRANSMIT] = &handle_trap_tty_transmit;
-  trap_handler[TRAP_DISK] = &handle_trap_tty_unhandled;
+  trap_handler[TRAP_DISK] = &handle_trap_unhandled;
   // handle all other slots in the trap vector
   for (int i=8; i<16; i++) {
-    trap_handler[i] = &handle_trap_tty_unhandled;
+    trap_handler[i] = &handle_trap_unhandled;
   }
   // write base pointer of trap handlers to REG_VECTOR_BASE
   WriteRegister(REG_VECTOR_BASE, (int)trap_handler);
@@ -142,12 +140,24 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   for (int i=0; i<num_kernel_stack_pages; i++) {
     kernel_stack[i] = region_0_page_table[i];
   }
+  int idle_stack_size = 2;
+  pte_t idle_page;
   int page_table_reg_1_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   pte_t *region_1_page_table = malloc(sizeof(pte_t) * page_table_reg_1_size);
+
+  // set up stack
+  for (int pageind=0; pageind<idle_stack_size; pageind++) {
+    frame_table[pageind] = 1;
+    idle_page.valid = 1;
+    idle_page.prot = (PROT_READ | PROT_WRITE);
+    idle_page.pfn = pageind; 
+    region_1_page_table[page_table_reg_1_size - (pageind + 1)] = kernel_page; 
+  }
+  
   KernelContext kctxt;
   uctxt -> pc = &DoIdle;
-  uctxt -> sp = &region_1_page_table[page_table_reg_1_size -1];
-  uctxt -> ebp =&region_1_page_table[page_table_reg_1_size -1]; 
+  uctxt -> sp = &region_1_page_table[page_table_reg_1_size - (idle_stack_size + 1)];
+  uctxt -> ebp =&region_1_page_table[page_table_reg_1_size - 1]; 
   int pid = helper_new_pid(region_1_page_table);
   pcb_t *idle_pcb = create_pcb(pid, kernel_stack, region_1_page_table, uctxt, &kctxt);
   running_process = idle_pcb;
