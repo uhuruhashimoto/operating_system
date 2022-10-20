@@ -87,48 +87,49 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   TracePrintf(1, "Size (in pages): %d\n", total_pmem_pages);
   TracePrintf(1, "==========================================\n");
 
-  for (int pageind = 0; pageind < total_pmem_pages; pageind++) {
-    addr = (int *) (PMEM_BASE + PAGESIZE * pageind);
-    TracePrintf(1, "Page %2d at addr %5p:", pageind, addr);
+  int kernel_pageind = 0;
+  for (kernel_pageind = 0; kernel_pageind < total_pmem_pages; kernel_pageind++) {
+    addr = (int *) (PMEM_BASE + PAGESIZE * kernel_pageind);
+    TracePrintf(1, "Page %2d at addr %5p:", kernel_pageind, addr);
     // Kernel text is implied to exist from the physical base (NULL) until kernel data begins
-    if (pageind < (kernel_data_start_page-1)) {
-      frame_table[pageind] = 1;
+    if (kernel_pageind < (kernel_data_start_page-1)) {
+      frame_table[kernel_pageind] = 1;
       kernel_page.valid = 1;
       kernel_page.prot = (PROT_READ | PROT_EXEC);
-      kernel_page.pfn = pageind; 
-      region_0_page_table[pageind] = kernel_page;
+      kernel_page.pfn = kernel_pageind;
+      region_0_page_table[kernel_pageind] = kernel_page;
       TracePrintf(1, "TEXT: val: %u, prot: %u, pfn: %u\n", kernel_page.valid, kernel_page.prot, kernel_page.pfn);
     }
     // After text, we give data RW permissions
-    else if (pageind >= (kernel_data_start_page-1) && pageind < kernel_data_end_page) {
-      frame_table[pageind] = 1;
+    else if (kernel_pageind >= (kernel_data_start_page-1) && kernel_pageind < kernel_data_end_page) {
+      frame_table[kernel_pageind] = 1;
       kernel_page.valid = 1;
       kernel_page.prot = (PROT_READ | PROT_WRITE);
-      kernel_page.pfn = pageind; 
-      region_0_page_table[pageind] = kernel_page; 
+      kernel_page.pfn = kernel_pageind;
+      region_0_page_table[kernel_pageind] = kernel_page;
       TracePrintf(1, "DATA/HEAP: val: %u, prot: %u, pfn: %u\n", kernel_page.valid, kernel_page.prot, kernel_page.pfn);
     }
     // Until the stack, we add invalid pages to give the kernel the illusion of the whole reg. 0 memory space
-    else if (pageind >= kernel_data_end_page && pageind < stack_start_page) {
-      frame_table[pageind] = 1;
+    else if (kernel_pageind >= kernel_data_end_page && kernel_pageind < stack_start_page) {
+      frame_table[kernel_pageind] = 1;
       kernel_page.valid = 0;
-      kernel_page.pfn = pageind; 
-      region_0_page_table[pageind] = kernel_page; 
+      kernel_page.pfn = kernel_pageind;
+      region_0_page_table[kernel_pageind] = kernel_page;
       TracePrintf(1, "INVALID: val: %u, prot: %u, pfn: %u\n", kernel_page.valid, kernel_page.prot, kernel_page.pfn); 
     }
     // then we mark the stack as valid 
-    else if (pageind >= stack_start_page && pageind < stack_end_page) {
-      frame_table[pageind] = 1;
+    else if (kernel_pageind >= stack_start_page && kernel_pageind < stack_end_page) {
+      frame_table[kernel_pageind] = 1;
       kernel_page.valid = 1;
        kernel_page.prot = (PROT_READ | PROT_WRITE);
-      kernel_page.pfn = pageind; 
-      region_0_page_table[pageind] = kernel_page; 
+      kernel_page.pfn = kernel_pageind;
+      region_0_page_table[kernel_pageind] = kernel_page;
       TracePrintf(1, "STACK: val: %u, prot: %u, pfn: %u\n", kernel_page.valid, kernel_page.prot, kernel_page.pfn);
     }
     // then we map the remainder of free physical frames
     else {
       TracePrintf(1, "EMPTY\n");
-      frame_table[pageind] = 0;
+      frame_table[kernel_pageind] = 0;
     }
 
   }
@@ -201,9 +202,11 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
     }
     // Here's the stack
     else {
+      int frame_ind = ind + kernel_pageind;
       idle_page.valid = 1;
       idle_page.prot = (PROT_READ | PROT_WRITE);
-      idle_page.pfn = 300 + ind; //TODO: change this
+      idle_page.pfn = frame_ind;
+      frame_table[frame_ind] = 1;
       region_1_page_table[ind] = idle_page; 
     }
   }
