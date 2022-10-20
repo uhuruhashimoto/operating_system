@@ -36,17 +36,46 @@ int *current_kernel_brk;
  *  Instantiate an idlePCB
  */
 void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
-  // Complementary Print Statements
-  TracePrintf(1, "Kernel data start is %p\n", _kernel_data_start);
-  TracePrintf(1, "Kernel orig brk is %p\n", _kernel_orig_brk);
-  TracePrintf(1, "Kernel data end is %p\n", _kernel_data_end);
+  /*
+  * We are given addresses in bytes corresponding to the following kernel address space:
+  * ---------- Top of region 0 (KERNEL_STACK_LIMIT or VMEM_0_SIZE)
+  * Stack
+  * ---------- Stack base (KERNEL_STACK_BASE)
+  * empty
+  * ---------- End of heap (_kernel_data_end)
+  * Heap
+  * Data
+  * -------- Start of data (_kernel_data_start)
+  * Text
+  * -------- Base (PMEM_BASE)
+  * 
+  * For each of these addresses (lines), we bit-shift the address by PAGESHIFT to find out 
+  * the page number it will correspond to in our page table. 
+  */
 
-  TracePrintf(1, "PMEM Base: %p\n", PMEM_BASE);
-  TracePrintf(1, "Pmem size: %x\n", pmem_size);
-  TracePrintf(1, "BITS: %d\n", PAGESHIFT);
-  TracePrintf(1, "Size of page table in bytes: %d\n", (pmem_size >> PAGESHIFT) * 4);
-  TracePrintf(1, "Bytes needed bit field: %d\n", (pmem_size >> PAGESHIFT) / 8);
-  TracePrintf(1, "Size of Region 0 is %d\n", VMEM_0_SIZE);
+  // full sizes
+  int total_pmem_pages = UP_TO_PAGE(pmem_size) >> PAGESHIFT;
+  int region_0_page_table_size = UP_TO_PAGE(VMEM_0_SIZE) >> PAGESHIFT;
+
+  // Address sizes
+  int kernel_text_start_page = UP_TO_PAGE(PMEM_BASE) >> PAGESHIFT;
+  int kernel_data_start_page = UP_TO_PAGE(_kernel_data_start - PMEM_BASE) >> PAGESHIFT;
+  int kernel_data_end_page = UP_TO_PAGE(_kernel_data_end - PMEM_BASE) >> PAGESHIFT;
+  int stack_start_page = UP_TO_PAGE(KERNEL_STACK_BASE - PMEM_BASE) >> PAGESHIFT;
+  int stack_end_page = UP_TO_PAGE(KERNEL_STACK_LIMIT - PMEM_BASE)>> PAGESHIFT;
+
+  // Page table setup
+
+  // Address checks
+  TracePrintf(1, "Physical memory size is %x bytes, %d pages\n", pmem_size, total_pmem_pages);
+  TracePrintf(1, "Region 0 size is %x bytes, %d pages\n", VMEM_0_SIZE, region_0_page_table_size); 
+  TracePrintf(1, "-------------------------\n");
+  TracePrintf(1, "Kernel text start page is addr %x, page %d \n", PMEM_BASE, kernel_text_start_page);
+  TracePrintf(1, "Kernel data start page is addr %x, page %d \n", _kernel_data_start - PMEM_BASE, kernel_data_start_page);
+  TracePrintf(1, "Kernel data end page is addr %x, page %d \n", _kernel_data_end - PMEM_BASE, kernel_data_end_page);
+  TracePrintf(1, "Kernel stack start page is addr %x, page %d \n", KERNEL_STACK_BASE - PMEM_BASE, stack_start_page);
+  TracePrintf(1, "Kernel stack end page is addr %x, page %d \n", KERNEL_STACK_LIMIT - PMEM_BASE, stack_end_page);
+
 
   int frame_table_size = UP_TO_PAGE(pmem_size) >> PAGESHIFT;
   int page_table_reg_0_size = UP_TO_PAGE(VMEM_0_SIZE) >> PAGESHIFT;
@@ -60,9 +89,13 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   int num_kstack_start_page = UP_TO_PAGE(KERNEL_STACK_BASE - PMEM_BASE) / PAGESIZE;
   int num_total_kernel_pages = UP_TO_PAGE(VMEM_0_SIZE) / PAGESIZE;
 
-  TracePrintf(1, "Total number of kernel pages: %d\n", num_total_kernel_pages);
+  TracePrintf(1, "KERNEL PAGE TABLE [BEFORE VMEM ENABLE]\n");
+  TracePrintf(1, "Size (in pages): %d\n", num_total_kernel_pages);
+  TracePrintf(1, "==========================================\n");
+  bool outofreg0 = false;
   for (int pageind = 0; pageind < frame_table_size; pageind++) {
     addr = (int *) (PMEM_BASE + PAGESIZE * pageind);
+    TracePrintf(1, "Page %2d at addr %5p:", pageind, addr);
     // Kernel text is implied to exist from the physical base (NULL) until kernel data begins
     if (pageind < num_ktext_pages) {
       frame_table[pageind] = 1;
@@ -70,21 +103,24 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
       kernel_page.prot = (PROT_READ | PROT_EXEC);
       kernel_page.pfn = pageind; 
       region_0_page_table[pageind] = kernel_page;
+      TracePrintf(1, "TEXT: val: %u, prot: %u, pfn: %u\n", kernel_page.valid, kernel_page.prot, kernel_page.pfn);
     }
     // After text, we give data RW permissions
     else if (pageind >= num_ktext_pages && pageind < num_kdata_pages) {
-     frame_table[pageind] = 1;
+      frame_table[pageind] = 1;
       kernel_page.valid = 1;
       kernel_page.prot = (PROT_READ | PROT_WRITE);
       kernel_page.pfn = pageind; 
       region_0_page_table[pageind] = kernel_page; 
+      TracePrintf(1, "DATA/HEAP: val: %u, prot: %u, pfn: %u\n", kernel_page.valid, kernel_page.prot, kernel_page.pfn);
     }
     // Until the stack, we add invalid pages to give the kernel the illusion of the whole reg. 0 memory space
     else if (pageind >= num_kdata_pages && pageind < num_kstack_start_page) {
       frame_table[pageind] = 1;
       kernel_page.valid = 0;
       kernel_page.pfn = pageind; 
-      region_0_page_table[pageind] = kernel_page;  
+      region_0_page_table[pageind] = kernel_page; 
+      TracePrintf(1, "INVALID: val: %u, prot: %u, pfn: %u\n", kernel_page.valid, kernel_page.prot, kernel_page.pfn); 
     }
     // then we mark the stack as valid 
     else if (pageind >= num_kstack_start_page && pageind < num_total_kernel_pages) {
@@ -93,12 +129,17 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
        kernel_page.prot = (PROT_READ | PROT_WRITE);
       kernel_page.pfn = pageind; 
       region_0_page_table[pageind] = kernel_page; 
+      TracePrintf(1, "STACK: val: %u, prot: %u, pfn: %u\n", kernel_page.valid, kernel_page.prot, kernel_page.pfn);
     }
     // then we map the remainder of free physical frames
     else {
+      TracePrintf(1, "EMPTY\n");
+      outofreg0 = true;
       frame_table[pageind] = 0;
     }
+
   }
+  TracePrintf(1, "\nEND OF REG0 PAGE TABLE\n-------------------------------------\n\n");
 
   // update registers
   WriteRegister(REG_PTBR0, (int) region_0_page_table);
@@ -107,6 +148,16 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   // turn on virtual memory permanently
   WriteRegister(REG_VM_ENABLE, 1);
   vmem_on = 1;
+
+  TracePrintf(1, "KERNEL PAGE TABLE [AFTER VMEM ENABLE]\n");
+  TracePrintf(1, "Size (in pages): %d\n", num_total_kernel_pages);
+  TracePrintf(1, "==========================================\n");
+  for (int j=0; j<num_total_kernel_pages; j++) {
+    TracePrintf(1, "Page %d at addr %p: val: %u, prot: %u, pfn: %u\n", j, &region_0_page_table[j], region_0_page_table[j].valid, region_0_page_table[j].prot, region_0_page_table[j].pfn); 
+  }
+
+
+
 
   // TRAP HANDLERS
   // set up trap handler array
@@ -153,14 +204,14 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
     // our loop shouldn't use any memory)
     if (ind < page_table_reg_1_size - idle_stack_size) {
       idle_page.valid = 0;
-      region_1_page_table[ind] = kernel_page;  
+      region_1_page_table[ind] = idle_page; 
     }
     // Here's the stack
     else {
       idle_page.valid = 1;
       idle_page.prot = (PROT_READ | PROT_WRITE);
       idle_page.pfn = 300 + ind; //TODO: change this
-      region_1_page_table[ind] = kernel_page; 
+      region_1_page_table[ind] = idle_page; 
     }
   }
   
@@ -175,6 +226,15 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   // update registers
   WriteRegister(REG_PTBR1, (int) region_1_page_table);
   WriteRegister(REG_PTLR1, page_table_reg_1_size);
+
+  //print region 1 page table
+  TracePrintf(1, "USER PAGE TABLE [AFTER VMEM ENABLE]\n");
+  TracePrintf(1, "Size (in pages): %d\n", page_table_reg_1_size);
+  TracePrintf(1, "==========================================\n");
+  for (int j=0; j<page_table_reg_1_size; j++) {
+    TracePrintf(1, "Page %d at addr %p: val: %u, prot: %u, pfn: %u\n", j, &region_1_page_table[j], region_1_page_table[j].valid, region_1_page_table[j].prot, region_1_page_table[j].pfn); 
+  }
+
   // when we return to userland, got to the idle process
   TracePrintf(1, "Leaving KernelStart...\n");
   return; 
