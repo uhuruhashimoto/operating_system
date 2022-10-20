@@ -88,6 +88,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   TracePrintf(1, "==========================================\n");
 
   int kernel_pageind = 0;
+  int max_consumed_frame = 0;
   for (kernel_pageind = 0; kernel_pageind < total_pmem_pages; kernel_pageind++) {
     addr = (int *) (PMEM_BASE + PAGESIZE * kernel_pageind);
     TracePrintf(1, "Page %2d at addr %5p:", kernel_pageind, addr);
@@ -99,6 +100,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
       kernel_page.pfn = kernel_pageind;
       region_0_page_table[kernel_pageind] = kernel_page;
       TracePrintf(1, "TEXT: val: %u, prot: %u, pfn: %u\n", kernel_page.valid, kernel_page.prot, kernel_page.pfn);
+      max_consumed_frame++;
     }
     // After text, we give data RW permissions
     else if (kernel_pageind >= (kernel_data_start_page-1) && kernel_pageind < kernel_data_end_page) {
@@ -108,6 +110,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
       kernel_page.pfn = kernel_pageind;
       region_0_page_table[kernel_pageind] = kernel_page;
       TracePrintf(1, "DATA/HEAP: val: %u, prot: %u, pfn: %u\n", kernel_page.valid, kernel_page.prot, kernel_page.pfn);
+      max_consumed_frame++;
     }
     // Until the stack, we add invalid pages to give the kernel the illusion of the whole reg. 0 memory space
     else if (kernel_pageind >= kernel_data_end_page && kernel_pageind < stack_start_page) {
@@ -115,7 +118,8 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
       kernel_page.valid = 0;
       kernel_page.pfn = kernel_pageind;
       region_0_page_table[kernel_pageind] = kernel_page;
-      TracePrintf(1, "INVALID: val: %u, prot: %u, pfn: %u\n", kernel_page.valid, kernel_page.prot, kernel_page.pfn); 
+      TracePrintf(1, "INVALID: val: %u, prot: %u, pfn: %u\n", kernel_page.valid, kernel_page.prot, kernel_page.pfn);
+      max_consumed_frame++;
     }
     // then we mark the stack as valid 
     else if (kernel_pageind >= stack_start_page && kernel_pageind < stack_end_page) {
@@ -125,6 +129,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
       kernel_page.pfn = kernel_pageind;
       region_0_page_table[kernel_pageind] = kernel_page;
       TracePrintf(1, "STACK: val: %u, prot: %u, pfn: %u\n", kernel_page.valid, kernel_page.prot, kernel_page.pfn);
+      max_consumed_frame++;
     }
     // then we map the remainder of free physical frames
     else {
@@ -147,11 +152,16 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   TracePrintf(1, "Size (in pages): %d\n", stack_end_page);
   TracePrintf(1, "==========================================\n");
   for (int j=0; j<stack_end_page; j++) {
-    TracePrintf(1, "Page %d at addr %p: val: %u, prot: %u, pfn: %u\n", j, &region_0_page_table[j], region_0_page_table[j].valid, region_0_page_table[j].prot, region_0_page_table[j].pfn); 
+    TracePrintf(1, "Page %d at addr %p: val: %u, prot: %u, pfn: %u\n",
+                j,
+                &region_0_page_table[j],
+                region_0_page_table[j].valid,
+                region_0_page_table[j].prot,
+                region_0_page_table[j].pfn);
   }
 
 
-
+  helper_check_heap("Checking kernel heap prior to setting up trap handlers\n");
 
   // TRAP HANDLERS
   // set up trap handler array
@@ -184,9 +194,9 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   // copy over kernel stack so we can take it with us
   int num_kernel_stack_pages = stack_end_page - stack_start_page;
   pte_t *kernel_stack = malloc(sizeof(pte_t) *num_kernel_stack_pages);
-  for (int i=0; i<num_kernel_stack_pages; i++) {
-    kernel_stack[i] = region_0_page_table[i];
-  }
+//  for (int i=0; i<num_kernel_stack_pages; i++) {
+//    kernel_stack[i] = region_0_page_table[i];
+//  }
 
   // set up region 1 page table
   int idle_stack_size = 2;
@@ -196,26 +206,51 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   for (int ind=0; ind<page_table_reg_1_size; ind++) {
     // set everything under the stack as non-valid (since the text is in the kernel and 
     // our loop shouldn't use any memory)
+    idle_page.valid = 0;
+//    TracePrintf(1, "%d\n", ind);
+
     if (ind < page_table_reg_1_size - idle_stack_size) {
-      idle_page.valid = 0;
-      region_1_page_table[ind] = idle_page; 
+      region_1_page_table[ind] = idle_page;
     }
     // Here's the stack
     else {
-      int frame_ind = ind + kernel_pageind;
+      TracePrintf(1, "HIT BLOCK 2, ind: %d, kernel_ind: %d\n", ind, kernel_pageind);
       idle_page.valid = 1;
       idle_page.prot = (PROT_READ | PROT_WRITE);
-      idle_page.pfn = frame_ind;
-      frame_table[frame_ind] = 1;
-      region_1_page_table[ind] = idle_page; 
+      idle_page.pfn = max_consumed_frame;
+      frame_table[max_consumed_frame] = 1;
+      region_1_page_table[ind] = idle_page;
+      max_consumed_frame++;
     }
   }
-  
+
+  helper_check_heap("Checking user heap prior to kctext\n");
+
+  // WHY THE HECK ARE THESE GETTING SET TO 1?
+//  region_1_page_table[88].valid = 0;
+//  region_1_page_table[87].valid = 0;
+
+//  TracePrintf(1, "USER PAGE TABLE [AFTER VMEM ENABLE]\n");
+//  TracePrintf(1, "Size (in pages): %d\n", page_table_reg_1_size);
+//  TracePrintf(1, "==========================================\n");
+//  for (int j=0; j<page_table_reg_1_size; j++) {
+//    TracePrintf(1,
+//                "Page %d at addr %p: val: %u, prot: %u, pfn: %u\n",
+//                j,
+//                &region_1_page_table[j],
+//                region_1_page_table[j].valid,
+//                region_1_page_table[j].prot,
+//                region_1_page_table[j].pfn
+//    );
+//  }
+
   KernelContext kctxt;
   uctxt -> pc = &DoIdle;
   uctxt -> sp = &region_1_page_table[page_table_reg_1_size - (idle_stack_size + 1)];
-  uctxt -> ebp =&region_1_page_table[page_table_reg_1_size - 1]; 
+  uctxt -> ebp =&region_1_page_table[page_table_reg_1_size - 1];
+
   int pid = helper_new_pid(region_1_page_table);
+
   pcb_t *idle_pcb = create_pcb(pid, kernel_stack, region_1_page_table, uctxt, &kctxt);
   running_process = idle_pcb;
 
@@ -228,8 +263,17 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   TracePrintf(1, "Size (in pages): %d\n", page_table_reg_1_size);
   TracePrintf(1, "==========================================\n");
   for (int j=0; j<page_table_reg_1_size; j++) {
-    TracePrintf(1, "Page %d at addr %p: val: %u, prot: %u, pfn: %u\n", j, &region_1_page_table[j], region_1_page_table[j].valid, region_1_page_table[j].prot, region_1_page_table[j].pfn); 
+    TracePrintf(1,
+                "Page %d at addr %p: val: %u, prot: %u, pfn: %u\n",
+                j,
+                &region_1_page_table[j],
+                region_1_page_table[j].valid,
+                region_1_page_table[j].prot,
+                region_1_page_table[j].pfn
+                );
   }
+
+  helper_check_heap("Checking user heap prior to leaving kernelstart\n");
 
   // when we return to userland, got to the idle process
   TracePrintf(1, "Leaving KernelStart...\n");
@@ -267,6 +311,7 @@ int SetKernelBrk(void *addr) {
 void DoIdle(void) {
   while(1) {
     TracePrintf(1,"DoIdle\n");
+    helper_check_heap("Checking user heap in DoIdle\n");
     Pause();
   } 
 }
