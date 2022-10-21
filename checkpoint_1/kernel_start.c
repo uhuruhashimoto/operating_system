@@ -234,8 +234,8 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   KernelContext kctxt;
   uctxt -> pc = &DoIdle;
-  uctxt -> sp = (void *) (stack_start_page << PAGESHIFT); //((page_table_reg_1_size - (idle_stack_size + 1)) << PAGESHIFT);
-  uctxt -> ebp = (void *) (stack_end_page << PAGESHIFT); //((page_table_reg_1_size - 1) << PAGESHIFT);
+  uctxt -> sp = (void *) VMEM_1_LIMIT - 8;//(idle_stack_size << PAGESHIFT); //(stack_start_page << PAGESHIFT); //((page_table_reg_1_size - (idle_stack_size + 1)) << PAGESHIFT);
+  // uctxt -> ebp = (void *) VMEM_1_LIMIT; //(stack_end_page << PAGESHIFT); //((page_table_reg_1_size - 1) << PAGESHIFT);
   int pid = helper_new_pid(region_1_page_table);
   pcb_t *idle_pcb = create_pcb(pid, kernel_stack, region_1_page_table, uctxt, &kctxt);
   running_process = idle_pcb;
