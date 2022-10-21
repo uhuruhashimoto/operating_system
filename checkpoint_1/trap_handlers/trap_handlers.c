@@ -1,6 +1,4 @@
 #include <ykernel.h>
-#include <hardware.h>
-#include <yalnix.h>
 #include "trap_handlers.h"
 #include "../syscalls/io_syscalls.h"
 #include "../syscalls/ipc_syscalls.h"
@@ -21,19 +19,19 @@ void handle_trap_kernel(UserContext* context) {
       handle_Fork();
       break;
     case YALNIX_EXEC:
-      // handle_Exec(context->regs[0], context->regs[1]);
+      handle_Exec((char *)context->regs[0], (char **) context->regs[1]); //TODO cast args as temporary solution
       break;
     case YALNIX_EXIT:
       handle_Exit(context->regs[0]);
       break;
     case YALNIX_WAIT:
-      // handle_Wait(context->regs[0]);
+      handle_Wait((int *)context->regs[0]); //TODO cast args as temporary solution
       break;
     case YALNIX_GETPID:
       handle_GetPid();
       break;
     case YALNIX_BRK:
-      // handle_Brk(context->regs[0]);
+      handle_Brk((void *)context->regs[0]); //TODO cast args as temporary solution
       break;
     case YALNIX_DELAY:
       handle_Delay(context->regs[0]);
@@ -103,6 +101,7 @@ void handle_trap_kernel(UserContext* context) {
  */
 void handle_trap_clock(UserContext* context) {
   TracePrintf(1, "Our kernel hit the clock trap\n");
+  helper_maybort("Leaving trap clock.");
   // TODO -- check if there is another process in the ready queue
   // if not, return to the running user process
   // if so, saves the current user context

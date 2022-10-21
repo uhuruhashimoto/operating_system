@@ -8,7 +8,7 @@
 #include <ykernel.h>
 #define NUM_TRAP_FUNCTIONS 16
 
-typedef void (*trap_handler_t) (UserContext* context);
+// typedef void (*trap_handler_t) (UserContext* context);
 
 /*
  * Handle traps to the kernel

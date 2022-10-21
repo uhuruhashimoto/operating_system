@@ -23,6 +23,8 @@
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 
+// trap_handler_t trap_handler[NUM_TRAP_FUNCTIONS]; 
+void *trap_handler[NUM_TRAP_FUNCTIONS];
 extern void *_kernel_data_start;
 extern void *_kernel_data_end;
 extern void *_kernel_orig_brk;
@@ -94,8 +96,13 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
     TracePrintf(1, "Page %2d at addr %5p:", kernel_pageind, addr);
     // Kernel text is implied to exist from the physical base (NULL) until kernel data begins
     if (kernel_pageind < (kernel_data_start_page-1)) {
+      if (kernel_pageind == 0) {
+        kernel_page.valid = 0;
+      }
+      else {
+        kernel_page.valid = 1;
+      }
       frame_table[kernel_pageind] = 1;
-      kernel_page.valid = 1;
       kernel_page.prot = (PROT_READ | PROT_EXEC);
       kernel_page.pfn = kernel_pageind;
       region_0_page_table[kernel_pageind] = kernel_page;
@@ -165,7 +172,6 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   // TRAP HANDLERS
   // set up trap handler array
-  trap_handler_t *trap_handler = (trap_handler_t *)malloc(sizeof(trap_handler_t) * NUM_TRAP_FUNCTIONS);
   trap_handler[TRAP_KERNEL] = &handle_trap_kernel;
   trap_handler[TRAP_CLOCK] = &handle_trap_clock;
   trap_handler[TRAP_ILLEGAL] = &handle_trap_illegal;
@@ -194,9 +200,10 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   // copy over kernel stack so we can take it with us
   int num_kernel_stack_pages = stack_end_page - stack_start_page;
   pte_t *kernel_stack = malloc(sizeof(pte_t) *num_kernel_stack_pages);
-//  for (int i=0; i<num_kernel_stack_pages; i++) {
-//    kernel_stack[i] = region_0_page_table[i];
-//  }
+  for (int i=0; i<num_kernel_stack_pages; i++) {
+    kernel_stack[i] = region_0_page_table[i];
+  }
+
 
   // set up region 1 page table
   int idle_stack_size = 2;
@@ -207,7 +214,6 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
     // set everything under the stack as non-valid (since the text is in the kernel and 
     // our loop shouldn't use any memory)
     idle_page.valid = 0;
-//    TracePrintf(1, "%d\n", ind);
 
     if (ind < page_table_reg_1_size - idle_stack_size) {
       region_1_page_table[ind] = idle_page;
@@ -226,31 +232,11 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   helper_check_heap("Checking user heap prior to kctext\n");
 
-  // WHY THE HECK ARE THESE GETTING SET TO 1?
-//  region_1_page_table[88].valid = 0;
-//  region_1_page_table[87].valid = 0;
-
-//  TracePrintf(1, "USER PAGE TABLE [AFTER VMEM ENABLE]\n");
-//  TracePrintf(1, "Size (in pages): %d\n", page_table_reg_1_size);
-//  TracePrintf(1, "==========================================\n");
-//  for (int j=0; j<page_table_reg_1_size; j++) {
-//    TracePrintf(1,
-//                "Page %d at addr %p: val: %u, prot: %u, pfn: %u\n",
-//                j,
-//                &region_1_page_table[j],
-//                region_1_page_table[j].valid,
-//                region_1_page_table[j].prot,
-//                region_1_page_table[j].pfn
-//    );
-//  }
-
   KernelContext kctxt;
   uctxt -> pc = &DoIdle;
-  uctxt -> sp = &region_1_page_table[page_table_reg_1_size - (idle_stack_size + 1)];
-  uctxt -> ebp =&region_1_page_table[page_table_reg_1_size - 1];
-
+  uctxt -> sp = (void *) (stack_start_page << PAGESHIFT); //((page_table_reg_1_size - (idle_stack_size + 1)) << PAGESHIFT);
+  uctxt -> ebp = (void *) (stack_end_page << PAGESHIFT); //((page_table_reg_1_size - 1) << PAGESHIFT);
   int pid = helper_new_pid(region_1_page_table);
-
   pcb_t *idle_pcb = create_pcb(pid, kernel_stack, region_1_page_table, uctxt, &kctxt);
   running_process = idle_pcb;
 
@@ -287,31 +273,28 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 */
 int SetKernelBrk(void *addr) {
  TracePrintf(1, "At beginning of SetKernelBrk, addr is %p\n", addr); 
- return 0;
-  // // error out if we don't have enough memory or if our address is invalid
-  // if (addr < _kernel_data_start || addr > _kernel_data_end) {
-  //   return ERROR;
-  // }
-  // //TODO: check if we have enough memory left to allocate
-  // // if vmem is not enabled, set the brk to the specified address above _kernel_origin_brk (hit by kernel malloc)
-  // if (!vmem_on) {
-  //   current_kernel_brk = UP_TO_PAGE(_kernel_orig_brk + PAGESIZE);
-  //   TracePrintf(1, "In physical memory, increasing brk to %p\n", current_kernel_brk);
-  //   return 0;
-  // }
-  // //otherwise, set the brk assuming the address is virtual (a normal brk syscall)
-  // else {
-  //   TracePrintf(1, "In virtual memory, incrementing brk to %p\n", addr);
-  //   current_kernel_brk = UP_TO_PAGE(addr);
-  //   return 0;
-  // }
+  // error out if we don't have enough memory or if our address is invalid
+  if (addr < _kernel_data_start || addr > _kernel_data_end) {
+    return ERROR;
+  }
+  // if vmem is not enabled, set the brk to the specified address above _kernel_origin_brk (hit by kernel malloc)
+  if (!vmem_on) {
+    *current_kernel_brk = UP_TO_PAGE(_kernel_orig_brk + PAGESIZE);
+    TracePrintf(1, "In physical memory, increasing brk to %p\n", current_kernel_brk);
+    return 0;
+  }
+  //otherwise, set the brk assuming the address is virtual (a normal brk syscall)
+  else {
+    // ReadRegister(REG_VECTOR_BASE, (int) trap_handler); 
+    return 0;
+  }
 }
 
 // Idle PCB code (part of kernel text)
 void DoIdle(void) {
   while(1) {
     TracePrintf(1,"DoIdle\n");
-    helper_check_heap("Checking user heap in DoIdle\n");
+    // helper_check_heap("Checking user heap in DoIdle\n");
     Pause();
   } 
 }
