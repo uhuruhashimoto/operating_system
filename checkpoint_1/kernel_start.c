@@ -206,7 +206,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   KernelContext kctxt;
   uctxt -> pc = &DoIdle;
-  uctxt -> sp = (void *) VMEM_1_LIMIT - 8;
+  uctxt -> sp = (void *) VMEM_1_LIMIT - 8; // 8...it's a magic number 
   int pid = helper_new_pid(region_1_page_table);
   pcb_t *idle_pcb = create_pcb(pid, kernel_stack, region_1_page_table, uctxt, &kctxt);
   running_process = idle_pcb;
