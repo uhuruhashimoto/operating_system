@@ -10,10 +10,15 @@
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 
+typedef struct frame_table_struct{
+  char *frame_table;
+  int frame_table_size;
+} frame_table_struct_t;
+
 // globals for the entire kernel
 pcb_t* running_process;
 queue_t* ready_queue;
-char *frame_table;
+frame_table_struct_t *frame_table_struct;
 
 /********** KernelStart ***********/
 /*

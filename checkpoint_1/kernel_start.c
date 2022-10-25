@@ -30,6 +30,7 @@
 #include "trap_handlers/trap_handlers.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
+#define MEMFULL -1
 
 // trap_handler_t trap_handler[NUM_TRAP_FUNCTIONS]; 
 void *trap_handler[NUM_TRAP_FUNCTIONS];
@@ -38,12 +39,6 @@ extern void *_kernel_data_end;
 extern void *_kernel_orig_brk;
 int vmem_on = 0;
 int *current_kernel_brk;
-char *frame_table;
-
-typedef struct frame_table_struct{
-  char *frame_table;
-  int frame_table_size;
-} frame_table_struct_t;
 
 
 /*
@@ -83,8 +78,12 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   // Page table setup
   pte_t *region_0_page_table = malloc(sizeof(pte_t) * region_0_page_table_size);
-  // Frame tracking via bit vector
-  frame_table = malloc(sizeof(char) * total_pmem_pages);
+
+  // Create frame tracking bit vector and put it in the global along with its size
+  frame_table_struct = malloc(sizeof(frame_table_struct));
+  char *frame_table = malloc(sizeof(char) * total_pmem_pages);
+  frame_table_struct->frame_table = frame_table;
+  frame_table_struct->frame_table_size = pmem_size;
 
   // helpers to walk through page table
   pte_t kernel_page;
@@ -250,7 +249,7 @@ int SetKernelBrk(void *addr) {
     while (region_1_brk_page_table[free_page].valid) {
       free_page++;
     }
-    while (frame_table[free_frame]) {
+    while (frame_table_struct->frame_table[free_frame]) {
       free_frame++;
     }
     pte_t brk_page;
@@ -279,7 +278,7 @@ int get_num_free_frames(char *frame_table, int frame_table_size) {
   int numfree = 0;
   for (int i=0; i<frame_table_size; i++) {
     // sum the number of unused frame table frames (1 is used, 0 unused)
-    numfree += (frame_table_size[i] ? 0 : 1);
+    numfree += (frame_table[i] ? 0 : 1);
   }
   return numfree;
 }
@@ -296,7 +295,7 @@ int get_free_frame(char *frame_table, int frame_table_size) {
       i++;
     } 
     else {
-      return NULL;
+      return MEMFULL;
     }
   }
   return i;
