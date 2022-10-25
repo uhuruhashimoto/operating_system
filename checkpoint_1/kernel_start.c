@@ -40,31 +40,23 @@ extern void *_kernel_orig_brk;
 int vmem_on = 0;
 int *current_kernel_brk;
 
-
 /*
- * Behavior:
- *  Set up virtual memory
- *  Set up trap handlers
- *  Instantiate an idlePCB
- */
+* We are given addresses in bytes corresponding to the following kernel address space:
+* ---------- Top of region 0 (KERNEL_STACK_LIMIT or VMEM_0_SIZE)
+* Stack
+* ---------- Stack base (KERNEL_STACK_BASE)
+* empty
+* ---------- End of heap (_kernel_data_end)
+* Heap
+* Data
+* -------- Start of data (_kernel_data_start)
+* Text
+* -------- Base (PMEM_BASE)
+* 
+* For each of these addresses (lines), we bit-shift the address by PAGESHIFT to find out 
+* the page number it will correspond to in our page table. 
+*/
 void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
-  /*
-  * We are given addresses in bytes corresponding to the following kernel address space:
-  * ---------- Top of region 0 (KERNEL_STACK_LIMIT or VMEM_0_SIZE)
-  * Stack
-  * ---------- Stack base (KERNEL_STACK_BASE)
-  * empty
-  * ---------- End of heap (_kernel_data_end)
-  * Heap
-  * Data
-  * -------- Start of data (_kernel_data_start)
-  * Text
-  * -------- Base (PMEM_BASE)
-  * 
-  * For each of these addresses (lines), we bit-shift the address by PAGESHIFT to find out 
-  * the page number it will correspond to in our page table. 
-  */
-
   // full sizes
   int total_pmem_pages = UP_TO_PAGE(pmem_size) >> PAGESHIFT;
   int region_0_page_table_size = UP_TO_PAGE(VMEM_0_SIZE) >> PAGESHIFT;
@@ -79,6 +71,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   // Page table setup
   pte_t *region_0_page_table = malloc(sizeof(pte_t) * region_0_page_table_size);
 
+  // Frame table setup
   // Create frame tracking bit vector and put it in the global along with its size
   frame_table_struct = malloc(sizeof(frame_table_struct));
   char *frame_table = malloc(sizeof(char) * total_pmem_pages);
