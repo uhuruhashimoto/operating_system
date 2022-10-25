@@ -11,7 +11,8 @@
 #include "data_structures/queue.h"
 
 // globals for the entire kernel
-pcb_t* running_process;
+pcb_t* running_process;                        // the current running process
+pcb_t* idle_process;                           //
 queue_t* ready_queue;
 
 /********** KernelStart ***********/
