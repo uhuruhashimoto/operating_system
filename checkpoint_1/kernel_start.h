@@ -13,6 +13,7 @@
 // globals for the entire kernel
 pcb_t* running_process;
 queue_t* ready_queue;
+char *frame_table;
 
 /********** KernelStart ***********/
 /*
