@@ -12,8 +12,9 @@
 
 // globals for the entire kernel
 pcb_t* running_process;                        // the current running process
-pcb_t* idle_process;                           //
-queue_t* ready_queue;
+pcb_t* idle_process;                           // the pcb of the idle process
+queue_t* ready_queue;                          // the ready queue of processes
+int *frame_table;                              // a pointer to the kernel frame table (configured in KernelStart)
 
 /********** KernelStart ***********/
 /*

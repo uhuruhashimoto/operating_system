@@ -4,6 +4,7 @@
 #include "../syscalls/ipc_syscalls.h"
 #include "../syscalls/process_syscalls.h"
 #include "../syscalls/sync_syscalls.h"
+#include "../data_structures/queue.h"
 
 /*
  * Handle traps to the kernel
@@ -101,6 +102,10 @@ void handle_trap_kernel(UserContext* context) {
  */
 void handle_trap_clock(UserContext* context) {
   TracePrintf(1, "Our kernel hit the clock trap\n");
+
+  if () {
+
+  }
   // TODO -- check if there is another process in the ready queue
   // if not, return to the running user process
   // if so, saves the current user context

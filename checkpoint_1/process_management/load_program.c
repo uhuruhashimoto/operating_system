@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <ykernel.h>
 #include <load_info.h>
+#Include "../data_structures/pcb.h"
 
 /*
  * ==>> #include anything you need for your kernel here
@@ -27,7 +28,7 @@
  * ==>> the current process.
  */
 int
-LoadProgram(char *name, char *args[], proc)
+LoadProgram(char *name, char *args[], pcb_t* proc)
 
 {
   int fd;
@@ -130,48 +131,56 @@ LoadProgram(char *name, char *args[], proc)
     return ERROR;
   }
 
+  /*
+ * This completes all the checks before we proceed to actually load
+ * the new program.  From this point on, we are committed to either
+ * loading succesfully or killing the process.
+ */
 
   /*
-   *  The arguments will get copied starting at "cp", and the argv
-   *  pointers to the arguments (and the argc value) will get built
-   *  starting at "cpp".  The value for "cpp" is computed by subtracting
-   *  off space for the number of arguments (plus 3, for the argc value,
-   *  a NULL pointer terminating the argv pointers, and a NULL pointer
-   *  terminating the envp pointers) times the size of each,
-   *  and then rounding the value *down* to a double-word boundary.
+   * Set the new stack pointer value in the process's UserContext
    */
-  cp = ((char *)VMEM_1_LIMIT) - size;
 
-  cpp = (char **)
-      (((int)cp -
-        ((argcount + 3 + POST_ARGV_NULL_SPACE) *sizeof (void *)))
-       & ~7);
 
   /*
-   * Compute the new stack pointer, leaving INITIAL_STACK_FRAME_SIZE bytes
-   * reserved above the stack pointer, before the arguments.
+   * ==>> (rewrite the line below to match your actual data structure)
+   * ==>> proc->uc.sp = cp2;
    */
-  cp2 = (caddr_t)cpp - INITIAL_STACK_FRAME_SIZE;
-
-
-
-  TracePrintf(1, "prog_size %d, text %d data %d bss %d pages\n",
-              li.t_npg + data_npg, li.t_npg, li.id_npg, li.ud_npg);
-
+  proc->uctxt.sp = cp2;
 
   /*
-   * Compute how many pages we need for the stack */
-  stack_npg = (VMEM_1_LIMIT - DOWN_TO_PAGE(cp2)) >> PAGESHIFT;
+   * Now save the arguments in a separate buffer in region 0, since
+   * we are about to blow away all of region 1.
+   */
+  cp2 = argbuf = (char *)malloc(size);
 
-  TracePrintf(1, "LoadProgram: heap_size %d, stack_size %d\n",
-              li.t_npg + data_npg, stack_npg);
+  // TODO --
+  /*
+   * ==>> You should perhaps check that malloc returned valid space
+   */
 
-
-  /* leave at least one page between heap and stack */
-  if (stack_npg + data_pg1 + data_npg >= MAX_PT_LEN) {
-    close(fd);
-    return ERROR;
+  for (i = 0; args[i] != NULL; i++) {
+    TracePrintf(3, "saving arg %d = '%s'\n", i, args[i]);
+    strcpy(cp2, args[i]);
+    cp2 += strlen(cp2) + 1;
   }
+
+  /*
+   * Set up the page tables for the process so that we can read the
+   * program into memory.  Get the right number of physical pages
+   * allocated, and set them all to writable.
+   */
+
+  /* ==>> Throw away the old region 1 virtual address space by
+   * ==>> curent process by walking through the R1 page table and,
+   * ==>> for every valid page, free the pfn and mark the page invalid.
+   */
+
+  /*
+   * ==>> Then, build up the new region1.
+   * ==>> (See the LoadProgram diagram in the manual.)
+   */
+
 
   /*
  * ==>> First, text. Allocate "li.t_npg" physical pages and map them starting>

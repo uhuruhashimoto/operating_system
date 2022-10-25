@@ -9,7 +9,9 @@ typedef struct queue {
   int size;
 } queue_t;
 
-// TODO -- function to create new queue objects
+/*
+ * Creates a new queue object
+ */
 queue_t* create_queue() {
   queue_t* new_queue = malloc(sizeof (queue_t));
   new_queue->size = 0;

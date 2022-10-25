@@ -38,7 +38,6 @@ extern void *_kernel_data_end;
 extern void *_kernel_orig_brk;
 int vmem_on = 0;
 int *current_kernel_brk;
-int *frame_table_global;
 
 /*
  * Behavior:
@@ -77,8 +76,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   // Page table setup
   pte_t *region_0_page_table = malloc(sizeof(pte_t) * region_0_page_table_size);
-  int *frame_table = malloc(sizeof(int) * total_pmem_pages);
-  frame_table_global = frame_table;
+  frame_table = malloc(sizeof(int) * total_pmem_pages);
 
   // helpers to walk through page table
   pte_t kernel_page;
@@ -244,7 +242,7 @@ int SetKernelBrk(void *addr) {
     while (region_1_brk_page_table[free_page].valid) {
       free_page++;
     }
-    while (frame_table_global[free_frame]) {
+    while (frame_table[free_frame]) {
       free_frame++;
     }
     pte_t brk_page;
