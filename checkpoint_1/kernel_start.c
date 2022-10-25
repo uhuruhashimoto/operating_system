@@ -30,6 +30,7 @@
 #include "trap_handlers/trap_handlers.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
+#define MEMFULL -1
 
 // trap_handler_t trap_handler[NUM_TRAP_FUNCTIONS]; 
 void *trap_handler[NUM_TRAP_FUNCTIONS];
@@ -40,29 +41,22 @@ int vmem_on = 0;
 int *current_kernel_brk;
 
 /*
- * Behavior:
- *  Set up virtual memory
- *  Set up trap handlers
- *  Instantiate an idlePCB
- */
+* We are given addresses in bytes corresponding to the following kernel address space:
+* ---------- Top of region 0 (KERNEL_STACK_LIMIT or VMEM_0_SIZE)
+* Stack
+* ---------- Stack base (KERNEL_STACK_BASE)
+* empty
+* ---------- End of heap (_kernel_data_end)
+* Heap
+* Data
+* -------- Start of data (_kernel_data_start)
+* Text
+* -------- Base (PMEM_BASE)
+* 
+* For each of these addresses (lines), we bit-shift the address by PAGESHIFT to find out 
+* the page number it will correspond to in our page table. 
+*/
 void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
-  /*
-  * We are given addresses in bytes corresponding to the following kernel address space:
-  * ---------- Top of region 0 (KERNEL_STACK_LIMIT or VMEM_0_SIZE)
-  * Stack
-  * ---------- Stack base (KERNEL_STACK_BASE)
-  * empty
-  * ---------- End of heap (_kernel_data_end)
-  * Heap
-  * Data
-  * -------- Start of data (_kernel_data_start)
-  * Text
-  * -------- Base (PMEM_BASE)
-  * 
-  * For each of these addresses (lines), we bit-shift the address by PAGESHIFT to find out 
-  * the page number it will correspond to in our page table. 
-  */
-
   // full sizes
   int total_pmem_pages = UP_TO_PAGE(pmem_size) >> PAGESHIFT;
   int region_0_page_table_size = UP_TO_PAGE(VMEM_0_SIZE) >> PAGESHIFT;
@@ -76,7 +70,13 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   // Page table setup
   pte_t *region_0_page_table = malloc(sizeof(pte_t) * region_0_page_table_size);
-  frame_table = malloc(sizeof(int) * total_pmem_pages);
+
+  // Frame table setup
+  // Create frame tracking bit vector and put it in the global along with its size
+  frame_table_struct = malloc(sizeof(frame_table_struct));
+  char *frame_table = malloc(sizeof(char) * total_pmem_pages);
+  frame_table_struct->frame_table = frame_table;
+  frame_table_struct->frame_table_size = pmem_size;
 
   // helpers to walk through page table
   pte_t kernel_page;
@@ -242,7 +242,7 @@ int SetKernelBrk(void *addr) {
     while (region_1_brk_page_table[free_page].valid) {
       free_page++;
     }
-    while (frame_table[free_frame]) {
+    while (frame_table_struct->frame_table[free_frame]) {
       free_frame++;
     }
     pte_t brk_page;
@@ -260,4 +260,36 @@ void DoIdle(void) {
     TracePrintf(1,"DoIdle\n");
     Pause();
   } 
+}
+
+//============================ FRAME TABLE HELPERS ==============================//
+/*
+return the number of free frames, to help during dynamic allocation. 
+This assumes that the kernel is uninterruptable and needs no synchronization (mutexes, etc.)
+*/
+int get_num_free_frames(char *frame_table, int frame_table_size) {
+  int numfree = 0;
+  for (int i=0; i<frame_table_size; i++) {
+    // sum the number of unused frame table frames (1 is used, 0 unused)
+    numfree += (frame_table[i] ? 0 : 1);
+  }
+  return numfree;
+}
+
+/*
+Traverses frame table bit vector to find the index
+of the next free frame. This assumes that the kernel is uninterruptable
+and needs no synchronization (mutexes, etc.)
+*/
+int get_free_frame(char *frame_table, int frame_table_size) {
+  int i = 0;
+  while (frame_table[i]) {
+    if (i < frame_table_size) {
+      i++;
+    } 
+    else {
+      return MEMFULL;
+    }
+  }
+  return i;
 }
