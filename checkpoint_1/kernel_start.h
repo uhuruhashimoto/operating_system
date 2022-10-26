@@ -23,12 +23,13 @@ typedef struct frame_table_struct{
     2. Process tracking, including pcbs and ready/idle/blocked queues
 */ 
 
-int *current_kernel_brk;
+int *current_kernel_brk_page;
 frame_table_struct_t *frame_table_struct;
 pcb_t* running_process;
 pcb_t* idle_process; 
 queue_t* ready_queue;
 void *trap_handler[NUM_TRAP_FUNCTIONS];
+pte_t *region_0_page_table;
 
 //=================== KERNEL FUNCTIONS =================//
 /*

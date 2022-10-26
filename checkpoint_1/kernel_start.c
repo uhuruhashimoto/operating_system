@@ -62,10 +62,12 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   int kernel_data_start_page = UP_TO_PAGE(_kernel_data_start - PMEM_BASE) >> PAGESHIFT;
   int kernel_data_end_page = UP_TO_PAGE(_kernel_data_end - PMEM_BASE) >> PAGESHIFT;
   int stack_start_page = UP_TO_PAGE(KERNEL_STACK_BASE - PMEM_BASE) >> PAGESHIFT;
-  int stack_end_page = UP_TO_PAGE(KERNEL_STACK_LIMIT - PMEM_BASE)>> PAGESHIFT;
+  int stack_end_page = UP_TO_PAGE(KERNEL_STACK_LIMIT - PMEM_BASE) >> PAGESHIFT;
 
   // Page table setup
-  pte_t *region_0_page_table = malloc(sizeof(pte_t) * region_0_page_table_size);
+  region_0_page_table = malloc(sizeof(pte_t) * region_0_page_table_size);
+  current_kernel_brk_page = malloc(sizeof(int));
+  *current_kernel_brk_page = kernel_data_end_page;
 
   // Frame table setup
   // Create frame tracking bit vector and put it in the global along with its size
@@ -89,7 +91,6 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   TracePrintf(1, "Kernel stack end page is addr %x, page %d \n", KERNEL_STACK_LIMIT - PMEM_BASE, stack_end_page);
 
   int kernel_pageind = 0;
-  int max_consumed_frame = 0;
   for (kernel_pageind = 0; kernel_pageind < total_pmem_pages; kernel_pageind++) {
     addr = (int *) (PMEM_BASE + PAGESIZE * kernel_pageind);
     // Kernel text is implied to exist from the physical base (NULL) until kernel data begins
@@ -104,24 +105,21 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
       kernel_page.prot = (PROT_READ | PROT_EXEC);
       kernel_page.pfn = kernel_pageind;
       region_0_page_table[kernel_pageind] = kernel_page;
-      max_consumed_frame++;
     }
     // After text, we give data RW permissions
-    else if (kernel_pageind >= (kernel_data_start_page-1) && kernel_pageind < kernel_data_end_page) {
+    else if (kernel_pageind >= (kernel_data_start_page-1) && kernel_pageind < *current_kernel_brk_page) {
       frame_table[kernel_pageind] = 1;
       kernel_page.valid = 1;
       kernel_page.prot = (PROT_READ | PROT_WRITE);
       kernel_page.pfn = kernel_pageind;
       region_0_page_table[kernel_pageind] = kernel_page;
-      max_consumed_frame++;
     }
     // Until the stack, we add invalid pages to give the kernel the illusion of the whole reg. 0 memory space
-    else if (kernel_pageind >= kernel_data_end_page && kernel_pageind < stack_start_page) {
+    else if (kernel_pageind >=  *current_kernel_brk_page && kernel_pageind < stack_start_page) {
       frame_table[kernel_pageind] = 1;
       kernel_page.valid = 0;
       kernel_page.pfn = kernel_pageind;
       region_0_page_table[kernel_pageind] = kernel_page;
-      max_consumed_frame++;
     }
     // then we mark the stack as valid 
     else if (kernel_pageind >= stack_start_page && kernel_pageind < stack_end_page) {
@@ -130,7 +128,6 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
        kernel_page.prot = (PROT_READ | PROT_WRITE);
       kernel_page.pfn = kernel_pageind;
       region_0_page_table[kernel_pageind] = kernel_page;
-      max_consumed_frame++;
     }
     // then we map the remainder of free physical frames
     else {
@@ -189,12 +186,11 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
     }
     // Here's the stack
     else {
+      int new_frame_num = get_free_frame(frame_table_struct->frame_table, frame_table_struct->frame_table_size);
       idle_page.valid = 1;
       idle_page.prot = (PROT_READ | PROT_WRITE);
-      idle_page.pfn = max_consumed_frame;
-      frame_table[max_consumed_frame] = 1;
+      idle_page.pfn = new_frame_num;
       region_1_page_table[ind] = idle_page;
-      max_consumed_frame++;
     }
   }
 
@@ -217,40 +213,54 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
 /*
 * Set the kernel brk based on whether or not virtual memory is enabled. This will be a syscall used by malloc and other
-* higher-level user/library dynamic allocation calls.
-* In case of any error, the value ERROR is returned.
+* higher-level user/library dynamic allocation calls. In case of any error, the value ERROR is returned.
 */
 int SetKernelBrk(void *addr) {
-  // error out if we don't have enough memory or if our address is invalid
+  // error out if we don't have enough memory 
+  if (!get_num_free_frames(frame_table_struct->frame_table, frame_table_struct->frame_table_size)) {
+    return ERROR;
+  }
+  // error out if we're provided an invalid address
   if (addr < _kernel_data_start || addr > _kernel_data_end) {
+    return ERROR;
+  }
+  // error out if we are trying to map the page right below the stack or the stack itself
+  int stack_page_num = KERNEL_STACK_BASE >> PAGESHIFT;
+  int addr_page = UP_TO_PAGE(addr - PMEM_BASE) >> PAGESHIFT;
+  if (addr_page >= stack_page_num - 1) {
     return ERROR;
   }
   // if vmem is not enabled, set the brk to the specified address above _kernel_origin_brk (hit by kernel malloc)
   if (!vmem_on) {
-    *current_kernel_brk = UP_TO_PAGE(_kernel_orig_brk + PAGESIZE);
-    return 0;
+    *current_kernel_brk_page = addr_page;
   }
-  //otherwise, set the brk assuming the address is virtual (a normal brk syscall)
+  //otherwise, set the brk assuming the address is virtual 
   else {
-    pte_t *region_1_brk_page_table = running_process->region_1_page_table;
-    int free_page = 0;
-    int free_frame = 0;
-    while (region_1_brk_page_table[free_page].valid) {
-      free_page++;
+    if (addr_page > *current_kernel_brk_page) {
+      while (addr_page > *current_kernel_brk_page) {
+        int new_frame_num = get_free_frame(frame_table_struct->frame_table, frame_table_struct->frame_table_size);
+        region_0_page_table[*current_kernel_brk_page].valid = 1;
+        region_0_page_table[*current_kernel_brk_page].prot = (PROT_READ | PROT_WRITE);
+        region_0_page_table[*current_kernel_brk_page].pfn = new_frame_num;
+        *current_kernel_brk_page++;
+      }
+      return 0;
     }
-    while (frame_table_struct->frame_table[free_frame]) {
-      free_frame++;
+    else {
+      while (addr_page < *current_kernel_brk_page) {
+        int discard_frame_number = region_0_page_table[*current_kernel_brk_page].pfn;
+        frame_table_struct->frame_table[discard_frame_number] = 0;
+        region_0_page_table[*current_kernel_brk_page].valid = 0;
+        *current_kernel_brk_page--;
+      }
+      return 0;
     }
-    pte_t brk_page;
-    brk_page.valid = 1;
-    brk_page.prot = (PROT_READ | PROT_WRITE);
-    brk_page.pfn = free_frame;
-    region_1_brk_page_table[free_page] = brk_page;
-    return 0;
   }
 }
 
-// Idle PCB code (part of kernel text)
+/*
+Idle PCB code (part of kernel text)
+*/ 
 void DoIdle(void) {
   while(1) {
     TracePrintf(1,"DoIdle\n");
@@ -287,5 +297,6 @@ int get_free_frame(char *frame_table, int frame_table_size) {
       return MEMFULL;
     }
   }
+  frame_table[i] = 1;
   return i;
 }
