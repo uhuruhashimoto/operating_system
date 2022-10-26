@@ -149,7 +149,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> (rewrite the line below to match your actual data structure)
    * ==>> proc->uc.sp = cp2;
    */
-  proc->uctxt.sp = cp2;
+  proc->uctxt->sp = cp2;
 
   /*
    * Now save the arguments in a separate buffer in region 0, since
@@ -196,7 +196,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
     // mark invalid
     proc->region_1_page_table[ind].valid = 0;
     // clear the frame
-    frame_table_struct->frame_table[proc->region_1_page_table[ind].pfn] = 0;
+    frame_table_global->frame_table[proc->region_1_page_table[ind].pfn] = 0;
   }
   free(proc->region_1_page_table);
   proc->region_1_page_table = NULL;
@@ -215,15 +215,15 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> (PROT_READ | PROT_WRITE).
    */
   int nextIndex = 0;
-  for (int i = 0; i < li.npg; i++) {
-    (&region_1_page_table)[i+text_pg1].valid = 1;
-    (&region_1_page_table)[i+text_pg1].prot = (PROT_READ | PROT_WRITE);
+  for (int i = 0; i < li.t_npg; i++) {
+    (&region_1_page_table)[i+text_pg1]->valid = 1;
+    (&region_1_page_table)[i+text_pg1]->prot = (PROT_READ | PROT_WRITE);
     // gets a new free frame
     int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
     if (pfn == -1) {
       return ERROR;
     }
-    (&region_1_page_table)[i+text_pg1].pfn = pfn;
+    (&region_1_page_table)[i+text_pg1]->pfn = pfn;
     nextIndex = pfn;
   }
 
@@ -234,13 +234,13 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> (PROT_READ | PROT_WRITE).
    */
   for (int i = 0; i < data_npg; i++) {
-    (&region_1_page_table)[i+data_pg1].valid = 1;
-    (&region_1_page_table)[i+data_pg1].prot = (PROT_READ | PROT_WRITE);
+    (&region_1_page_table)[i+data_pg1]->valid = 1;
+    (&region_1_page_table)[i+data_pg1]->prot = (PROT_READ | PROT_WRITE);
     int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
     if (pfn == -1) {
       return ERROR;
     }
-    (&region_1_page_table)[i+data_pg1].pfn = pfn;
+    (&region_1_page_table)[i+data_pg1]->pfn = pfn;
     nextIndex = pfn;
   }
 
@@ -251,13 +251,13 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> protection of (PROT_READ | PROT_WRITE).
    */
   for (int i = 0; i < stack_npg; i++) {
-    (&region_1_page_table)[MAX_PT_LEN - stack_npg + i].valid = 1;
-    (&region_1_page_table)[MAX_PT_LEN - stack_npg + i].prot = (PROT_READ | PROT_WRITE);
+    (&region_1_page_table)[MAX_PT_LEN - stack_npg + i]->valid = 1;
+    (&region_1_page_table)[MAX_PT_LEN - stack_npg + i]->prot = (PROT_READ | PROT_WRITE);
     int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
     if (pfn == -1) {
       return ERROR;
     }
-    (&region_1_page_table)[MAX_PT_LEN - stack_npg + i].pfn = pfn;
+    (&region_1_page_table)[MAX_PT_LEN - stack_npg + i]->pfn = pfn;
     nextIndex = pfn;
   }
 
@@ -265,7 +265,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> (Finally, make sure that there are no stale region1 mappings left in >
    */
   // set page table base
-  WriteRegister(REG_PTBR1, region_1_page_table);
+  WriteRegister(REG_PTBR1, (unsigned  int)region_1_page_table);
   // set page table limit
   WriteRegister(REG_PTLR1, page_table_reg_1_size);
   // flush the TLB
@@ -314,19 +314,19 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    */
 
   for (int ind=0; ind < page_table_reg_1_size; ind++) {
-    (&region_1_page_table)[ind].prot = (PROT_READ | PROT_EXEC);
+    (&region_1_page_table)[ind]->prot = (PROT_READ | PROT_EXEC);
   }
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 
   /*
    * Zero out the uninitialized data area
    */
-  bzero(li.id_end, li.ud_end - li.id_end);
+  bzero((void*)li.id_end, li.ud_end - li.id_end);
 
   /*
    * Set the entry point in the process's UserContext
    */
-  proc->uctxt.pc = (caddr_t) li.entry;
+  proc->uctxt->pc = (caddr_t) li.entry;
 
   /*
    * Now, finally, build the argument list on the new stack.

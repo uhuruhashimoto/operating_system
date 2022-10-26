@@ -20,6 +20,16 @@ queue_t* create_queue() {
 }
 
 /*
+ * is the queue empty?
+ */
+bool is_empty(queue_t* queue) {
+  if (queue->head == NULL) {
+    return true;
+  }
+  return false;
+}
+
+/*
  * Adds the PCB to the back of the ready queue
  */
 int add_to_queue(queue_t* queue, pcb_t* pcb)

@@ -10,6 +10,11 @@
 typedef struct queue queue_t;
 
 /*
+ * is the queue empty?
+ */
+bool is_empty(queue_t* queue);
+
+/*
  * Adds the PCB to the back of the queue
  */
 int add_to_queue(queue_t* queue, pcb_t* pcb);

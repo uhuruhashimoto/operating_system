@@ -1,4 +1,5 @@
 #include <ykernel.h>
+#include "../kernel_start.h"
 #include "trap_handlers.h"
 #include "../syscalls/io_syscalls.h"
 #include "../syscalls/ipc_syscalls.h"
@@ -103,12 +104,16 @@ void handle_trap_kernel(UserContext* context) {
 void handle_trap_clock(UserContext* context) {
   TracePrintf(1, "Our kernel hit the clock trap\n");
 
-  if () {
+  // check if there is another process in the ready queue
+  if (is_empty(ready_queue)) {
+    // if not, swap in the idle pcb and put the old pcb in the ready queue
 
   }
-  // TODO -- check if there is another process in the ready queue
-  // if not, return to the running user process
-  // if so, saves the current user context
+  else {
+    // if so, swap in the next process in the ready queue
+
+  }
+  // saves the current user context in the old pcb
   // clears the TLB
   // calls load_next_user_process
 

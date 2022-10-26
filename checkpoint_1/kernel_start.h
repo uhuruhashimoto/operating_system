@@ -21,7 +21,8 @@
 int *current_kernel_brk_page;
 frame_table_struct_t *frame_table_global;
 pcb_t* running_process;
-pcb_t* idle_process; 
+pcb_t* idle_process;                                           // the special idle process; use when nothing is in ready queue
+bool is_idle = false;                                          // if is_idle, we won't put the process back on the ready queue
 queue_t* ready_queue;
 void *trap_handler[NUM_TRAP_FUNCTIONS];
 pte_t *region_0_page_table;
