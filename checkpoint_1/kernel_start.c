@@ -31,8 +31,6 @@
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 
-// trap_handler_t trap_handler[NUM_TRAP_FUNCTIONS]; 
-void *trap_handler[NUM_TRAP_FUNCTIONS];
 extern void *_kernel_data_start;
 extern void *_kernel_data_end;
 extern void *_kernel_orig_brk;

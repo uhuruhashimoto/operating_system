@@ -24,9 +24,10 @@ typedef struct frame_table_struct{
 */ 
 
 int *current_kernel_brk;
+frame_table_struct_t *frame_table_struct;
 pcb_t* running_process;
 queue_t* ready_queue;
-frame_table_struct_t *frame_table_struct;
+void *trap_handler[NUM_TRAP_FUNCTIONS];
 
 //=================== KERNEL FUNCTIONS =================//
 /*
