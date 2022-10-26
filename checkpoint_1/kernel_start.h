@@ -58,6 +58,6 @@ int get_free_frame(char *frame_table, int frame_table_size);
 /*
 * return the number of free frames
 */
-int get_num_free_frames(char *frame_table, int frame_table_size)
+int get_num_free_frames(char *frame_table, int frame_table_size);
 
 #endif //CURRENT_CHUNGUS_KERNEL_START_H
