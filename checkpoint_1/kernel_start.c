@@ -31,6 +31,7 @@
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 #include "data_structures/frame_table.h"
+#include "process_management/load_program.h"
 
 extern void *_kernel_data_start;
 extern void *_kernel_data_end;
@@ -178,6 +179,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   pte_t idle_page;
   int page_table_reg_1_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   pte_t *region_1_page_table = malloc(sizeof(pte_t) * page_table_reg_1_size);
+  int first_possible_free_frame = 0;
   for (int ind=0; ind<page_table_reg_1_size; ind++) {
     // set everything under the stack as non-valid (since the text is in the kernel and 
     // our loop shouldn't use any memory)
@@ -188,7 +190,16 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
     }
     // Here's the stack
     else {
-      int new_frame_num = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size);
+      int new_frame_num = get_free_frame(
+          frame_table_global->frame_table,
+          frame_table_global->frame_table_size,
+          first_possible_free_frame
+          );
+      if (new_frame_num == -1) {
+        TracePrintf(1, "Unable to get a free frame for the idle process user stack!\n");
+        return;
+      }
+      first_possible_free_frame = new_frame_num;
       idle_page.valid = 1;
       idle_page.prot = (PROT_READ | PROT_WRITE);
       idle_page.pfn = new_frame_num;
@@ -207,6 +218,21 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   WriteRegister(REG_PTBR1, (int) region_1_page_table);
   WriteRegister(REG_PTLR1, page_table_reg_1_size);
 
+  // get the name of the default process, or a default
+  char* name = cmd_args[0];
+  // TODO -- is cmd_args[0] always NULL if there are no arguments?
+  if (name == NULL) {
+    name = "init";
+  }
+
+  // TODO-- fork the idle pcb
+  // TODO -- load the init process into the forked pcb
+  if (LoadProgram(name, cmd_args, idle_pcb) != -1) {
+    // TODO -- put the forked pcb on the ready queue
+  }
+  else {
+    TracePrintf(1, "Loading the init process failed with exit code -1\n");
+  }
 
   // when we return to userland, got to the idle process
   TracePrintf(1, "Leaving KernelStart...\n");
@@ -240,7 +266,7 @@ int SetKernelBrk(void *addr) {
   else {
     if (addr_page > *current_kernel_brk_page) {
       while (addr_page > *current_kernel_brk_page) {
-        int new_frame_num = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size);
+        int new_frame_num = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, 0);
         region_0_page_table[*current_kernel_brk_page].valid = 1;
         region_0_page_table[*current_kernel_brk_page].prot = (PROT_READ | PROT_WRITE);
         region_0_page_table[*current_kernel_brk_page].pfn = new_frame_num;
