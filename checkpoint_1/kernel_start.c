@@ -30,7 +30,6 @@
 #include "trap_handlers/trap_handlers.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
-#define MEMFULL -1
 
 // trap_handler_t trap_handler[NUM_TRAP_FUNCTIONS]; 
 void *trap_handler[NUM_TRAP_FUNCTIONS];
@@ -38,7 +37,6 @@ extern void *_kernel_data_start;
 extern void *_kernel_data_end;
 extern void *_kernel_orig_brk;
 int vmem_on = 0;
-int *current_kernel_brk;
 
 /*
 * We are given addresses in bytes corresponding to the following kernel address space:
