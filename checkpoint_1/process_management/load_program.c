@@ -176,6 +176,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * program into memory.  Get the right number of physical pages
    * allocated, and set them all to writable.
    */
+  TracePrintf(1, "Setting up page table for the process\n");
   pte_t page;
   int page_table_reg_1_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   pte_t *region_1_page_table = malloc(sizeof(pte_t) * page_table_reg_1_size);
@@ -192,6 +193,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> curent process by walking through the R1 page table and,
    * ==>> for every valid page, free the pfn and mark the page invalid.
    */
+  TracePrintf(1, "Throwing away old address space\n");
   for (int ind=0; ind < page_table_reg_1_size; ind++) {
     // mark invalid
     proc->region_1_page_table[ind].valid = 0;

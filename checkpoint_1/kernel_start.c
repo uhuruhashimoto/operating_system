@@ -244,6 +244,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   // TODO-- fork the idle pcb
   // TODO -- load the init process into the forked pcb
+  TracePrintf(1, "Attempting to load program with name: %s\n", name);
   if (LoadProgram(name, cmd_args, idle_pcb) != -1) {
     // TODO -- put the forked pcb on the ready queue
   }
