@@ -90,6 +90,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   TracePrintf(1, "Kernel stack start page is addr %x, page %d \n", KERNEL_STACK_BASE - PMEM_BASE, stack_start_page);
   TracePrintf(1, "Kernel stack end page is addr %x, page %d \n", KERNEL_STACK_LIMIT - PMEM_BASE, stack_end_page);
 
+  // set up our memory; note that we use the current kernel brk page in case the brk has changed
   int kernel_pageind = 0;
   for (kernel_pageind = 0; kernel_pageind < total_pmem_pages; kernel_pageind++) {
     addr = (int *) (PMEM_BASE + PAGESIZE * kernel_pageind);
