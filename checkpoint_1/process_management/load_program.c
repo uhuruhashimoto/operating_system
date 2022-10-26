@@ -9,7 +9,10 @@
 #include <unistd.h>
 #include <ykernel.h>
 #include <load_info.h>
-#Include "../data_structures/pcb.h"
+#include <hardware.h>
+#include "../kernel_start.h"
+#include "../data_structures/pcb.h"
+#include "../data_structures/frame_table.h"
 
 /*
  * ==>> #include anything you need for your kernel here
@@ -154,10 +157,13 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    */
   cp2 = argbuf = (char *)malloc(size);
 
-  // TODO --
   /*
    * ==>> You should perhaps check that malloc returned valid space
    */
+  if (cp2 == NULL) {
+    TracePrintf(1, "Malloc returned null when generating an argbuf in load_program\n");
+    return ERROR;
+  }
 
   for (i = 0; args[i] != NULL; i++) {
     TracePrintf(3, "saving arg %d = '%s'\n", i, args[i]);
@@ -170,11 +176,30 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * program into memory.  Get the right number of physical pages
    * allocated, and set them all to writable.
    */
+  pte_t page;
+  int page_table_reg_1_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
+  pte_t *region_1_page_table = malloc(sizeof(pte_t) * page_table_reg_1_size);
+  for (int ind=0; ind<page_table_reg_1_size; ind++) {
+    // set everything under the stack as non-valid (since the text is in the kernel and
+    // our loop shouldn't use any memory)
+    page.valid = 0;
+    page.prot = (PROT_WRITE);
+    region_1_page_table[ind] = page;
+  }
+
 
   /* ==>> Throw away the old region 1 virtual address space by
    * ==>> curent process by walking through the R1 page table and,
    * ==>> for every valid page, free the pfn and mark the page invalid.
    */
+  for (int ind=0; ind < page_table_reg_1_size; ind++) {
+    // mark invalid
+    proc->region_1_page_table[ind].valid = 0;
+    // clear the frame
+    frame_table_struct->frame_table[proc->region_1_page_table[ind].pfn] = 0;
+  }
+  free(proc->region_1_page_table);
+  proc->region_1_page_table = NULL;
 
   /*
    * ==>> Then, build up the new region1.
@@ -182,12 +207,25 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    */
 
 
+
   /*
- * ==>> First, text. Allocate "li.t_npg" physical pages and map them starting>
- * ==>> the "text_pg1" page in region 1 address space.
- * ==>> These pages should be marked valid, with a protection of
- * ==>> (PROT_READ | PROT_WRITE).
- */
+   * ==>> First, text. Allocate "li.t_npg" physical pages and map them starting>
+   * ==>> the "text_pg1" page in region 1 address space.
+   * ==>> These pages should be marked valid, with a protection of
+   * ==>> (PROT_READ | PROT_WRITE).
+   */
+  int nextIndex = 0;
+  for (int i = 0; i < li.npg; i++) {
+    (&region_1_page_table)[i+text_pg1].valid = 1;
+    (&region_1_page_table)[i+text_pg1].prot = (PROT_READ | PROT_WRITE);
+    // gets a new free frame
+    int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
+    if (pfn == -1) {
+      return ERROR;
+    }
+    (&region_1_page_table)[i+text_pg1].pfn = pfn;
+    nextIndex = pfn;
+  }
 
   /*
    * ==>> Then, data. Allocate "data_npg" physical pages and map them starting >
@@ -195,6 +233,16 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> These pages should be marked valid, with a protection of
    * ==>> (PROT_READ | PROT_WRITE).
    */
+  for (int i = 0; i < data_npg; i++) {
+    (&region_1_page_table)[i+data_pg1].valid = 1;
+    (&region_1_page_table)[i+data_pg1].prot = (PROT_READ | PROT_WRITE);
+    int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
+    if (pfn == -1) {
+      return ERROR;
+    }
+    (&region_1_page_table)[i+data_pg1].pfn = pfn;
+    nextIndex = pfn;
+  }
 
   /*
    * ==>> Then, stack. Allocate "stack_npg" physical pages and map them to the >
@@ -202,10 +250,26 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> These pages should be marked valid, with a
    * ==>> protection of (PROT_READ | PROT_WRITE).
    */
+  for (int i = 0; i < stack_npg; i++) {
+    (&region_1_page_table)[MAX_PT_LEN - stack_npg + i].valid = 1;
+    (&region_1_page_table)[MAX_PT_LEN - stack_npg + i].prot = (PROT_READ | PROT_WRITE);
+    int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
+    if (pfn == -1) {
+      return ERROR;
+    }
+    (&region_1_page_table)[MAX_PT_LEN - stack_npg + i].pfn = pfn;
+    nextIndex = pfn;
+  }
 
   /*
    * ==>> (Finally, make sure that there are no stale region1 mappings left in >
    */
+  // set page table base
+  WriteRegister(REG_PTBR1, region_1_page_table);
+  // set page table limit
+  WriteRegister(REG_PTLR1, page_table_reg_1_size);
+  // flush the TLB
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 
   /*
    * All pages for the new address space are now in the page table.
@@ -249,7 +313,10 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> you will need to flush the old mapping.
    */
 
-
+  for (int ind=0; ind < page_table_reg_1_size; ind++) {
+    (&region_1_page_table)[ind].prot = (PROT_READ | PROT_EXEC);
+  }
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 
   /*
    * Zero out the uninitialized data area
@@ -259,11 +326,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   /*
    * Set the entry point in the process's UserContext
    */
-
-  /*
-   * ==>> (rewrite the line below to match your actual data structure)
-   * ==>> proc->uc.pc = (caddr_t) li.entry;
-   */
+  proc->uctxt.pc = (caddr_t) li.entry;
 
   /*
    * Now, finally, build the argument list on the new stack.
