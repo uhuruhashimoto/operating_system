@@ -1,7 +1,6 @@
 #include "queue.h"
 #include "pcb.h"
 #include <ykernel.h>
-#include "../kernel_start.h"
 
 typedef struct queue {
   pcb_t* head;
@@ -67,18 +66,5 @@ pcb_t* remove_from_queue(queue_t* queue)
   }
 
   // return the PCB
-  return pcb;
-}
-
-/*
- * Removes a PCB from the front of the queue, and swaps in an idle PCB if queue is empty
- *  For use with the ready queue
- */
-pcb_t* SAFE_remove_from_queue(queue_t* queue)
-{
-  pcb_t* pcb = remove_from_queue(queue);
-  if (pcb == NULL) {
-    return idle_process;
-  }
   return pcb;
 }

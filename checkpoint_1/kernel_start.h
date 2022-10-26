@@ -6,7 +6,6 @@
 #define CURRENT_CHUNGUS_KERNEL_START_H
 
 #include <ykernel.h>
-#include "trap_handlers/trap_handlers.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 #include "data_structures/frame_table.h"
@@ -18,14 +17,14 @@
     2. Process tracking, including pcbs and ready/idle/blocked queues
 */ 
 
-int *current_kernel_brk_page;
-frame_table_struct_t *frame_table_global;
-pcb_t* running_process;
-pcb_t* idle_process;                                           // the special idle process; use when nothing is in ready queue
-bool is_idle = false;                                          // if is_idle, we won't put the process back on the ready queue
-queue_t* ready_queue;
-void *trap_handler[NUM_TRAP_FUNCTIONS];
-pte_t *region_0_page_table;
+extern int *current_kernel_brk_page;
+extern frame_table_struct_t *frame_table_global;
+extern pcb_t* running_process;
+extern pcb_t* idle_process;                                           // the special idle process; use when nothing is in ready queue
+extern bool is_idle;                                                  // if is_idle, we won't put the process back on the ready queue
+extern queue_t* ready_queue;
+extern void *trap_handler[16];
+extern pte_t *region_0_page_table;
 
 //=================== KERNEL FUNCTIONS =================//
 /*
