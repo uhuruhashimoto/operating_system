@@ -8,3 +8,6 @@ Here lies Yalnix, the Taker of Souls. We have entered the tomb and robbed the de
 Note: Makefile path to source is set to VBox and may need to be changed. If correct, make commands run as expected.
 
 Usage: ./yalnix or ./yalnix -W
+
+## Testing:
+./yalnix ./checkpoint_1/test_processes/iterator

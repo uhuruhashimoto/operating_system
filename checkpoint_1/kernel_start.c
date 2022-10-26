@@ -238,6 +238,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   char* name = cmd_args[0];
   // TODO -- is cmd_args[0] always NULL if there are no arguments?
   if (name == NULL) {
+    TracePrintf(1, "No init program specified, running default program!\n");
     name = "init";
   }
 
@@ -248,6 +249,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   }
   else {
     TracePrintf(1, "Loading the init process failed with exit code -1\n");
+    // TODO -- have the OS fail gracefully
   }
 
   // when we return to userland, got to the idle process

@@ -14,10 +14,10 @@ K_SRCS = kernel_start.c data_structures/pcb.c data_structures/queue.c data_struc
 K_INCS = $(K_SRCS:%.c=%.o) 
 
 # Where's your user source?
-U_SRC_DIR = 
+U_SRC_DIR = $(K_SRC_DIR)/test_processes
 
 # What are the user c and include files?
-U_SRCS = 
+U_SRCS = iterator.c
 U_INCS = 
 
 
@@ -30,7 +30,7 @@ ALL = $(KERNEL_ALL) $(USER_APPS)
 KERNEL_ALL = yalnix
 
 
-# Automatically generate the list of sources, objects, and includes for the kernek
+# Automatically generate the list of sources, objects, and includes for the kernel
 KERNEL_SRCS = $(K_SRCS:%=$(K_SRC_DIR)/%)
 KERNEL_OBJS = $(KERNEL_SRCS:%.c=%.o) 
 KERNEL_INCS = $(K_INCS:%=$(K_SRC_DIR)/%) 
