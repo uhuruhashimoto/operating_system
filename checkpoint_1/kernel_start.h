@@ -9,12 +9,7 @@
 #include "trap_handlers/trap_handlers.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
-#define MEMFULL -1
-
-typedef struct frame_table_struct{
-  char *frame_table;
-  int frame_table_size;
-} frame_table_struct_t;
+#include "data_structures/frame_table.h"
 
 //=================== KERNEL GLOBALS ===================//
 /*
@@ -24,7 +19,7 @@ typedef struct frame_table_struct{
 */ 
 
 int *current_kernel_brk_page;
-frame_table_struct_t *frame_table_struct;
+frame_table_struct_t *frame_table_global;
 pcb_t* running_process;
 pcb_t* idle_process; 
 queue_t* ready_queue;
@@ -50,17 +45,5 @@ int SetKernelBrk(void *addr);
 * This functions as the "user text" for our idle PCB, looping indefinitely.
 */
 void DoIdle(void);
-
-//=================== FRAME TABLE FUNCTIONS =================//
-
-/*
-* return the number of the next free frame, or MEMFULL if memory is insufficient
-*/
-int get_free_frame(char *frame_table, int frame_table_size);
-
-/*
-* return the number of free frames
-*/
-int get_num_free_frames(char *frame_table, int frame_table_size);
 
 #endif //CURRENT_CHUNGUS_KERNEL_START_H

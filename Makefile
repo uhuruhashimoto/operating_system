@@ -10,7 +10,7 @@
 K_SRC_DIR = /home/cs58/vbs/yalnix_test/current_chungus/checkpoint_1
 # K_SRC_DIR = /media/sf_cs58/current_chungus/checkpoint_1
 # What are the kernel c and include files?
-K_SRCS = kernel_start.c data_structures/pcb.c data_structures/queue.c trap_handlers/trap_handlers.c syscalls/process_syscalls.c
+K_SRCS = kernel_start.c data_structures/pcb.c data_structures/queue.c data_structures/frame_table.c trap_handlers/trap_handlers.c syscalls/process_syscalls.c 
 K_INCS = $(K_SRCS:%.c=%.o) 
 
 # Where's your user source?

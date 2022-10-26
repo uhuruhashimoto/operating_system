@@ -30,6 +30,7 @@
 #include "trap_handlers/trap_handlers.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
+#include "data_structures/frame_table.h"
 
 extern void *_kernel_data_start;
 extern void *_kernel_data_end;
@@ -71,10 +72,10 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   // Frame table setup
   // Create frame tracking bit vector and put it in the global along with its size
-  frame_table_struct = malloc(sizeof(frame_table_struct));
+  frame_table_global = malloc(sizeof(frame_table_global));
   char *frame_table = malloc(sizeof(char) * total_pmem_pages);
-  frame_table_struct->frame_table = frame_table;
-  frame_table_struct->frame_table_size = pmem_size;
+  frame_table_global->frame_table = frame_table;
+  frame_table_global->frame_table_size = pmem_size;
 
   // helpers to walk through page table
   pte_t kernel_page;
@@ -90,6 +91,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   TracePrintf(1, "Kernel stack start page is addr %x, page %d \n", KERNEL_STACK_BASE - PMEM_BASE, stack_start_page);
   TracePrintf(1, "Kernel stack end page is addr %x, page %d \n", KERNEL_STACK_LIMIT - PMEM_BASE, stack_end_page);
 
+  // set up our memory; note that we use the current kernel brk page in case the brk has changed
   int kernel_pageind = 0;
   for (kernel_pageind = 0; kernel_pageind < total_pmem_pages; kernel_pageind++) {
     addr = (int *) (PMEM_BASE + PAGESIZE * kernel_pageind);
@@ -186,7 +188,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
     }
     // Here's the stack
     else {
-      int new_frame_num = get_free_frame(frame_table_struct->frame_table, frame_table_struct->frame_table_size);
+      int new_frame_num = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size);
       idle_page.valid = 1;
       idle_page.prot = (PROT_READ | PROT_WRITE);
       idle_page.pfn = new_frame_num;
@@ -217,7 +219,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 */
 int SetKernelBrk(void *addr) {
   // error out if we don't have enough memory 
-  if (!get_num_free_frames(frame_table_struct->frame_table, frame_table_struct->frame_table_size)) {
+  if (!get_num_free_frames(frame_table_global->frame_table, frame_table_global->frame_table_size)) {
     return ERROR;
   }
   // error out if we're provided an invalid address
@@ -238,7 +240,7 @@ int SetKernelBrk(void *addr) {
   else {
     if (addr_page > *current_kernel_brk_page) {
       while (addr_page > *current_kernel_brk_page) {
-        int new_frame_num = get_free_frame(frame_table_struct->frame_table, frame_table_struct->frame_table_size);
+        int new_frame_num = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size);
         region_0_page_table[*current_kernel_brk_page].valid = 1;
         region_0_page_table[*current_kernel_brk_page].prot = (PROT_READ | PROT_WRITE);
         region_0_page_table[*current_kernel_brk_page].pfn = new_frame_num;
@@ -249,7 +251,7 @@ int SetKernelBrk(void *addr) {
     else {
       while (addr_page < *current_kernel_brk_page) {
         int discard_frame_number = region_0_page_table[*current_kernel_brk_page].pfn;
-        frame_table_struct->frame_table[discard_frame_number] = 0;
+        frame_table_global->frame_table[discard_frame_number] = 0;
         region_0_page_table[*current_kernel_brk_page].valid = 0;
         *current_kernel_brk_page--;
       }
@@ -266,37 +268,4 @@ void DoIdle(void) {
     TracePrintf(1,"DoIdle\n");
     Pause();
   } 
-}
-
-//============================ FRAME TABLE HELPERS ==============================//
-/*
-return the number of free frames, to help during dynamic allocation. 
-This assumes that the kernel is uninterruptable and needs no synchronization (mutexes, etc.)
-*/
-int get_num_free_frames(char *frame_table, int frame_table_size) {
-  int numfree = 0;
-  for (int i=0; i<frame_table_size; i++) {
-    // sum the number of unused frame table frames (1 is used, 0 unused)
-    numfree += (frame_table[i] ? 0 : 1);
-  }
-  return numfree;
-}
-
-/*
-Traverses frame table bit vector to find the index
-of the next free frame. This assumes that the kernel is uninterruptable
-and needs no synchronization (mutexes, etc.)
-*/
-int get_free_frame(char *frame_table, int frame_table_size) {
-  int i = 0;
-  while (frame_table[i]) {
-    if (i < frame_table_size) {
-      i++;
-    } 
-    else {
-      return MEMFULL;
-    }
-  }
-  frame_table[i] = 1;
-  return i;
 }
