@@ -20,8 +20,8 @@ Traverses frame table bit vector to find the index
 of the next free frame. This assumes that the kernel is uninterruptable
 and needs no synchronization (mutexes, etc.)
 */
-int get_free_frame(char *frame_table, int frame_table_size) {
-  int i = 0;
+int get_free_frame(char *frame_table, int frame_table_size, int iterator_start) {
+  int i = iterator_start;
   while (frame_table[i]) {
     if (i < frame_table_size) {
       i++;

@@ -14,7 +14,7 @@ typedef struct frame_table_struct{
 /*
 * return the number of the next free frame, or MEMFULL if memory is insufficient
 */
-int get_free_frame(char *frame_table, int frame_table_size);
+int get_free_frame(char *frame_table, int frame_table_size, int iteration_start);
 
 /*
 * return the number of free frames
