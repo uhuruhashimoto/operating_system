@@ -182,6 +182,11 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   pte_t page;
   int page_table_reg_1_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   pte_t *region_1_page_table = malloc(sizeof(pte_t) * page_table_reg_1_size);
+  if (region_1_page_table == NULL) {
+    TracePrintf(1, "Failed to allocate space for the new r1 page table!\n");
+    return ERROR;
+  }
+
   for (int ind=0; ind<page_table_reg_1_size; ind++) {
     // set everything under the stack as non-valid (since the text is in the kernel and
     // our loop shouldn't use any memory)
@@ -192,7 +197,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
 
 
   /* ==>> Throw away the old region 1 virtual address space by
-   * ==>> curent process by walking through the R1 page table and,
+   * ==>> current process by walking through the R1 page table and,
    * ==>> for every valid page, free the pfn and mark the page invalid.
    */
   TracePrintf(1, "Throwing away old address space\n");
@@ -221,142 +226,145 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   TracePrintf(1, "Allocating space for %d text pages, starting at page %d, in table with %d pages\n",
               li.t_npg, text_pg1, page_table_reg_1_size
               );
-  TracePrintf(1, "Allocating space for %d data pages, starting at page %d, in table with %d pages\n",
-              data_npg, data_pg1, page_table_reg_1_size
-  );
 
   int nextIndex = 0;
   for (int i = 0; i < li.t_npg; i++) {
-    (&region_1_page_table)[i+text_pg1]->valid = 1;
-    (&region_1_page_table)[i+text_pg1]->prot = (PROT_READ | PROT_WRITE);
+    region_1_page_table[i+text_pg1].valid = 1;
+    region_1_page_table[i+text_pg1].prot = (PROT_READ | PROT_WRITE);
     // gets a new free frame
-//    int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
-//    if (pfn == -1) {
-//      return ERROR;
-//    }
-//    (&region_1_page_table)[i+text_pg1]->pfn = pfn;
-//    nextIndex = pfn;
+    int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
+    if (pfn == -1) {
+      return ERROR;
+    }
+    region_1_page_table[i+text_pg1].pfn = pfn;
+    nextIndex = pfn;
   }
-//
-//  /*
-//   * ==>> Then, data. Allocate "data_npg" physical pages and map them starting >
-//   * ==>> the  "data_pg1" in region 1 address space.
-//   * ==>> These pages should be marked valid, with a protection of
-//   * ==>> (PROT_READ | PROT_WRITE).
-//   */
-//  for (int i = 0; i < data_npg; i++) {
-//    (&region_1_page_table)[i+data_pg1]->valid = 1;
-//    (&region_1_page_table)[i+data_pg1]->prot = (PROT_READ | PROT_WRITE);
-//    int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
-//    if (pfn == -1) {
-//      return ERROR;
-//    }
-//    (&region_1_page_table)[i+data_pg1]->pfn = pfn;
-//    nextIndex = pfn;
-//  }
-//
-//  /*
-//   * ==>> Then, stack. Allocate "stack_npg" physical pages and map them to the >
-//   * ==>> of the region 1 virtual address space.
-//   * ==>> These pages should be marked valid, with a
-//   * ==>> protection of (PROT_READ | PROT_WRITE).
-//   */
-//  for (int i = 0; i < stack_npg; i++) {
-//    (&region_1_page_table)[MAX_PT_LEN - stack_npg + i]->valid = 1;
-//    (&region_1_page_table)[MAX_PT_LEN - stack_npg + i]->prot = (PROT_READ | PROT_WRITE);
-//    int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
-//    if (pfn == -1) {
-//      return ERROR;
-//    }
-//    (&region_1_page_table)[MAX_PT_LEN - stack_npg + i]->pfn = pfn;
-//    nextIndex = pfn;
-//  }
-//
-//  /*
-//   * ==>> (Finally, make sure that there are no stale region1 mappings left in >
-//   */
-//  // set page table base
-//  WriteRegister(REG_PTBR1, (unsigned  int)region_1_page_table);
-//  // set page table limit
-//  WriteRegister(REG_PTLR1, page_table_reg_1_size);
-//  // flush the TLB
-//  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
-//
-//  /*
-//   * All pages for the new address space are now in the page table.
-//   */
-//
-//  /*
-//   * Read the text from the file into memory.
-//   */
-//  lseek(fd, li.t_faddr, SEEK_SET);
-//  segment_size = li.t_npg << PAGESHIFT;
-//  if (read(fd, (void *) li.t_vaddr, segment_size) != segment_size) {
-//    close(fd);
-//    return KILL;   // see ykernel.h
-//  }
-//
-//  /*
-//   * Read the data from the file into memory.
-//   */
-//  lseek(fd, li.id_faddr, 0);
-//  segment_size = li.id_npg << PAGESHIFT;
-//
-//
-//  if (read(fd, (void *) li.id_vaddr, segment_size) != segment_size) {
-//    close(fd);
-//    return KILL;
-//  }
-//
-//
-//  close(fd);                    /* we've read it all now */
-//
-//
-//  /*
-//   * ==>> Above, you mapped the text pages as writable, so this code could write
-//   * ==>> the new text there.
-//   *
-//   * ==>> But now, you need to change the protections so that the machine can e>
-//   * ==>> the text.
-//   *
-//   * ==>> For each text page in region1, change the protection to (PROT_READ | >
-//   * ==>> If any of these page table entries is also in the TLB,
-//   * ==>> you will need to flush the old mapping.
-//   */
-//
-//  for (int ind=0; ind < page_table_reg_1_size; ind++) {
-//    (&region_1_page_table)[ind]->prot = (PROT_READ | PROT_EXEC);
-//  }
-//  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
-//
-//  /*
-//   * Zero out the uninitialized data area
-//   */
-//  bzero((void*)li.id_end, li.ud_end - li.id_end);
-//
-//  /*
-//   * Set the entry point in the process's UserContext
-//   */
-//  proc->uctxt->pc = (caddr_t) li.entry;
-//
-//  /*
-//   * Now, finally, build the argument list on the new stack.
-//   */
-//
-//
-//  memset(cpp, 0x00, VMEM_1_LIMIT - ((int) cpp));
-//
-//  *cpp++ = (char *)argcount;            /* the first value at cpp is argc */
-//  cp2 = argbuf;
-//  for (i = 0; i < argcount; i++) {      /* copy each argument and set argv */
-//    *cpp++ = cp;
-//    strcpy(cp, cp2);
-//    cp += strlen(cp) + 1;
-//    cp2 += strlen(cp2) + 1;
-//  }
-//  free(argbuf);
-//  *cpp++ = NULL;                        /* the last argv is a NULL pointer */
-//  *cpp++ = NULL;                        /* a NULL pointer for an empty envp */
+
+  /*
+   * ==>> Then, data. Allocate "data_npg" physical pages and map them starting >
+   * ==>> the  "data_pg1" in region 1 address space.
+   * ==>> These pages should be marked valid, with a protection of
+   * ==>> (PROT_READ | PROT_WRITE).
+   */
+  TracePrintf(1, "Allocating space for %d data pages, starting at page %d, in table with %d pages\n",
+              data_npg, data_pg1, page_table_reg_1_size);
+  for (int i = 0; i < data_npg; i++) {
+    region_1_page_table[i+data_pg1].valid = 1;
+    region_1_page_table[i+data_pg1].prot = (PROT_READ | PROT_WRITE);
+    int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
+    if (pfn == -1) {
+      return ERROR;
+    }
+    region_1_page_table[i+data_pg1].pfn = pfn;
+    nextIndex = pfn;
+  }
+
+  /*
+   * ==>> Then, stack. Allocate "stack_npg" physical pages and map them to the >
+   * ==>> of the region 1 virtual address space.
+   * ==>> These pages should be marked valid, with a
+   * ==>> protection of (PROT_READ | PROT_WRITE).
+   */
+  TracePrintf(1, "Allocating space for %d stack pages, starting at page %d, in table with %d pages\n",
+              stack_npg, MAX_PT_LEN - stack_npg, page_table_reg_1_size);
+  for (int i = 0; i < stack_npg; i++) {
+    region_1_page_table[MAX_PT_LEN - stack_npg + i].valid = 1;
+    region_1_page_table[MAX_PT_LEN - stack_npg + i].prot = (PROT_READ | PROT_WRITE);
+    int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
+    if (pfn == -1) {
+      return ERROR;
+    }
+    region_1_page_table[MAX_PT_LEN - stack_npg + i].pfn = pfn;
+    nextIndex = pfn;
+  }
+
+  
+
+  /*
+   * ==>> (Finally, make sure that there are no stale region1 mappings left in >
+   */
+  // set page table base
+  WriteRegister(REG_PTBR1, (unsigned  int)region_1_page_table);
+  // set page table limit
+  WriteRegister(REG_PTLR1, page_table_reg_1_size);
+  // flush the TLB
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
+
+  /*
+   * All pages for the new address space are now in the page table.
+   */
+
+  /*
+   * Read the text from the file into memory.
+   */
+  lseek(fd, li.t_faddr, SEEK_SET);
+  segment_size = li.t_npg << PAGESHIFT;
+  if (read(fd, (void *) li.t_vaddr, segment_size) != segment_size) {
+    close(fd);
+    return KILL;   // see ykernel.h
+  }
+
+  /*
+   * Read the data from the file into memory.
+   */
+  lseek(fd, li.id_faddr, 0);
+  segment_size = li.id_npg << PAGESHIFT;
+
+
+  if (read(fd, (void *) li.id_vaddr, segment_size) != segment_size) {
+    close(fd);
+    return KILL;
+  }
+
+
+  close(fd);                    /* we've read it all now */
+
+
+  /*
+   * ==>> Above, you mapped the text pages as writable, so this code could write
+   * ==>> the new text there.
+   *
+   * ==>> But now, you need to change the protections so that the machine can e>
+   * ==>> the text.
+   *
+   * ==>> For each text page in region1, change the protection to (PROT_READ | >
+   * ==>> If any of these page table entries is also in the TLB,
+   * ==>> you will need to flush the old mapping.
+   */
+
+  for (int ind=0; ind < page_table_reg_1_size; ind++) {
+    (&region_1_page_table)[ind]->prot = (PROT_READ | PROT_EXEC);
+  }
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
+
+  /*
+   * Zero out the uninitialized data area
+   */
+  bzero((void*)li.id_end, li.ud_end - li.id_end);
+
+  /*
+   * Set the entry point in the process's UserContext
+   */
+  proc->uctxt->pc = (caddr_t) li.entry;
+
+  /*
+   * Now, finally, build the argument list on the new stack.
+   */
+
+
+  memset(cpp, 0x00, VMEM_1_LIMIT - ((int) cpp));
+
+  *cpp++ = (char *)argcount;            /* the first value at cpp is argc */
+  cp2 = argbuf;
+  for (i = 0; i < argcount; i++) {      /* copy each argument and set argv */
+    *cpp++ = cp;
+    strcpy(cp, cp2);
+    cp += strlen(cp) + 1;
+    cp2 += strlen(cp2) + 1;
+  }
+  free(argbuf);
+  *cpp++ = NULL;                        /* the last argv is a NULL pointer */
+  *cpp++ = NULL;                        /* a NULL pointer for an empty envp */
 
   return SUCCESS;
 }
