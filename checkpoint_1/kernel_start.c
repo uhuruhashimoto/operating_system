@@ -171,7 +171,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   WriteRegister(REG_VM_ENABLE, 1);
   vmem_on = 1;
 
-  malloc(sizeof(int) * 10000);
+  // malloc(sizeof(int) * 10000);
 
   // TRAP HANDLERS
   // set up trap handler array
