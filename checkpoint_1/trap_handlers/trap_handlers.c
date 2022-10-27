@@ -119,14 +119,14 @@ void handle_trap_clock(UserContext* context) {
   pcb_t* next_process;
   // check if there is another process in the ready queue
   if (is_empty(ready_queue)) {
-    TracePrintf(1, "TRAP CLOCK: Queue is empty, the next process is idle\n");
+    TracePrintf(3, "TRAP CLOCK: Queue is empty, the next process is idle\n");
     // if not, swap in the idle pcb and put the old pcb in the ready queue
     next_process = idle_process;
     is_idle = true;
     add_to_queue(ready_queue, running_process);
   }
   else {
-    TracePrintf(1, "TRAP CLOCK: Getting next item from the queue\n");
+    TracePrintf(3, "TRAP CLOCK: Getting next item from the queue\n");
     // if so, swap in the next process in the ready queue
     next_process = remove_from_queue(ready_queue);
     if (is_idle) {
@@ -139,9 +139,9 @@ void handle_trap_clock(UserContext* context) {
   }
 
   pcb_t* old_process = running_process;
-  TracePrintf(1, "PID of next process: %d\n", next_process->pid);
+  TracePrintf(3, "PID of next process: %d\n", next_process->pid);
   running_process = next_process;
-  TracePrintf(1, "PID of new process: %d\n", running_process->pid);
+  TracePrintf(3, "PID of new process: %d\n", running_process->pid);
 
   // saves the current user context in the old pcb
   // clears the TLB
