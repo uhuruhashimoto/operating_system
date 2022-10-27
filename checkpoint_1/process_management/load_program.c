@@ -129,10 +129,10 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
 
 
 //  /* leave at least one page between heap and stack */
-//  if (stack_npg + data_pg1 + data_npg >= MAX_PT_LEN) {
-//    close(fd);
-//    return ERROR;
-//  }
+  if (stack_npg + data_pg1 + data_npg >= MAX_PT_LEN) {
+    close(fd);
+    return ERROR;
+  }
 
   /*
  * This completes all the checks before we proceed to actually load
