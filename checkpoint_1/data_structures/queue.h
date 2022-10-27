@@ -10,6 +10,11 @@
 typedef struct queue queue_t;
 
 /*
+ * Creates a new queue object
+ */
+queue_t* create_queue();
+
+/*
  * is the queue empty?
  */
 bool is_empty(queue_t* queue);
