@@ -46,19 +46,19 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
   // store current KernelContext in current pcb
   pcb_t *curr_pcb = (pcb_t  *)curr_pcb_p;
   pcb_t *next_pcb = (pcb_t *)next_pcb_p;
-  memcpy(kc_in, curr_pcb->kctxt, sizeof(KernelContext));
+  memcpy(curr_pcb->kctxt, kc_in, sizeof(KernelContext));
 
   //store stack
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
   for (int i=0; i<num_stack_pages; i++) {
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
-    memcpy(&region_0_page_table[stack_page_ind], &(curr_pcb->kernel_stack[i]), sizeof(pte_t));
+    memcpy(&(curr_pcb->kernel_stack[i]), &region_0_page_table[stack_page_ind], sizeof(pte_t));
   } 
   //change region 0 stack mappings to those in new pcb
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);
   for (int i=0; i<num_stack_pages; i++) {
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
-    memcpy(&(next_pcb->kernel_stack[i]), &region_0_page_table[stack_page_ind], sizeof(pte_t));
+    memcpy(&region_0_page_table[stack_page_ind], &(next_pcb->kernel_stack[i]), sizeof(pte_t));
   } 
 
   return next_pcb->kctxt;
@@ -71,7 +71,7 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
 KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   //copy current KernelContext into initPCB
   pcb_t *init_pcb = (pcb_t  *)new_pcb_p;
-  memcpy(kc_in, init_pcb->kctxt, sizeof(KernelContext));
+  memcpy(init_pcb->kctxt, kc_in, sizeof(KernelContext));
   //copy current kernel stack into new kstack frames in initPCB
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
   for (int i=0; i<num_stack_pages; i++) {
@@ -83,9 +83,10 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
     bufpage->prot = (PROT_READ | PROT_WRITE);
     bufpage->pfn = new_frame;
     //copy stack page into a new frame
-    memcpy(&region_0_page_table[stack_page_ind], bufpage, sizeof(pte_t));
+    memcpy(bufpage, &region_0_page_table[stack_page_ind], sizeof(pte_t));
     //now copy that page (and associated frame) into the pcb
-    memcpy(bufpage, &(init_pcb->kernel_stack[i]), sizeof(pte_t));
+    init_pcb->kernel_stack[i] = *bufpage;
+    // memcpy(bufpage, &(init_pcb->kernel_stack[i]), sizeof(pte_t));
   }
   // flush TLB
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);
