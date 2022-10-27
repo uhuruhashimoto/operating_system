@@ -26,6 +26,7 @@ int switch_between_processes(pcb_t *current_process, pcb_t *next_process) {
   int rc = KernelContextSwitch(&KCSwitch, (void *)current_process, (void *)next_process);
   if (rc != 0) {
     TracePrintf(1, "Failed to switch kernel contexts; exiting...\n");
+    //TODO: EXIT
     return ERROR;
   }
   return 0;
