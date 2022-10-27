@@ -138,12 +138,14 @@ void handle_trap_clock(UserContext* context) {
     }
   }
 
+  pcb_t* old_process = running_process;
   TracePrintf(1, "PID of next process: %d\n", next_process->pid);
-  // saves the current user context in the old pcb
-  // clears the TLB
-  switch_between_processes(running_process, next_process);
   running_process = next_process;
   TracePrintf(1, "PID of new process: %d\n", running_process->pid);
+
+  // saves the current user context in the old pcb
+  // clears the TLB
+  switch_between_processes(old_process, running_process);
 }
 
 /*

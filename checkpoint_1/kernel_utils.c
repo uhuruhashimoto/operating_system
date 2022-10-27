@@ -27,6 +27,9 @@ int switch_between_processes(pcb_t *current_process, pcb_t *next_process) {
     TracePrintf(2, "Failed to switch kernel contexts; exiting...\n");
     Halt();
   }
+
+  // TODO -- swap out user address spaces
+  running_process = next_process;
   return 0;
 }
 
