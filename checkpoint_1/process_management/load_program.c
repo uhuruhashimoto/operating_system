@@ -280,13 +280,14 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
     nextIndex = pfn;
   }
 
-  for (int i = 0; i < page_table_reg_1_size; i++) {
-    TracePrintf(1, "Valid: %d, Pfn: %d\n", region_1_page_table[i].valid, region_1_page_table[i].pfn);
-  }
+//  for (int i = 0; i < page_table_reg_1_size; i++) {
+//    TracePrintf(1, "Valid: %d, Pfn: %d\n", region_1_page_table[i].valid, region_1_page_table[i].pfn);
+//  }
 
   /*
    * ==>> (Finally, make sure that there are no stale region1 mappings left in >
    */
+  proc->region_1_page_table = region_1_page_table;
   // set page table base
   WriteRegister(REG_PTBR1, (unsigned  int)region_1_page_table);
   // set page table limit
@@ -301,6 +302,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   /*
    * Read the text from the file into memory.
    */
+  TracePrintf(1, "Reading text from file into memory\n");
   lseek(fd, li.t_faddr, SEEK_SET);
   segment_size = li.t_npg << PAGESHIFT;
   if (read(fd, (void *) li.t_vaddr, segment_size) != segment_size) {
@@ -322,6 +324,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
 
 
   close(fd);                    /* we've read it all now */
+  TracePrintf(1, "Reading complete\n");
 
 
   /*
@@ -335,27 +338,30 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> If any of these page table entries is also in the TLB,
    * ==>> you will need to flush the old mapping.
    */
-
+  TracePrintf(1, "Finalizing page table protections...\n");
   for (int ind=0; ind < page_table_reg_1_size; ind++) {
-    (&region_1_page_table)[ind]->prot = (PROT_READ | PROT_EXEC);
+    region_1_page_table[ind].prot = (PROT_READ | PROT_EXEC);
   }
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 
   /*
    * Zero out the uninitialized data area
    */
+  TracePrintf(1, "Zeroing uninitialized data\n");
   bzero((void*)li.id_end, li.ud_end - li.id_end);
+// TODO
 
   /*
    * Set the entry point in the process's UserContext
    */
+  TracePrintf(1, "Setting PC\n");
   proc->uctxt->pc = (caddr_t) li.entry;
 
   /*
    * Now, finally, build the argument list on the new stack.
    */
 
-
+  TracePrintf(1, "Building argument list on new stack\n");
   memset(cpp, 0x00, VMEM_1_LIMIT - ((int) cpp));
 
   *cpp++ = (char *)argcount;            /* the first value at cpp is argc */
@@ -369,6 +375,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   free(argbuf);
   *cpp++ = NULL;                        /* the last argv is a NULL pointer */
   *cpp++ = NULL;                        /* a NULL pointer for an empty envp */
+  TracePrintf(1, "Finished loading the program\n");
 
   return SUCCESS;
 }
