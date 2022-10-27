@@ -12,7 +12,7 @@ extern queue_t* ready_queue;
 int clone_process(pcb_t *new_pcb) {
   int rc = KernelContextSwitch(&KCCopy, (void *)new_pcb, NULL);
   if (rc != 0) {
-    TracePrintf(5, "Failed to clone kernel process; exiting...\n");
+    TracePrintf(1, "Failed to clone kernel process; exiting...\n");
     Halt();
   }
   return rc;
@@ -29,7 +29,7 @@ int switch_between_processes(pcb_t *current_process, pcb_t *next_process) {
 
   int rc = KernelContextSwitch(&KCSwitch, (void *)current_process, (void *)next_process);
   if (rc != 0) {
-    TracePrintf(5, "Failed to switch kernel contexts; exiting...\n");
+    TracePrintf(1, "Failed to switch kernel contexts; exiting...\n");
     Halt();
   }
 

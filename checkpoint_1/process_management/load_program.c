@@ -361,6 +361,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    */
   TracePrintf(3, "Setting PC\n");
   proc->uctxt->pc = (caddr_t) li.entry;
+  TracePrintf(1, "LOAD_PROGRAM: Set PC to %x\n", proc->uctxt->pc);
 
   /*
    * Now, finally, build the argument list on the new stack.
@@ -381,6 +382,8 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   *cpp++ = NULL;                        /* the last argv is a NULL pointer */
   *cpp++ = NULL;                        /* a NULL pointer for an empty envp */
   TracePrintf(1, "Finished loading the program\n");
+
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
 
   return SUCCESS;
 }

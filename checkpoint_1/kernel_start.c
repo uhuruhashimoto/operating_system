@@ -276,21 +276,23 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   }
   TracePrintf(1, "Cloned into init_pcb:\n");
   TracePrintf(1, "Process id is %d, idle is %d, init is %d\n", running_process->pid, idle_pcb->pid, init_pcb->pid);
+  TracePrintf(1, "Process pc is %x, idle is %x, init is %x\n", running_process->uctxt->pc, idle_pcb->uctxt->pc, init_pcb->uctxt->pc);
 
   // make sure we only load the init process as init
   if (running_process->pid == init_pcb->pid) {
     // load the init process into the forked pcb
     TracePrintf(1, "Attempting to load program with name: %s\n", name);
-    if (LoadProgram(name, cmd_args, init_pcb) != -1) {
-      add_to_queue(ready_queue, init_pcb);
-    }
-    else {
+    if (LoadProgram(name, cmd_args, init_pcb) == -1) {
       TracePrintf(1, "Loading the init process failed with exit code -1\n");
       Halt();
     }
   }
+  // Set the uctxt to the desired place
+  uctxt->pc = running_process->uctxt->pc;
+  uctxt->sp = running_process->uctxt->sp;
+  TracePrintf(1, "Process pc is %x, idle is %x, init is %x\n", running_process->uctxt->pc, idle_pcb->uctxt->pc, init_pcb->uctxt->pc);
 
-  // when we return to userland, got to the idle process
+  // return to userland
   TracePrintf(1, "Leaving KernelStart...\n");
   return; 
 }
