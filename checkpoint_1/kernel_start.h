@@ -20,7 +20,7 @@
     2. Process tracking, including pcbs and ready/idle/blocked queues
 */ 
 
-extern int *current_kernel_brk_page;
+extern int current_kernel_brk_page;
 extern frame_table_struct_t *frame_table_global;
 extern pcb_t* running_process;
 extern pcb_t* idle_process;                                           // the special idle process; use when nothing is in ready queue

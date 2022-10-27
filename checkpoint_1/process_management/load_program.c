@@ -149,7 +149,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> (rewrite the line below to match your actual data structure)
    * ==>> proc->uc.sp = cp2;
    */
-  TracePrintf(1, "Setting the Stack Pointer\n");
+  TracePrintf(3, "Setting the Stack Pointer\n");
   proc->uctxt->sp = cp2;
 
   /*
@@ -171,14 +171,14 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
     strcpy(cp2, args[i]);
     cp2 += strlen(cp2) + 1;
   }
-  TracePrintf(1, "Finished copying the arguments\n");
+  TracePrintf(3, "Finished copying the arguments in load_program\n");
 
   /*
    * Set up the page tables for the process so that we can read the
    * program into memory.  Get the right number of physical pages
    * allocated, and set them all to writable.
    */
-  TracePrintf(1, "Setting up page table for the process\n");
+  TracePrintf(3, "Setting up page table for the process\n");
   pte_t page;
   int page_table_reg_1_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   pte_t *region_1_page_table = malloc(sizeof(pte_t) * page_table_reg_1_size);
@@ -198,7 +198,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> current process by walking through the R1 page table and,
    * ==>> for every valid page, free the pfn and mark the page invalid.
    */
-  TracePrintf(1, "Throwing away old address space\n");
+  TracePrintf(3, "Throwing away old address space\n");
   for (int ind=0; ind < page_table_reg_1_size; ind++) {
     if (proc->region_1_page_table[ind].valid) {
       // mark invalid
@@ -223,7 +223,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> These pages should be marked valid, with a protection of
    * ==>> (PROT_READ | PROT_WRITE).
    */
-  TracePrintf(1, "Allocating space for %d text pages, starting at page %d, in table with %d pages\n",
+  TracePrintf(4, "Allocating space for %d text pages, starting at page %d, in table with %d pages\n",
               li.t_npg, text_pg1, page_table_reg_1_size
               );
 
@@ -246,7 +246,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> These pages should be marked valid, with a protection of
    * ==>> (PROT_READ | PROT_WRITE).
    */
-  TracePrintf(1, "Allocating space for %d data pages, starting at page %d, in table with %d pages\n",
+  TracePrintf(4, "Allocating space for %d data pages, starting at page %d, in table with %d pages\n",
               data_npg, data_pg1, page_table_reg_1_size);
   for (int i = 0; i < data_npg; i++) {
     region_1_page_table[i+data_pg1].valid = 1;
@@ -265,7 +265,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> These pages should be marked valid, with a
    * ==>> protection of (PROT_READ | PROT_WRITE).
    */
-  TracePrintf(1, "Allocating space for %d stack pages, starting at page %d, in table with %d pages\n",
+  TracePrintf(4, "Allocating space for %d stack pages, starting at page %d, in table with %d pages\n",
               stack_npg, MAX_PT_LEN - stack_npg, page_table_reg_1_size);
   for (int i = 0; i < stack_npg; i++) {
     region_1_page_table[MAX_PT_LEN - stack_npg + i].valid = 1;
@@ -296,7 +296,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   /*
    * Read the text from the file into memory.
    */
-  TracePrintf(1, "Reading text from file into memory\n");
+  TracePrintf(4, "Reading text from file into memory\n");
   lseek(fd, li.t_faddr, SEEK_SET);
   segment_size = li.t_npg << PAGESHIFT;
   if (read(fd, (void *) li.t_vaddr, segment_size) != segment_size) {
@@ -318,7 +318,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
 
 
   close(fd);                    /* we've read it all now */
-  TracePrintf(1, "Reading complete\n");
+  TracePrintf(4, "Reading complete\n");
 
 
   /*
@@ -332,7 +332,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> If any of these page table entries is also in the TLB,
    * ==>> you will need to flush the old mapping.
    */
-  TracePrintf(1, "Finalizing page table protections...\n");
+  TracePrintf(3, "Finalizing page table protections...\n");
   for (int ind=0; ind < li.t_npg; ind++) {
     region_1_page_table[ind+text_pg1].prot = (PROT_READ | PROT_EXEC);
   }
@@ -340,7 +340,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
 
   for (int i = 0; i < page_table_reg_1_size; i++) {
     if (region_1_page_table[i].valid) {
-      TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+      TracePrintf(4, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
                   VMEM_1_BASE + (i << PAGESHIFT),
                   VMEM_1_BASE + ((i+1) << PAGESHIFT)-1,
                   region_1_page_table[i].valid,
@@ -352,21 +352,21 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   /*
    * Zero out the uninitialized data area
    */
-  TracePrintf(1, "Zeroing uninitialized data\n");
-  TracePrintf(1, "Zeroing from %x to %x;\n", li.id_end, li.ud_end);
+  TracePrintf(3, "Zeroing uninitialized data\n");
+  TracePrintf(3, "Zeroing from %x to %x;\n", li.id_end, li.ud_end);
   bzero((void*)li.id_end, li.ud_end - li.id_end);
 
   /*
    * Set the entry point in the process's UserContext
    */
-  TracePrintf(1, "Setting PC\n");
+  TracePrintf(3, "Setting PC\n");
   proc->uctxt->pc = (caddr_t) li.entry;
 
   /*
    * Now, finally, build the argument list on the new stack.
    */
 
-  TracePrintf(1, "Building argument list on new stack\n");
+  TracePrintf(3, "Building argument list on new stack\n");
   memset(cpp, 0x00, VMEM_1_LIMIT - ((int) cpp));
 
   *cpp++ = (char *)argcount;            /* the first value at cpp is argc */

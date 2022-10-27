@@ -139,7 +139,7 @@ void handle_trap_clock(UserContext* context) {
   // saves the current user context in the old pcb
   // clears the TLB
   switch_between_processes(running_process, next_process);
-  // calls load_next_user_process
+  // TODO -- how do we actually load the new kernel context ...?
 }
 
 /*
