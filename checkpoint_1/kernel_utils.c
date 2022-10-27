@@ -148,7 +148,7 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   // invalidate the bufpage, so it doesn't stick around on the stack
   bufpage->valid = 0;
 
-  TracePrintf(2, "=====Region 0 Page Table After Clone=====\n");
+  TracePrintf(1, "=====Region 0 Page Table After Clone=====\n");
   for (int i = 0; i < page_table_reg_0_size; i++) {
     if (region_0_page_table[i].valid) {
       TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
@@ -160,7 +160,7 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
     }
   }
 
-  TracePrintf(2, "=====OLD PCB Kernel Stack=====\n");
+  TracePrintf(1, "=====OLD PCB Kernel Stack=====\n");
   for (int i=0; i<num_stack_pages; i++) {
     TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
                 KERNEL_STACK_BASE + (i << PAGESHIFT),
@@ -170,7 +170,7 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
     );
   }
 
-  TracePrintf(2, "=====New PCB Kernel Stack=====\n");
+  TracePrintf(1, "=====New PCB Kernel Stack=====\n");
   for (int i=0; i<num_stack_pages; i++) {
     TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
                 KERNEL_STACK_BASE + (i << PAGESHIFT),
