@@ -95,7 +95,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   frame_table_global = malloc(sizeof(frame_table_global));
   char *frame_table = malloc(sizeof(char) * total_pmem_pages);
   frame_table_global->frame_table = frame_table;
-  frame_table_global->frame_table_size = pmem_size;
+  frame_table_global->frame_table_size = total_pmem_pages;
 
   // Allocate global data structures
   ready_queue = create_queue(); 
@@ -171,7 +171,17 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   WriteRegister(REG_VM_ENABLE, 1);
   vmem_on = 1;
 
-  // malloc(sizeof(int) * 10000);
+  TracePrintf(3, "========Region 0 Page Table Just After Setting VMEM======\n");
+  for (int i = 0; i < region_0_page_table_size; i++) {
+    if (region_0_page_table[i].valid) {
+      TracePrintf(3, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+                  VMEM_0_BASE + (i << PAGESHIFT),
+                  VMEM_0_BASE + ((i+1) << PAGESHIFT)-1,
+                  region_0_page_table[i].valid,
+                  region_0_page_table[i].pfn
+      );
+    }
+  }
 
   // TRAP HANDLERS
   // set up trap handler array
@@ -286,7 +296,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 * higher-level user/library dynamic allocation calls. In case of any error, the value ERROR is returned.
 */
 int SetKernelBrk(void *addr) {
-  TracePrintf(1, "SETKERNELBRK: Hit SetKernelBrk\n");
+  TracePrintf(3, "SETKERNELBRK: Hit SetKernelBrk\n");
   // error out if we're provided an invalid address
   if (addr < _kernel_data_start) {
     TracePrintf(1, "SETKERNELBRK: Invalid address provided.\n");
@@ -301,7 +311,7 @@ int SetKernelBrk(void *addr) {
   }
   // if vmem is not enabled, set the brk to the specified address above _kernel_origin_brk (hit by kernel malloc)
   if (!vmem_on) {
-    TracePrintf(1, "SETKERNELBRK: VMem not enabled. Setting kernel brk page from %d to %d\n",
+    TracePrintf(3, "SETKERNELBRK: VMem not enabled. Setting kernel brk page from %d to %d\n",
                 current_kernel_brk_page, addr_page);
     current_kernel_brk_page = addr_page;
     return SUCCESS;
@@ -309,11 +319,12 @@ int SetKernelBrk(void *addr) {
 
   //otherwise, set the brk assuming the address is virtual 
   else {
-    TracePrintf(1, "SETKERNELBRK: VMem enabled. Setting kernel brk from %d to %d\n",
+    TracePrintf(3, "SETKERNELBRK: VMem enabled. Setting kernel brk from %d to %d\n",
                 current_kernel_brk_page, addr_page);
 
     int first_possible_free_frame = 0;
     if (addr_page > current_kernel_brk_page) {
+      TracePrintf(3, "SETKERNELBRK: Will try to find memory to allocate more frames\n");
       // error out if we don't have enough memory
       if (addr_page-current_kernel_brk_page > get_num_free_frames(frame_table_global->frame_table,
                                                                    frame_table_global->frame_table_size)
@@ -322,6 +333,7 @@ int SetKernelBrk(void *addr) {
         return ERROR;
       }
 
+      TracePrintf(3, "SETKERNELBRK: SetKernelBrk found enough memory for malloc to succeed\n");
       while (addr_page > current_kernel_brk_page) {
         int new_frame_num = get_free_frame(frame_table_global->frame_table,
                                            frame_table_global->frame_table_size,
@@ -338,7 +350,10 @@ int SetKernelBrk(void *addr) {
       return SUCCESS;
     }
     else {
+      // TODO -- does this code path ever execute?
+      TracePrintf(3, "SETKERNELBRK: SetKernelBrk found that we don't need to allocate more frames\n");
       while (addr_page < current_kernel_brk_page) {
+        TracePrintf(3, "SETKERNELBRK: Deleting a page from the page table...\n");
         int discard_frame_number = region_0_page_table[current_kernel_brk_page].pfn;
         frame_table_global->frame_table[discard_frame_number] = 0;
         region_0_page_table[current_kernel_brk_page].valid = 0;
