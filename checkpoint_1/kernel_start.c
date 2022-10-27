@@ -183,8 +183,6 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
     }
   }
 
-  malloc(sizeof(int) * 10000);
-
   // TRAP HANDLERS
   // set up trap handler array
   trap_handler[TRAP_KERNEL] = &handle_trap_kernel;
@@ -352,8 +350,10 @@ int SetKernelBrk(void *addr) {
       return SUCCESS;
     }
     else {
+      // TODO -- does this code path ever execute?
       TracePrintf(3, "SETKERNELBRK: SetKernelBrk found that we don't need to allocate more frames\n");
       while (addr_page < current_kernel_brk_page) {
+        TracePrintf(3, "SETKERNELBRK: Deleting a page from the page table...\n");
         int discard_frame_number = region_0_page_table[current_kernel_brk_page].pfn;
         frame_table_global->frame_table[discard_frame_number] = 0;
         region_0_page_table[current_kernel_brk_page].valid = 0;
