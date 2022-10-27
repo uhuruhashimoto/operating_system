@@ -6,6 +6,7 @@
 #define CURRENT_CHUNGUS_KERNEL_START_H
 
 #include <ykernel.h>
+#include "kernel_utils.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 #include "data_structures/frame_table.h"

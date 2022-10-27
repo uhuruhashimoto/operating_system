@@ -3,6 +3,8 @@
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 
+extern queue_t* ready_queue;
+
 /*
 * This is the highest level function for creating and cloning a new process.
 * Note that there is no bookkeeping required in running processes.
@@ -11,7 +13,8 @@ int clone_process(pcb_t *init_pcb) {
   int rc = KernelContextSwitch(&KCCopy, (void *)init_pcb, NULL);
   if (rc != 0) {
     TracePrintf(1, "Failed to clone kernel process; exiting...\n");
-    exit(rc);
+    //TODO: EXIT
+    return ERROR;
   }
   return rc;
 }
@@ -23,7 +26,7 @@ int switch_between_processes(pcb_t *current_process, pcb_t *next_process) {
   int rc = KernelContextSwitch(&KCSwitch, (void *)current_process, (void *)next_process);
   if (rc != 0) {
     TracePrintf(1, "Failed to switch kernel contexts; exiting...\n");
-    exit(rc);
+    return ERROR;
   }
   return 0;
 }
@@ -42,13 +45,13 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
   for (int i=0; i<num_stack_pages; i++) {
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
-    memcpy(&region_0_page_table[stack_page_ind], curr_pcb->kernel_stack[i], sizeof(pte_t));
+    memcpy(&region_0_page_table[stack_page_ind], &(curr_pcb->kernel_stack[i]), sizeof(pte_t));
   } 
   //change region 0 stack mappings to those in new pcb
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);
   for (int i=0; i<num_stack_pages; i++) {
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
-    memcpy(next_pcb->kernel_stack[i], &region_0_page_table[stack_page_ind], sizeof(pte_t));
+    memcpy(&(next_pcb->kernel_stack[i]), &region_0_page_table[stack_page_ind], sizeof(pte_t));
   } 
 
   return next_pcb->kctxt;
@@ -75,7 +78,7 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
     //copy stack page into a new frame
     memcpy(&region_0_page_table[stack_page_ind], bufpage, sizeof(pte_t));
     //now copy that page (and associated frame) into the pcb
-    memcpy(bufpage, init_pcb->kernel_stack[i], sizeof(pte_t));
+    memcpy(bufpage, &(init_pcb->kernel_stack[i]), sizeof(pte_t));
   }
   // flush TLB
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);

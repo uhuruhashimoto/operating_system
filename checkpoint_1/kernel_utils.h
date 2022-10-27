@@ -4,6 +4,8 @@
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 
+extern queue_t* ready_queue;
+
 /*
 * Top level helper to clone processes. Handles error handling, KernelContextSwitch call.
 */
@@ -25,4 +27,4 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
 */
 KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used);
 
-#define CURRENT_CHUNGUS_KERNEL_UTILS
+#endif
