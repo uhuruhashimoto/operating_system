@@ -7,9 +7,8 @@
 * This is the highest level function for creating and cloning a new process.
 * Note that there is no bookkeeping required in running processes.
 */
-int clone_process() {
-  pcb_t *current_process = running_process;
-  int rc = KernelContextSwitch(&KCCopy, (void *)current_process, NULL);
+int clone_process(pcb_t *init_pcb) {
+  int rc = KernelContextSwitch(&KCCopy, (void *)init_pcb, NULL);
   if (rc != 0) {
     TracePrintf(1, "Failed to clone kernel process; exiting...\n");
     exit(rc);
