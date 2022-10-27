@@ -1,6 +1,5 @@
 #include <ykernel.h>
 #include "pcb.h"
-#include "queue.h"
 
 /*
 * Allocate pcb data structures; e.g. kernel context and stack

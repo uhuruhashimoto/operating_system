@@ -27,11 +27,13 @@
 
 #include <ykernel.h>
 #include "kernel_start.h"
+#include "kernel_utils.h"
 #include "trap_handlers/trap_handlers.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 #include "data_structures/frame_table.h"
 #include "process_management/load_program.h"
+
 
 extern void *_kernel_data_start;
 extern void *_kernel_data_end;
@@ -231,7 +233,6 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   for (int i=0; i<num_kernel_stack_pages; i++) {
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
     idle_pcb->kernel_stack[i] = region_0_page_table[stack_page_ind];
-    // memcpy(&region_0_page_table[stack_page_ind], &(idle_pcb->kernel_stack[i]), sizeof(pte_t));
   }
 
   //set it as the running process
@@ -254,7 +255,13 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
     name = "init";
   }
 
-  // TODO-- fork the idle pcb
+  //clone
+  int rc = clone_process(init_pcb);
+  if (rc != 0) {
+    TracePrintf(1, "Kernel boot code encountered an error and was unable to clone from idle into the executable.\n");
+  }
+
+
   // TODO -- load the init process into the forked pcb
   TracePrintf(1, "Attempting to load program with name: %s\n", name);
   if (LoadProgram(name, cmd_args, idle_pcb) != -1) {
