@@ -1,6 +1,5 @@
 #include <ykernel.h>
 #include "../kernel_start.h"
-<<<<<<< HEAD
 #include "../data_structures/pcb.h"
 #include "../data_structures/queue.h"
 #include "../data_structures/frame_table.h"
@@ -12,9 +11,6 @@ extern bool is_idle;                                                  // if is_i
 extern queue_t* ready_queue;
 extern void *trap_handler[16];
 extern pte_t *region_0_page_table;
-=======
-
->>>>>>> 6b9f17123cf39a8b3f9db1d02a93da222e449576
 /*
  * Fork the process and create a new, separate address space
  */
@@ -87,17 +83,17 @@ int handle_GetPid(void)
 int handle_Brk(void *addr)
 {
   //error handling
-  if (addr < VMEM_1_BASE) {
+  if (addr < (void *)VMEM_1_BASE) {
     TracePrintf(1, "Error: New brk address provided is in Region 0 (kernel memory).\n");
     return ERROR;
   }
-  else if (addr > VMEM_1_LIMIT) {
+  else if (addr > (void *)VMEM_1_LIMIT) {
     TracePrintf(1, "Error: New brk address provided is above writable memory.\n");
     return ERROR;
   } 
   
   pte_t *region_1_page_table = running_process->region_1_page_table;
-  int addr_page = addr >> PAGESHIFT;
+  int addr_page = UP_TO_PAGE(addr - PMEM_BASE) >> PAGESHIFT;
   int current_brk_page = 0;
   int region_1_page_table_size = VMEM_1_SIZE >> PAGESHIFT;
   bool brkfound = false;
@@ -109,7 +105,7 @@ int handle_Brk(void *addr)
     }
     current_brk_page++;
   }
-  TracePrintf("SETBRK: Current brk found at %d pages\n", current_brk_page);
+  TracePrintf(2, "SETBRK: Current brk found at %d pages\n", current_brk_page);
 
   int first_possible_free_frame = 0;
   if (addr_page > current_brk_page) {
