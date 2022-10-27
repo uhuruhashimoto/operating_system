@@ -47,6 +47,8 @@ int add_to_queue(queue_t* queue, pcb_t* pcb)
     queue->head = pcb;
   }
 
+  queue->size++;
+
   // return 0 on SUCCESS, -1 on ERROR
   return SUCCESS;
 }
@@ -64,6 +66,8 @@ pcb_t* remove_from_queue(queue_t* queue)
   if (queue->head == NULL) {
     queue->tail = NULL;
   }
+
+  queue->size--;
 
   // return the PCB
   return pcb;

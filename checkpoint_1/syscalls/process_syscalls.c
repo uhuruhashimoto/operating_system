@@ -1,5 +1,6 @@
 #include <ykernel.h>
 #include "../kernel_start.h"
+<<<<<<< HEAD
 #include "../data_structures/pcb.h"
 #include "../data_structures/queue.h"
 #include "../data_structures/frame_table.h"
@@ -11,6 +12,9 @@ extern bool is_idle;                                                  // if is_i
 extern queue_t* ready_queue;
 extern void *trap_handler[16];
 extern pte_t *region_0_page_table;
+=======
+
+>>>>>>> 6b9f17123cf39a8b3f9db1d02a93da222e449576
 /*
  * Fork the process and create a new, separate address space
  */
@@ -157,7 +161,34 @@ ERROR is returned instead.
 int handle_Delay(int clock_ticks)
 {
   // return ERROR if clock_ticks is negative
+  if (clock_ticks < 0) {
+    return ERROR;
+  }
+
   // return 0 if clock_ticks is zero
+  if (clock_ticks == 0) {
+    return SUCCESS;
+  }
+
   // otherwise, block the process for clock_ticks (put in delay queue)
-  // return 0
+  running_process->delayed_clock_cycles = clock_ticks;
+  if (delayed_processes == NULL) {
+    delayed_processes = running_process;
+  }
+  else {
+    pcb_t* next_proc = delayed_processes;
+    while (next_proc->next_pcb != NULL) {
+      // do nothing
+    }
+    // point them at one another, sticking this process in the queue
+    next_proc->next_pcb = running_process;
+    running_process->prev_pcb = next_proc;
+  }
+
+  pcb_t* old_process = running_process;
+
+  // get the next process from the queue
+  install_next_from_queue(old_process);
+
+  return SUCCESS;
 }

@@ -12,9 +12,14 @@ extern queue_t* ready_queue;
 int clone_process();
 
 /*
-* Top level helper to switch processes. Handles error handling, bookkeeping and KernelContextSwitch call.
+ * Runs the next process from the queue
+ */
+int install_next_from_queue(pcb_t* current_process);
+
+/*
+* Top level helper to switch processes. Handles KernelContextSwitch call.
 */
-int switch_between_processes();
+int switch_between_processes(pcb_t *current_process, pcb_t *next_process);
 
 /*
 * Switches kernel context, being careful to save special registers

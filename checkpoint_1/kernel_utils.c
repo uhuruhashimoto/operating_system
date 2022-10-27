@@ -19,6 +19,42 @@ int clone_process(pcb_t *new_pcb) {
 }
 
 /*
+ * Runs the next process from the queue
+ */
+int install_next_from_queue(pcb_t* current_process) {
+  pcb_t* next_process;
+  // check if there is another process in the ready queue
+  if (is_empty(ready_queue)) {
+    TracePrintf(3, "INSTALL_NEXT: Queue is empty, the next process is idle\n");
+    // if not, swap in the idle pcb and put the old pcb in the ready queue
+    next_process = idle_process;
+    is_idle = true;
+    add_to_queue(ready_queue, running_process);
+  }
+  else {
+    TracePrintf(3, "INSTALL_NEXT: Getting next item from the queue\n");
+    // if so, swap in the next process in the ready queue
+    next_process = remove_from_queue(ready_queue);
+    if (is_idle) {
+      is_idle = false;
+    }
+      // we add the valid process back into the ready queue
+    else {
+      add_to_queue(ready_queue, running_process);
+    }
+  }
+
+  TracePrintf(1, "TRAP_CLOCK: ABOUT TO SWAP PROCESSES\n");
+  TracePrintf(3, "PID of next process: %d\n", next_process->pid);
+  running_process = next_process;
+  TracePrintf(3, "PID of new process: %d\n", running_process->pid);
+
+  // saves the current user context in the old pcb
+  // clears the TLB
+  switch_between_processes(current_process, running_process);
+}
+
+/*
 * This is the highest level function for switching between different processes.
 */
 int switch_between_processes(pcb_t *current_process, pcb_t *next_process) {
