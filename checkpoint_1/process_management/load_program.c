@@ -137,7 +137,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   /*
  * This completes all the checks before we proceed to actually load
  * the new program.  From this point on, we are committed to either
- * loading succesfully or killing the process.
+ * loading successfully or killing the process.
  */
 
   /*
