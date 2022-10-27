@@ -103,7 +103,7 @@ void handle_trap_kernel(UserContext* context) {
  * Handle traps to clock -- starts the next process in the ready queue
  */
 void handle_trap_clock(UserContext* context) {
-  TracePrintf(1, "Our kernel hit the clock trap\n");
+  TracePrintf(1, "TRAP_CLOCK: Our kernel hit the clock trap\n");
 
   if (ready_queue == NULL) {
     TracePrintf(1, "NULL READY QUEUE\n");
@@ -138,6 +138,7 @@ void handle_trap_clock(UserContext* context) {
     }
   }
 
+  TracePrintf(1, "TRAP_CLOCK: ABOUT TO SWAP PROCESSES\n");
   pcb_t* old_process = running_process;
   TracePrintf(3, "PID of next process: %d\n", next_process->pid);
   running_process = next_process;
