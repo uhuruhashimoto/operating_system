@@ -104,6 +104,11 @@ void handle_trap_kernel(UserContext* context) {
 void handle_trap_clock(UserContext* context) {
   TracePrintf(1, "Our kernel hit the clock trap\n");
 
+  if (ready_queue == NULL) {
+    TracePrintf(1, "NULL READY QUEUE\n");
+    return;
+  }
+
   // check if there is another process in the ready queue
   if (is_empty(ready_queue)) {
     // if not, swap in the idle pcb and put the old pcb in the ready queue
