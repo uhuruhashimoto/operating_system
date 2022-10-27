@@ -18,7 +18,7 @@
 * Globals that persist indefinitely for the whole kernel: 
     1. Memory storage, including the frame table and brk
     2. Process tracking, including pcbs and ready/idle/blocked queues
-*/ 
+*/
 
 extern int current_kernel_brk_page;
 extern frame_table_struct_t *frame_table_global;
@@ -28,6 +28,7 @@ extern bool is_idle;                                                  // if is_i
 extern queue_t* ready_queue;
 extern void *trap_handler[16];
 extern pte_t *region_0_page_table;
+extern pcb_t *delayed_processes;
 
 //=================== KERNEL FUNCTIONS =================//
 /*

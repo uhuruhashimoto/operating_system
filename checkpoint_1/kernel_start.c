@@ -55,6 +55,7 @@ bool is_idle = false;                                          // if is_idle, we
 queue_t* ready_queue;
 void *trap_handler[NUM_TRAP_FUNCTIONS];
 pte_t *region_0_page_table;
+pcb_t *delayed_processes = NULL;                               // a linked list of processes being delayed
 
 /*
 * We are given addresses in bytes corresponding to the following kernel address space:

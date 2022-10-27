@@ -10,4 +10,16 @@ Note: Makefile path to source is set to VBox and may need to be changed. If corr
 Usage: ./yalnix or ./yalnix -W
 
 ## Testing:
+
+### Simple alternation between Init and Idle
+```
 ./yalnix ./checkpoint_1/test_processes/iterator
+```
+
+The idle process will print "DoIdle", while the iterator will print an incrementing value. These two prints alternate.
+
+### Delay Test
+
+### Brk Test
+
+### GetPID Test

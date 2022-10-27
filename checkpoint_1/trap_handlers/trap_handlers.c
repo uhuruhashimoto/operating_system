@@ -110,11 +110,34 @@ void handle_trap_clock(UserContext* context) {
     return;
   }
 
-  // TODO
   // handle Delay:
-  //  go through all processes in the delay data structure
-  //  decrement their delays
-  //  if any process gets a delay of 0, put it back into the ready queue
+  if (delayed_processes != NULL) {
+    // go through all processes in the delay data structure
+    pcb_t* next_process = delayed_processes;
+    while (next_process != NULL) {
+      // decrement their delays
+      next_process->delayed_clock_cycles--;
+
+      // if any process gets a delay of 0 or less, put it back into the ready queue
+      if (next_process->delayed_clock_cycles <= 0) {
+        add_to_queue(ready_queue, next_process);
+
+        // remove it from the delay data structure
+        if (next_process->prev_pcb == NULL) {
+          // next_pcb may be NULL, this is OK
+          delayed_processes = next_process->next_pcb;
+        }
+        else {
+          // muck with pointers to remove our process from the queue
+          next_process->prev_pcb->next_pcb = next_process->next_pcb;
+          next_process->next_pcb->prev_pcb = next_process->prev_pcb;
+        }
+      }
+
+      next_process = next_process->next_pcb;
+    }
+  }
+
 
   pcb_t* next_process;
   // check if there is another process in the ready queue

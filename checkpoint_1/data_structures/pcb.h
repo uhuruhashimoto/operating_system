@@ -33,6 +33,7 @@ typedef struct pcb {
   struct pcb *children;                                     // null unless there are children
   int num_children;                                    // 0 unless there are children
   struct pcb *parent;                                       // the parent, if any
+  int delayed_clock_cycles;                            // 0 unless it is delayed
 } pcb_t;
 
 /*
