@@ -76,7 +76,7 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
     bufpage->prot = (PROT_READ | PROT_WRITE);
     bufpage->pfn = new_frame;
     //copy stack page into a new frame
-    memcpy(bufpage, &region_0_page_table[stack_page_ind], sizeof(pte_t));
+    memcpy(bufpage, (void *)(stack_page_ind << PAGESHIFT), sizeof(pte_t));
     //now copy that page (and associated frame) into the pcb
     init_pcb->kernel_stack[i] = *bufpage;
     // memcpy(bufpage, &(init_pcb->kernel_stack[i]), sizeof(pte_t));
