@@ -260,17 +260,18 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   int rc = clone_process(init_pcb);
   if (rc != 0) {
     TracePrintf(1, "Kernel boot code encountered an error and was unable to clone from idle into init_pcb.\n");
+    Halt();
   }
   TracePrintf(1, "Cloned into init_pcb\n");
 
-  // TODO -- load the init process into the forked pcb
+  // load the init process into the forked pcb
   TracePrintf(1, "Attempting to load program with name: %s\n", name);
   if (LoadProgram(name, cmd_args, init_pcb) != -1) {
     add_to_queue(ready_queue, init_pcb);
   }
   else {
     TracePrintf(1, "Loading the init process failed with exit code -1\n");
-    // TODO -- have the OS fail gracefully
+    Halt();
   }
 
   // when we return to userland, got to the idle process
