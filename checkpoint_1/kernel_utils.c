@@ -41,13 +41,13 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
   pcb_t *next_pcb = (pcb_t *)next_pcb_p;
   memcpy(kc_in, curr_pcb->kctxt, sizeof(KernelContext));
 
-  //store stack
+  //store the kernel stack in the current pcb
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
   for (int i=0; i<num_stack_pages; i++) {
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
     memcpy(&region_0_page_table[stack_page_ind], &(curr_pcb->kernel_stack[i]), sizeof(pte_t));
   } 
-  //change region 0 stack mappings to those in new pcb
+  // set the kernel stack in region 0 to the kernel stack in the new pcb
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);
   for (int i=0; i<num_stack_pages; i++) {
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
