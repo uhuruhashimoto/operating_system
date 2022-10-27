@@ -255,16 +255,16 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
     name = "init";
   }
 
-  //clone
+  //clone the current process into init_pcb
   int rc = clone_process(init_pcb);
   if (rc != 0) {
-    TracePrintf(1, "Kernel boot code encountered an error and was unable to clone from idle into the executable.\n");
+    TracePrintf(1, "Kernel boot code encountered an error and was unable to clone from idle into init_pcb.\n");
   }
 
 
   // TODO -- load the init process into the forked pcb
   TracePrintf(1, "Attempting to load program with name: %s\n", name);
-  if (LoadProgram(name, cmd_args, idle_pcb) != -1) {
+  if (LoadProgram(name, cmd_args, init_pcb) != -1) {
     // TODO -- put the forked pcb on the ready queue
   }
   else {
