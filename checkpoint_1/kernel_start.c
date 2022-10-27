@@ -163,7 +163,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   }
 
-  // update registers
+  // update registers with region 0 page table
   WriteRegister(REG_PTBR0, (int) region_0_page_table);
   WriteRegister(REG_PTLR0, region_0_page_table_size);
 

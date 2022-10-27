@@ -87,6 +87,13 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
     }
   }
 
+  TracePrintf(5, "=====Kernel Stack Contents After Switch=====\n");
+  char* pointer = (char*)(KERNEL_STACK_BASE);
+  for (int i = 0; i < 2*(1 << PAGESHIFT); i++) {
+    TracePrintf(5, "%d", pointer[i]);
+  }
+  TracePrintf(5, "=====END OF STACK CONTENTS=====\n");
+
   // set the kernel stack in region 0 to the kernel stack in the new pcb
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);
 
@@ -115,12 +122,12 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
     }
   }
 
-  // bufpage should be just below the stack
-  int bufpage_index = (KERNEL_STACK_BASE >> PAGESHIFT) - 1;
-  pte_t *bufpage = &region_0_page_table[bufpage_index];
   //copy current kernel stack into new kstack frames in initPCB
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
   for (int i=0; i<num_stack_pages; i++) {
+    // bufpage should be just below the stack (-1, then -2)
+    int bufpage_index = (KERNEL_STACK_BASE >> PAGESHIFT) - 1 - i;
+    pte_t *bufpage = &region_0_page_table[bufpage_index];
 
     // get the index of the stack page to copy
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
@@ -138,15 +145,24 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
                 bufpage_index << PAGESHIFT);
 
     memcpy((void *)(bufpage_index << PAGESHIFT), (void *)(stack_page_ind << PAGESHIFT), PAGESIZE);
+
+    TracePrintf(1, "=====Kernel Stack Contents After Copy=====\n");
+    char* pointer = (char*)(bufpage_index << PAGESHIFT);
+    for (int i = 0; i < (1 << PAGESHIFT); i++) {
+      TracePrintf(3, "%d", pointer[i]);
+    }
+    TracePrintf(1, "=====END OF STACK CONTENTS=====\n");
+
     //now copy that page (and associated frame) into the new pcb
     pte_t page;
     page.valid = 1;
     page.prot = bufpage->prot;
     page.pfn = bufpage->pfn;
     new_pcb->kernel_stack[i] = page;
+
+    // invalidate the bufpage, so it doesn't stick around on the stack
+    bufpage->valid = 0;
   }
-  // invalidate the bufpage, so it doesn't stick around on the stack
-  bufpage->valid = 0;
 
   TracePrintf(1, "=====Region 0 Page Table After Clone=====\n");
   for (int i = 0; i < page_table_reg_0_size; i++) {
@@ -174,7 +190,7 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   for (int i=0; i<num_stack_pages; i++) {
     TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
                 KERNEL_STACK_BASE + (i << PAGESHIFT),
-                KERNEL_STACK_BASE + ((i+1) << PAGESHIFT)-1,
+                KERNEL_STACK_BASE + ((i + 1) << PAGESHIFT) - 1,
                 new_pcb->kernel_stack[i].valid,
                 new_pcb->kernel_stack[i].pfn
     );
