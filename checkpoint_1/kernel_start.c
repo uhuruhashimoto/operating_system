@@ -236,7 +236,6 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   // get the name of the default process, or a default
   char* name = cmd_args[0];
-  // TODO -- is cmd_args[0] always NULL if there are no arguments?
   if (name == NULL) {
     TracePrintf(1, "No init program specified, running default program!\n");
     name = "init";

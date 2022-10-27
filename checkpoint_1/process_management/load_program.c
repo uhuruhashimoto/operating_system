@@ -129,10 +129,10 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
 
 
 //  /* leave at least one page between heap and stack */
-//  if (stack_npg + data_pg1 + data_npg >= MAX_PT_LEN) {
-//    close(fd);
-//    return ERROR;
-//  }
+  if (stack_npg + data_pg1 + data_npg >= MAX_PT_LEN) {
+    close(fd);
+    return ERROR;
+  }
 
   /*
  * This completes all the checks before we proceed to actually load
@@ -188,8 +188,6 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   }
 
   for (int ind=0; ind<page_table_reg_1_size; ind++) {
-    // set everything under the stack as non-valid (since the text is in the kernel and
-    // our loop shouldn't use any memory)
     page.valid = 0;
     page.prot = (PROT_WRITE);
     region_1_page_table[ind] = page;
@@ -280,10 +278,6 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
     nextIndex = pfn;
   }
 
-//  for (int i = 0; i < page_table_reg_1_size; i++) {
-//    TracePrintf(1, "Valid: %d, Pfn: %d\n", region_1_page_table[i].valid, region_1_page_table[i].pfn);
-//  }
-
   /*
    * ==>> (Finally, make sure that there are no stale region1 mappings left in >
    */
@@ -339,17 +333,28 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    * ==>> you will need to flush the old mapping.
    */
   TracePrintf(1, "Finalizing page table protections...\n");
-  for (int ind=0; ind < page_table_reg_1_size; ind++) {
-    region_1_page_table[ind].prot = (PROT_READ | PROT_EXEC);
+  for (int ind=0; ind < li.t_npg; ind++) {
+    region_1_page_table[ind+text_pg1].prot = (PROT_READ | PROT_EXEC);
   }
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
+
+  for (int i = 0; i < page_table_reg_1_size; i++) {
+    if (region_1_page_table[i].valid) {
+      TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+                  VMEM_1_BASE + (i << PAGESHIFT),
+                  VMEM_1_BASE + ((i+1) << PAGESHIFT)-1,
+                  region_1_page_table[i].valid,
+                  region_1_page_table[i].pfn
+      );
+    }
+  }
 
   /*
    * Zero out the uninitialized data area
    */
   TracePrintf(1, "Zeroing uninitialized data\n");
+  TracePrintf(1, "Zeroing from %x to %x;\n", li.id_end, li.ud_end);
   bzero((void*)li.id_end, li.ud_end - li.id_end);
-// TODO
 
   /*
    * Set the entry point in the process's UserContext
