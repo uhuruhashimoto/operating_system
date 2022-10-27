@@ -21,6 +21,7 @@ of the next free frame. This assumes that the kernel is uninterruptable
 and needs no synchronization (mutexes, etc.)
 */
 int get_free_frame(char *frame_table, int frame_table_size, int iterator_start) {
+  TracePrintf(5, "Looking for more free frames\n");
   int i;
   for (i = iterator_start; i < frame_table_size; i++) {
     if (frame_table[i] == 0) {
