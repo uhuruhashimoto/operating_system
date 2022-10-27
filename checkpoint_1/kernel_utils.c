@@ -59,7 +59,7 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
 * into space already allocated by caller.
 */
 KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
-  pte_t *bufpage = (pte_t *) KERNEL_STACK_BASE;
+  pte_t *bufpage = &region_0_page_table[KERNEL_STACK_BASE >> PAGESHIFT];
   //copy current KernelContext into initPCB
   pcb_t *init_pcb = (pcb_t  *)new_pcb_p;
   memcpy(init_pcb->kctxt, kc_in, sizeof(KernelContext));
@@ -74,7 +74,7 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
     bufpage->pfn = new_frame;
     //copy stack page into a new frame
     TracePrintf(1, "copying %d bytes from [%p, %p] to %p\n", PAGESIZE, stack_page_ind<<PAGESHIFT, (stack_page_ind<<PAGESHIFT) + PAGESIZE, bufpage);
-    memcpy(bufpage, (void *)(stack_page_ind << PAGESHIFT), PAGESIZE);
+    memcpy((void *)KERNEL_STACK_BASE, (void *)(stack_page_ind << PAGESHIFT), PAGESIZE);
     //now copy that page (and associated frame) into the pcb
     init_pcb->kernel_stack[i] = *bufpage;
   }
