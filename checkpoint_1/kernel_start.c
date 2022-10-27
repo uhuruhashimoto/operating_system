@@ -94,6 +94,11 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   frame_table_global->frame_table = frame_table;
   frame_table_global->frame_table_size = pmem_size;
 
+  // Allocate global data structures
+  ready_queue = create_queue(); 
+  running_process = malloc(sizeof(pte_t *));
+  idle_process = malloc(sizeof(pte_t *));
+
   // helpers to walk through page table
   pte_t kernel_page;
   int *addr;
@@ -181,15 +186,6 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   // write base pointer of trap handlers to REG_VECTOR_BASE
   WriteRegister(REG_VECTOR_BASE, (int) trap_handler);
 
-
-  // Create an idle pcb, with PC pointing to the kernel idle function
-  // copy over kernel stack so we can take it with us
-  int num_kernel_stack_pages = stack_end_page - stack_start_page;
-  pte_t *kernel_stack = malloc(sizeof(pte_t) *num_kernel_stack_pages);
-  for (int i=0; i<num_kernel_stack_pages; i++) {
-    kernel_stack[i] = region_0_page_table[i];
-  }
-
   // set up region 1 page table
   int idle_stack_size = 2;
   pte_t idle_page;
@@ -223,12 +219,29 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
     }
   }
 
-  KernelContext kctxt;
+  // modify the user context to act as text
   uctxt -> pc = &DoIdle;
   uctxt -> sp = (void *) VMEM_1_LIMIT - 8; // 8...it's a magic number 
+
+  //Create an idle pcb for this process
+  int num_kernel_stack_pages = stack_end_page - stack_start_page;
   int pid = helper_new_pid(region_1_page_table);
-  pcb_t *idle_pcb = create_pcb(pid, kernel_stack, region_1_page_table, uctxt, &kctxt);
+  pcb_t *idle_pcb = allocate_pcb();
+  idle_pcb = set_pcb_values(idle_pcb, pid, region_1_page_table, uctxt);
+  for (int i=0; i<num_kernel_stack_pages; i++) {
+    int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
+    idle_pcb->kernel_stack[i] = region_0_page_table[stack_page_ind];
+    // memcpy(&region_0_page_table[stack_page_ind], &(idle_pcb->kernel_stack[i]), sizeof(pte_t));
+  }
+
+  //set it as the running process
   running_process = idle_pcb;
+
+  // Create a pcb for init
+  int init_pid = helper_new_pid(region_1_page_table);
+  pcb_t *init_pcb = allocate_pcb();
+  init_pcb->pid = init_pid;
+  add_to_queue(ready_queue, init_pcb);
 
   // update registers with the idle process's R1 page table
   WriteRegister(REG_PTBR1, (int) region_1_page_table);

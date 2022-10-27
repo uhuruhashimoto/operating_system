@@ -9,6 +9,8 @@
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 #include "data_structures/frame_table.h"
+#include "trap_handlers/trap_handlers.h"
+#include "process_management/load_program.h"
 
 //=================== KERNEL GLOBALS ===================//
 /*
