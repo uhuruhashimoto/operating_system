@@ -21,20 +21,13 @@ int clone_process(pcb_t *init_pcb) {
 
 /*
 * This is the highest level function for switching between different processes.
-* Using round robin scheduling, it grabs a ready process and swaps them out.
 */
-int switch_between_processes() {
-  pcb_t *current_process = running_process;
-  pcb_t *next_process = remove_from_queue(ready_queue);
+int switch_between_processes(pcb_t *current_process, pcb_t *next_process) {
   int rc = KernelContextSwitch(&KCSwitch, (void *)current_process, (void *)next_process);
   if (rc != 0) {
     TracePrintf(1, "Failed to switch kernel contexts; exiting...\n");
     return ERROR;
   }
-  //handle bookkeeping with the running and ready processes
-  pcb_t *temp_pcb = running_process;
-  running_process = next_process;
-  add_to_queue(ready_queue, temp_pcb);
   return 0;
 }
 
@@ -48,13 +41,13 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
   pcb_t *next_pcb = (pcb_t *)next_pcb_p;
   memcpy(curr_pcb->kctxt, kc_in, sizeof(KernelContext));
 
-  //store stack
+  //store the kernel stack in the current pcb
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
   for (int i=0; i<num_stack_pages; i++) {
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
     memcpy(&(curr_pcb->kernel_stack[i]), &region_0_page_table[stack_page_ind], sizeof(pte_t));
   } 
-  //change region 0 stack mappings to those in new pcb
+  // set the kernel stack in region 0 to the kernel stack in the new pcb
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);
   for (int i=0; i<num_stack_pages; i++) {
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
