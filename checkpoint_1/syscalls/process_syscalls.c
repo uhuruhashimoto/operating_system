@@ -98,16 +98,16 @@ int handle_Brk(void *addr)
   int region_1_page_table_size = VMEM_1_SIZE >> PAGESHIFT;
   bool brkfound = false;
 
-  TracePrintf(1, "Addr page is %d\n", addr_page);
+  TracePrintf(3, "Addr page is %d\n", addr_page);
   if (addr_page >= region_1_page_table_size) {
     TracePrintf(1, "Error: heap overflow. Unable to allocate memory past heap boundary\n");
     return ERROR;
   }
 
-  TracePrintf(1, "=====Region 1 Page Table Before SetBrk (%d pages)=====\n", region_1_page_table_size);
+  TracePrintf(5, "=====Region 1 Page Table Before SetBrk (%d pages)=====\n", region_1_page_table_size);
   for (int i = 0; i < region_1_page_table_size; i++) {
     if (region_1_page_table[i].valid) {
-      TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+      TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
                   VMEM_1_BASE + (i << PAGESHIFT),
                   VMEM_1_BASE + ((i+1) << PAGESHIFT)-1,
                   region_1_page_table[i].valid,
@@ -127,7 +127,7 @@ int handle_Brk(void *addr)
 
   int first_possible_free_frame = 0;
   if (addr_page > current_brk_page) {
-    TracePrintf(1, "SETBRK: Will try to find memory to allocate more frames\n");
+    TracePrintf(3, "SETBRK: Will try to find memory to allocate more frames\n");
     // error out if we don't have enough memory
     if (addr_page-current_brk_page > get_num_free_frames(frame_table_global->frame_table,
                                                                   frame_table_global->frame_table_size)
@@ -136,7 +136,7 @@ int handle_Brk(void *addr)
       return ERROR;
     }
 
-    TracePrintf(1, "SETBRK: SetBrk found enough memory for malloc to succeed\n");
+    TracePrintf(3, "SETBRK: SetBrk found enough memory for malloc to succeed\n");
     while (addr_page > current_brk_page) {
       int new_frame_num = get_free_frame(frame_table_global->frame_table,
                                           frame_table_global->frame_table_size,
@@ -151,10 +151,10 @@ int handle_Brk(void *addr)
       current_brk_page++;
     }
 
-    TracePrintf(1, "=====Region 1 Page Table After SetBrk=====\n");
+    TracePrintf(5, "=====Region 1 Page Table After SetBrk=====\n");
     for (int i = 0; i < region_1_page_table_size; i++) {
       if (region_1_page_table[i].valid) {
-        TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+        TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
                     VMEM_1_BASE + (i << PAGESHIFT),
                     VMEM_1_BASE + ((i+1) << PAGESHIFT)-1,
                     region_1_page_table[i].valid,
@@ -162,6 +162,9 @@ int handle_Brk(void *addr)
         );
       }
     }
+
+    TracePrintf(1, "SETBRK: Brk set to %d pages\n", current_brk_page);
+
     return SUCCESS;
   }
   else {
@@ -174,6 +177,9 @@ int handle_Brk(void *addr)
       region_1_page_table[current_brk_page].valid = 0;
       current_brk_page--;
     }
+
+    TracePrintf(1, "SETBRK: Brk set to %d pages\n", current_brk_page);
+
     return SUCCESS;
   }
 }
