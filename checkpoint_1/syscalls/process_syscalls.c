@@ -93,10 +93,28 @@ int handle_Brk(void *addr)
   } 
   
   pte_t *region_1_page_table = running_process->region_1_page_table;
-  int addr_page = UP_TO_PAGE(addr - PMEM_BASE) >> PAGESHIFT;
+  int addr_page = UP_TO_PAGE(addr - VMEM_0_LIMIT) >> PAGESHIFT;
   int current_brk_page = 0;
   int region_1_page_table_size = VMEM_1_SIZE >> PAGESHIFT;
   bool brkfound = false;
+
+  TracePrintf(1, "Addr page is %d\n", addr_page);
+  if (addr_page >= region_1_page_table_size) {
+    TracePrintf(1, "Error: heap overflow. Unable to allocate memory past heap boundary\n");
+    return ERROR;
+  }
+
+  TracePrintf(1, "=====Region 1 Page Table Before SetBrk (%d pages)=====\n", region_1_page_table_size);
+  for (int i = 0; i < region_1_page_table_size; i++) {
+    if (region_1_page_table[i].valid) {
+      TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+                  VMEM_1_BASE + (i << PAGESHIFT),
+                  VMEM_1_BASE + ((i+1) << PAGESHIFT)-1,
+                  region_1_page_table[i].valid,
+                  region_1_page_table[i].pfn
+      );
+    }
+  }
 
   //find the brk
   while (!brkfound && current_brk_page < region_1_page_table_size){
@@ -105,26 +123,26 @@ int handle_Brk(void *addr)
     }
     current_brk_page++;
   }
-  TracePrintf(2, "SETBRK: Current brk found at %d pages\n", current_brk_page);
+  TracePrintf(1, "SETBRK: Current brk found at %d pages\n", current_brk_page);
 
   int first_possible_free_frame = 0;
   if (addr_page > current_brk_page) {
-    TracePrintf(3, "SETBRK: Will try to find memory to allocate more frames\n");
+    TracePrintf(1, "SETBRK: Will try to find memory to allocate more frames\n");
     // error out if we don't have enough memory
     if (addr_page-current_brk_page > get_num_free_frames(frame_table_global->frame_table,
                                                                   frame_table_global->frame_table_size)
         ) {
-      TracePrintf(1, "SETBRK: SetKernelBrk did not find enough memory for the whole malloc to succeed\n");
+      TracePrintf(1, "SETBRK: SetBrk did not find enough memory for the whole malloc to succeed\n");
       return ERROR;
     }
 
-    TracePrintf(3, "SETBRK: SetKernelBrk found enough memory for malloc to succeed\n");
+    TracePrintf(1, "SETBRK: SetBrk found enough memory for malloc to succeed\n");
     while (addr_page > current_brk_page) {
       int new_frame_num = get_free_frame(frame_table_global->frame_table,
                                           frame_table_global->frame_table_size,
                                           first_possible_free_frame);
       if (new_frame_num == -1) {
-        TracePrintf(1, "SETBRK: SetKernelBrk was unable to allocate a new frame...\n");
+        TracePrintf(1, "SETBRK: SetBrk was unable to allocate a new frame...\n");
         return ERROR;
       }
       region_1_page_table[current_brk_page].valid = 1;
@@ -132,13 +150,25 @@ int handle_Brk(void *addr)
       region_1_page_table[current_brk_page].pfn = new_frame_num;
       current_brk_page++;
     }
+
+    TracePrintf(1, "=====Region 1 Page Table After SetBrk=====\n");
+    for (int i = 0; i < region_1_page_table_size; i++) {
+      if (region_1_page_table[i].valid) {
+        TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+                    VMEM_1_BASE + (i << PAGESHIFT),
+                    VMEM_1_BASE + ((i+1) << PAGESHIFT)-1,
+                    region_1_page_table[i].valid,
+                    region_1_page_table[i].pfn
+        );
+      }
+    }
     return SUCCESS;
   }
   else {
     // TODO -- does this code path ever execute?
-    TracePrintf(3, "SETBRK: SetKernelBrk found that we don't need to allocate more frames\n");
+    TracePrintf(1, "SETBRK: SetKernelBrk found that we don't need to allocate more frames\n");
     while (addr_page < current_brk_page) {
-      TracePrintf(3, "SETBRK: Deleting a page from the page table...\n");
+      TracePrintf(1, "SETBRK: Deleting a page from the page table...\n");
       int discard_frame_number = region_1_page_table[current_brk_page].pfn;
       frame_table_global->frame_table[discard_frame_number] = 0;
       region_1_page_table[current_brk_page].valid = 0;
