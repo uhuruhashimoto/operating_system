@@ -1,5 +1,6 @@
 #include <ykernel.h>
 #include "../kernel_start.h"
+#include "../kernel_utils.h"
 #include "trap_handlers.h"
 #include "../syscalls/io_syscalls.h"
 #include "../syscalls/ipc_syscalls.h"
@@ -109,23 +110,36 @@ void handle_trap_clock(UserContext* context) {
     return;
   }
 
-  // check if there is another process in the ready queue
-  if (is_empty(ready_queue)) {
-    // if not, swap in the idle pcb and put the old pcb in the ready queue
-
-  }
-  else {
-    // if so, swap in the next process in the ready queue
-
-  }
-  // saves the current user context in the old pcb
-  // clears the TLB
-  // calls load_next_user_process
-
+  // TODO
   // handle Delay:
   //  go through all processes in the delay data structure
   //  decrement their delays
   //  if any process gets a delay of 0, put it back into the ready queue
+
+  pcb_t* next_process;
+  // check if there is another process in the ready queue
+  if (is_empty(ready_queue)) {
+    // if not, swap in the idle pcb and put the old pcb in the ready queue
+    next_process = idle_process;
+    is_idle = true;
+    add_to_queue(ready_queue, running_process);
+  }
+  else {
+    // if so, swap in the next process in the ready queue
+    next_process = remove_from_queue(ready_queue);
+    if (is_idle) {
+      is_idle = false;
+    }
+    // we add the valid process back into the ready queue
+    else {
+      add_to_queue(ready_queue, running_process);
+    }
+  }
+
+  // saves the current user context in the old pcb
+  // clears the TLB
+  switch_between_processes(running_process, next_process);
+  // calls load_next_user_process
 }
 
 /*

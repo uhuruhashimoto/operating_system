@@ -18,20 +18,13 @@ int clone_process(pcb_t *init_pcb) {
 
 /*
 * This is the highest level function for switching between different processes.
-* Using round robin scheduling, it grabs a ready process and swaps them out.
 */
-int switch_between_processes() {
-  pcb_t *current_process = running_process;
-  pcb_t *next_process = remove_from_queue(ready_queue);
+int switch_between_processes(pcb_t *current_process, pcb_t *next_process) {
   int rc = KernelContextSwitch(&KCSwitch, (void *)current_process, (void *)next_process);
   if (rc != 0) {
     TracePrintf(1, "Failed to switch kernel contexts; exiting...\n");
     exit(rc);
   }
-  //handle bookkeeping with the running and ready processes
-  pcb_t *temp_pcb = running_process;
-  running_process = next_process;
-  add_to_queue(ready_queue, temp_pcb);
   return 0;
 }
 
