@@ -17,8 +17,8 @@ K_INCS = $(K_SRCS:%.c=%.o)
 U_SRC_DIR = $(K_SRC_DIR)/test_processes
 
 # What are the user c and include files?
-U_SRCS = iterator.c
-U_INCS = 
+U_SRCS = iterator.c # queue_test.c
+U_INCS =
 
 
 #==========================================================
