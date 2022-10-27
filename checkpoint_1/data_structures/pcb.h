@@ -3,7 +3,6 @@
 
 #include <ykernel.h>
 #include "stdbool.h"
-#include "queue.h"
 
 /*
 * Our pcb stores the following types of info:
