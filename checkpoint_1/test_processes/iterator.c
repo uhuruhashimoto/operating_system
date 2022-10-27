@@ -6,7 +6,9 @@
 int main(int argc, char* argv[]) {
   int it = 0;
   while(1) {
-    TracePrintf(0, "Iterator Process: %d\n", it++);
+    int pid = GetPid();
+    TracePrintf(0, "Pid: %d\n", pid);
+    TracePrintf(0, "Iterator Process iteration: %d\n", it++);
     Pause();
   }
 }

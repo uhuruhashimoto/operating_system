@@ -74,6 +74,7 @@ int handle_Wait(int *status_ptr)
 int handle_GetPid(void)
 {
   // get the PID off the PCB
+  return running_process->pid;
 }
 
 /*

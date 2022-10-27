@@ -11,7 +11,7 @@ Usage: ./yalnix or ./yalnix -W
 
 ## Testing:
 
-### Simple alternation between Init and Idle
+### Simple alternation between Init and Idle; also prints the PID
 ```
 ./yalnix ./checkpoint_1/test_processes/iterator
 ```
