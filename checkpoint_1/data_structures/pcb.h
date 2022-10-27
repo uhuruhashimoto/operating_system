@@ -3,6 +3,7 @@
 
 #include <ykernel.h>
 #include "stdbool.h"
+#include "queue.h"
 
 /*
 * Our pcb stores the following types of info:
@@ -36,25 +37,14 @@ typedef struct pcb {
 } pcb_t;
 
 /*
-* basic setter: create pcb with context/page table info, initializing exit and queue info to 
-* reasonable defaults. 
+* Allocate pcb data structures; e.g. kernel context and stack
 */
-pcb_t *create_pcb(
-  int pid,
-  pte_t *kernel_stack, 
-  pte_t *region_1_page_table, 
-  UserContext *uctxt, 
-  KernelContext *kctxt
-);
+pcb_t *allocate_pcb();
 
 /*
- * Adds the PCB to the back of the ready queue
- */
-int add_to_ready_queue(pcb_t* pcb);
+* Set pcb values
+*/
+pcb_t *set_pcb_values(pcb_t *pcb, int pid, pte_t *region_1_page_table, UserContext *uctxt);
 
-/*
- * Removes a PCB from the front of the ready queue
- */
-int remove_from_ready_queue(pcb_t* pcb);
 
 #endif //CURRENT_CHUNGUS_PCB
