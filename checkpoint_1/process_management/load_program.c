@@ -202,10 +202,12 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    */
   TracePrintf(1, "Throwing away old address space\n");
   for (int ind=0; ind < page_table_reg_1_size; ind++) {
-    // mark invalid
-    proc->region_1_page_table[ind].valid = 0;
-    // clear the frame
-    frame_table_global->frame_table[proc->region_1_page_table[ind].pfn] = 0;
+    if (proc->region_1_page_table[ind].valid) {
+      // mark invalid
+      proc->region_1_page_table[ind].valid = 0;
+      // clear the frame
+      frame_table_global->frame_table[proc->region_1_page_table[ind].pfn] = 0;
+    }
   }
   free(proc->region_1_page_table);
   proc->region_1_page_table = NULL;
@@ -278,7 +280,9 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
     nextIndex = pfn;
   }
 
-  
+  for (int i = 0; i < page_table_reg_1_size; i++) {
+    TracePrintf(1, "Valid: %d, Pfn: %d\n", region_1_page_table[i].valid, region_1_page_table[i].pfn);
+  }
 
   /*
    * ==>> (Finally, make sure that there are no stale region1 mappings left in >
