@@ -21,15 +21,12 @@ of the next free frame. This assumes that the kernel is uninterruptable
 and needs no synchronization (mutexes, etc.)
 */
 int get_free_frame(char *frame_table, int frame_table_size, int iterator_start) {
-  int i = iterator_start;
-  while (frame_table[i]) {
-    if (i < frame_table_size-1) {
-      i++;
-    } 
-    else {
-      return MEMFULL;
+  int i;
+  for (i = iterator_start; i < frame_table_size; i++) {
+    if (frame_table[i] == 0) {
+      frame_table[i] = 1;
+      return i;
     }
   }
-  frame_table[i] = 1;
-  return i;
+  return MEMFULL;
 }

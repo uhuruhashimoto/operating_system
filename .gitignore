@@ -3,3 +3,4 @@ TRACE
 TTYLOG*
 yalnix
 *.o
+checkpoint_1/test_processes/iterator

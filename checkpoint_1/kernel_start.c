@@ -230,7 +230,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   pcb_t *idle_pcb = create_pcb(pid, kernel_stack, region_1_page_table, uctxt, &kctxt);
   running_process = idle_pcb;
 
-  // update registers
+  // update registers with the idle process's R1 page table
   WriteRegister(REG_PTBR1, (int) region_1_page_table);
   WriteRegister(REG_PTLR1, page_table_reg_1_size);
 
