@@ -62,12 +62,14 @@ pcb_t* remove_from_queue(queue_t* queue)
   pcb_t* pcb = queue->head;
   // move the head of the ready queue
   queue->head = pcb->next_pcb;
-  // if we have removed the last element from the head, set tail to NULL
-  if (queue->head == NULL) {
-    queue->tail = NULL;
-  }
 
   queue->size--;
+
+  // if we have removed the last element from the head, set tail to NULL
+  if (queue->head == NULL || queue->size <= 0) {
+    queue->tail = NULL;
+    queue->head = NULL;
+  }
 
   // return the PCB
   return pcb;

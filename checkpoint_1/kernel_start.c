@@ -101,7 +101,6 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   // Allocate global data structures
   ready_queue = create_queue(); 
   running_process = malloc(sizeof(pte_t *));
-  idle_process = malloc(sizeof(pte_t *));
 
   // helpers to walk through page table
   pte_t kernel_page;
@@ -241,15 +240,15 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   //Create an idle pcb for this process
   int num_kernel_stack_pages = stack_end_page - stack_start_page;
   int pid = helper_new_pid(region_1_page_table);
-  pcb_t *idle_pcb = allocate_pcb();
-  idle_pcb = set_pcb_values(idle_pcb, pid, region_1_page_table, uctxt);
+  idle_process = allocate_pcb();
+  idle_process = set_pcb_values(idle_process, pid, region_1_page_table, uctxt);
   for (int i=0; i<num_kernel_stack_pages; i++) {
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
-    idle_pcb->kernel_stack[i] = region_0_page_table[stack_page_ind];
+    idle_process->kernel_stack[i] = region_0_page_table[stack_page_ind];
   }
 
   //set it as the running process
-  running_process = idle_pcb;
+  running_process = idle_process;
 
   // Create a pcb for init
   int init_pid = helper_new_pid(region_1_page_table);
@@ -276,8 +275,8 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
     Halt();
   }
   TracePrintf(1, "Cloned into init_pcb:\n");
-  TracePrintf(1, "Process id is %d, idle is %d, init is %d\n", running_process->pid, idle_pcb->pid, init_pcb->pid);
-  TracePrintf(1, "Process pc is %x, idle is %x, init is %x\n", running_process->uctxt->pc, idle_pcb->uctxt->pc, init_pcb->uctxt->pc);
+  TracePrintf(1, "Process id is %d, idle is %d, init is %d\n", running_process->pid, idle_process->pid, init_pcb->pid);
+  TracePrintf(1, "Process pc is %x, idle is %x, init is %x\n", running_process->uctxt->pc, idle_process->uctxt->pc, init_pcb->uctxt->pc);
 
   // make sure we only load the init process as init
   if (running_process->pid == init_pcb->pid) {
@@ -287,11 +286,15 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
       TracePrintf(1, "Loading the init process failed with exit code -1\n");
       Halt();
     }
+  } else {
+    // make sure idle never gets in the queue
+    is_idle = true;
   }
+
   // Set the uctxt to the desired place
   uctxt->pc = running_process->uctxt->pc;
   uctxt->sp = running_process->uctxt->sp;
-  TracePrintf(1, "Process pc is %x, idle is %x, init is %x\n", running_process->uctxt->pc, idle_pcb->uctxt->pc, init_pcb->uctxt->pc);
+  TracePrintf(1, "Process pc is %x, idle is %x, init is %x\n", running_process->uctxt->pc, idle_process->uctxt->pc, init_pcb->uctxt->pc);
 
   // return to userland
   TracePrintf(1, "Leaving KernelStart...\n");

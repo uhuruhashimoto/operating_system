@@ -13,8 +13,12 @@ int clone_process();
 
 /*
  * Runs the next process from the queue
+ *  If code==0
+ *    adds old process back into ready queue
+ *  Otherwise
+ *    the old process is blocked for some reason
  */
-int install_next_from_queue(pcb_t* current_process);
+int install_next_from_queue(pcb_t* current_process, int code);
 
 /*
 * Top level helper to switch processes. Handles KernelContextSwitch call.

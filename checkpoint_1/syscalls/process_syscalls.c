@@ -203,25 +203,26 @@ int handle_Delay(int clock_ticks)
     return SUCCESS;
   }
 
+  // make sure that we don't bring straggling processes along
+  running_process->next_pcb = NULL;
+  running_process->prev_pcb = NULL;
+
   // otherwise, block the process for clock_ticks (put in delay queue)
   running_process->delayed_clock_cycles = clock_ticks;
-  if (delayed_processes == NULL) {
-    delayed_processes = running_process;
-  }
-  else {
-    pcb_t* next_proc = delayed_processes;
-    while (next_proc->next_pcb != NULL) {
-      // do nothing
-    }
-    // point them at one another, sticking this process in the queue
-    next_proc->next_pcb = running_process;
-    running_process->prev_pcb = next_proc;
+
+  // stick in at the head of the linked list
+  running_process->next_pcb = delayed_processes;
+  delayed_processes = running_process;
+
+  if (delayed_processes->next_pcb != NULL) {
+    // set the backpointer of the previous head
+    delayed_processes->next_pcb->prev_pcb = delayed_processes;
   }
 
   pcb_t* old_process = running_process;
 
   // get the next process from the queue
-  install_next_from_queue(old_process);
+  install_next_from_queue(old_process, 1);
 
   return SUCCESS;
 }

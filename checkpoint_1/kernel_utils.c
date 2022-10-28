@@ -20,16 +20,23 @@ int clone_process(pcb_t *new_pcb) {
 
 /*
  * Runs the next process from the queue
+ *  If code==0
+ *    adds old process back into ready queue
+ *  Otherwise
+ *    the old process is blocked for some reason
  */
-int install_next_from_queue(pcb_t* current_process) {
+int install_next_from_queue(pcb_t* current_process, int code) {
   pcb_t* next_process;
   // check if there is another process in the ready queue
   if (is_empty(ready_queue)) {
     TracePrintf(3, "INSTALL_NEXT: Queue is empty, the next process is idle\n");
     // if not, swap in the idle pcb and put the old pcb in the ready queue
     next_process = idle_process;
+    // we add the valid process back into the ready queue
+    if (code == 0 && !is_idle) {
+      add_to_queue(ready_queue, running_process);
+    }
     is_idle = true;
-    add_to_queue(ready_queue, running_process);
   }
   else {
     TracePrintf(3, "INSTALL_NEXT: Getting next item from the queue\n");
@@ -38,16 +45,15 @@ int install_next_from_queue(pcb_t* current_process) {
     if (is_idle) {
       is_idle = false;
     }
-      // we add the valid process back into the ready queue
-    else {
+    // we add the valid process back into the ready queue
+    else if (code == 0) {
       add_to_queue(ready_queue, running_process);
     }
   }
 
-  TracePrintf(1, "TRAP_CLOCK: ABOUT TO SWAP PROCESSES\n");
-  TracePrintf(3, "PID of next process: %d\n", next_process->pid);
+  TracePrintf(3, "INSTALL_NEXT: ABOUT TO SWAP PROCESSES\n");
+  TracePrintf(3, "INSTALL_NEXT: PID of next process: %d\n", next_process->pid);
   running_process = next_process;
-  TracePrintf(3, "PID of new process: %d\n", running_process->pid);
 
   // saves the current user context in the old pcb
   // clears the TLB

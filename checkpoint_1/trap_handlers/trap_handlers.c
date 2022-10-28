@@ -106,42 +106,68 @@ void handle_trap_clock(UserContext* context) {
   TracePrintf(1, "TRAP_CLOCK: Our kernel hit the clock trap\n");
 
   if (ready_queue == NULL) {
-    TracePrintf(1, "NULL READY QUEUE\n");
+    TracePrintf(1, "TRAP_CLOCK/DELAY: NULL READY QUEUE\n");
     return;
   }
 
   // handle Delay:
   if (delayed_processes != NULL) {
+    if (delayed_processes->prev_pcb == NULL) {
+      TracePrintf(3, "TRAP_CLOCK/DELAY: NULL prev_pcb\n");
+    }
+
+    if (delayed_processes->next_pcb == NULL) {
+      TracePrintf(3, "TRAP_CLOCK/DELAY: NULL next_pcb\n");
+    } else {
+      TracePrintf(3, "TRAP_CLOCK/DELAY: Going from %d to %d\n", delayed_processes, delayed_processes->next_pcb);
+    }
+
     // go through all processes in the delay data structure
     pcb_t* next_process = delayed_processes;
+    TracePrintf(1, "TRAP_CLOCK/DELAY: Remaining Ticks: %d\n\n", next_process->delayed_clock_cycles);
     while (next_process != NULL) {
       // decrement their delays
       next_process->delayed_clock_cycles--;
+      TracePrintf(3, "Delayed process with id %d now has %d clock cycles remaining\n",
+                  next_process->pid, next_process->delayed_clock_cycles);
 
       // if any process gets a delay of 0 or less, put it back into the ready queue
       if (next_process->delayed_clock_cycles <= 0) {
+        TracePrintf(3, "Delayed process with id %d will be put in the ready queue\n", next_process->pid);
         add_to_queue(ready_queue, next_process);
 
         // remove it from the delay data structure
         if (next_process->prev_pcb == NULL) {
+//          TracePrintf(1, "PrevPCB is NULL\n");
           // next_pcb may be NULL, this is OK
-          delayed_processes = next_process->next_pcb;
+          if (next_process->next_pcb != NULL) {
+            delayed_processes = next_process->next_pcb;
+          }
+          else {
+            delayed_processes = NULL;
+            break;
+          }
         }
         else {
+//          TracePrintf(1, "PrevPCB is NOT NULL\n");
           // muck with pointers to remove our process from the queue
           next_process->prev_pcb->next_pcb = next_process->next_pcb;
-          next_process->next_pcb->prev_pcb = next_process->prev_pcb;
+          if (next_process->next_pcb != NULL) {
+            next_process->next_pcb->prev_pcb = next_process->prev_pcb;
+          }
         }
       }
 
+//      TracePrintf(1, "Going from %d to %d\n", next_process, next_process->next_pcb);
       next_process = next_process->next_pcb;
     }
   }
 
+  TracePrintf(3, "TRAP_CLOCK/DELAY: LEFT THE WHILE LOOP, %d\n", delayed_processes);
   pcb_t* old_process = running_process;
 
   // get the next process from the queue
-  install_next_from_queue(old_process);
+  install_next_from_queue(old_process, 0);
 }
 
 /*
