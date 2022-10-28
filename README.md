@@ -21,7 +21,7 @@ Note: Makefile paths are set to VBox defaults and may need to be changed. If cor
 ```
 Will halt after attempting to load program "init", unless this is in the top-level directory of the project.
 We currently have an "init" executable, but it is located in the /checkpoint_1/test_processes directory.
-Options: `-W` to dump core, `[level]` to TracePrint at a level below 1 (for more information).
+Options: `-W` to dump core, `-lk [level]` to TracePrint at a level below 1 (for more information).
 
 ## Init 
 ```
