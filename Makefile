@@ -7,17 +7,17 @@
 
 
 # Where's your kernel source?
-#K_SRC_DIR = /home/cs58/vbs/yalnix_test/current_chungus/checkpoint_1
-K_SRC_DIR = /media/sf_cs58/current_chungus/checkpoint_1
+K_SRC_DIR = /home/cs58/vbs/yalnix_test/current_chungus/checkpoint_1
+# K_SRC_DIR = /media/sf_cs58/current_chungus/checkpoint_1
 # What are the kernel c and include files?
 K_SRCS = kernel_start.c kernel_utils.c data_structures/pcb.c data_structures/queue.c data_structures/frame_table.c trap_handlers/trap_handlers.c syscalls/process_syscalls.c process_management/load_program.c
-K_INCS = $(K_SRCS:%.c=%.o) 
+K_INCS = $(K_SRCS:%.c=%.h) 
 
 # Where's your user source?
 U_SRC_DIR = $(K_SRC_DIR)/test_processes
 
 # What are the user c and include files?
-U_SRCS = iterator.c brk_test.c delay_test.c
+U_SRCS = iterator.c brk_test.c delay_test.c pid_test.c init.c
 U_INCS =
 
 
