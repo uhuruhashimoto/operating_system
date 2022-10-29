@@ -3,6 +3,7 @@
 #include "../data_structures/pcb.h"
 #include "../data_structures/queue.h"
 #include "../data_structures/frame_table.h"
+#include "../debug_utils/debug.h"
 
 extern frame_table_struct_t *frame_table_global;
 extern pcb_t* running_process;
@@ -16,12 +17,17 @@ extern pte_t *region_0_page_table;
  */
 int handle_Fork(void)
 {
-  // creates a new PID for the new process, coping over execution location
-  // create new P1 page table
-  // copy used pages of old process to the new process
-  // finagle the return codes
-  // sticks the new process in the ready queue
-  // return
+  print_reg_0_page_table(1);  
+
+  // set up a child pcb
+  pcb_t *child_pcb = allocate_pcb();
+  int rc = clone_process(child_pcb);
+  child_pcb->parent = running_process;
+  add_to_queue(ready_queue, child_pcb);
+  //TODO: deal with return codes
+  //TODO: deal with PC/register locations?
+  print_reg_0_page_table(1); 
+  return rc;
 }
 
 /*
