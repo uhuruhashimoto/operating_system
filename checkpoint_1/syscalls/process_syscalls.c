@@ -51,12 +51,20 @@ int handle_Fork(void)
       memcpy((void *)(bufpage_index << PAGESHIFT), (void *)(VMEM_1_BASE + (i << PAGESHIFT)), PAGESIZE);
     }
   }
+
   print_reg_1_page_table(running_process, 1, "RUNNING PROC");
   print_reg_1_page_table_contents(running_process, 1, "RUNNING PROC");
   print_reg_1_page_table(child_pcb, 1, "CHILD");
   print_reg_1_page_table_contents(child_pcb, 1, "CHILD");
+  print_frame_table(5);
+
   add_to_queue(ready_queue, child_pcb);
   int rc = clone_process(child_pcb);
+
+  TracePrintf(1, "BACK FROM CLONE. MY PAGE TABLES ARE AS FOLLOWS.\n");
+  print_frame_table(5);
+  print_reg_1_page_table(running_process, 1, "POST CLONE");
+  print_reg_1_page_table_contents(running_process, 1, "POST CLONE");
 
   // if we've done the bookkeeping in our round robin/clock trap, then our running process should 
   // contain the correct pcb when returning from clone.

@@ -2,6 +2,7 @@
 #include "kernel_start.h"
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
+#include "debug_utils/debug.h"
 
 extern queue_t* ready_queue;
 
@@ -10,11 +11,15 @@ extern queue_t* ready_queue;
 * Note that there is no bookkeeping required in running processes.
 */
 int clone_process(pcb_t *new_pcb) {
+  print_reg_1_page_table(new_pcb, 5, "PRE SWITCH CLONE UTILITY");
+  print_reg_1_page_table_contents(new_pcb, 5, "PRE SWITCH CLONE UTILITY");
   int rc = KernelContextSwitch(&KCCopy, (void *)new_pcb, NULL);
   if (rc != 0) {
     TracePrintf(1, "Failed to clone kernel process; exiting...\n");
     Halt();
   }
+  print_reg_1_page_table(new_pcb, 5, "IN CLONE UTILITY");
+  print_reg_1_page_table_contents(new_pcb, 5, "IN CLONE UTILITY");
   return new_pcb->rc;
 }
 
@@ -171,6 +176,9 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   new_pcb->rc = 0;
   memcpy(new_pcb->kctxt, kc_in, sizeof(KernelContext));
 
+  print_reg_1_page_table(new_pcb, 1, "KC COPY BEGINNING");
+  print_reg_1_page_table_contents(new_pcb, 1, "KC COPY BEGINNING");
+
   int page_table_reg_0_size = UP_TO_PAGE(VMEM_0_SIZE) >> PAGESHIFT;
   TracePrintf(5, "=====Region 0 Page Table Before Clone=====\n");
   for (int i = 0; i < page_table_reg_0_size; i++) {
@@ -255,5 +263,7 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   // flush TLB
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);
   // return kc_in (See Page 40)
+  print_reg_1_page_table(new_pcb, 1, "KC COPY END");
+  print_reg_1_page_table_contents(new_pcb, 1, "KC COPY END");
   return kc_in;
 }

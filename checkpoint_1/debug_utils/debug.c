@@ -48,6 +48,8 @@ void print_kernel_stack(int level) {
 
 // print bytes of valid reg 1 pages for a given process
 void print_reg_1_page_table_contents(pcb_t *process, int level, char *header) {
+    //change reg 1 page table mapping so we can see what's actually there
+    WriteRegister(REG_PTBR1, (int) process->region_1_page_table);
     pte_t *region_1_page_table = process->region_1_page_table;
     int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
     TracePrintf(level, "=====Region 1 Page Table Contents for pid %d (%d pages)=====\n", process->pid, region_1_page_table_size);
@@ -62,6 +64,7 @@ void print_reg_1_page_table_contents(pcb_t *process, int level, char *header) {
             );
         } 
     } 
+    WriteRegister(REG_PTBR1, (int) running_process->region_1_page_table);
 }
 
 // print region 1 page table for a given process
