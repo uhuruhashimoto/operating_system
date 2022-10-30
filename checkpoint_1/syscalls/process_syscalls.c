@@ -27,8 +27,9 @@ int handle_Fork(void)
   int child_pid = helper_new_pid(child_pcb->region_1_page_table);
   child_pcb->pid = child_pid;
   child_pcb->parent = running_process;
-  running_process->rc = running_process->pid;
   memcpy(child_pcb->uctxt, running_process->uctxt, sizeof(UserContext));
+  child_pcb->rc = 0;
+  running_process->rc = running_process->pid;
 
   // walk through the page table and copy over all allocated pages into a buffer page (with a new pfn)
   // Note: because our TLB caches pages, we need to either move our buffer page down or overwrite that single page

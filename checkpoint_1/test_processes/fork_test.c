@@ -2,6 +2,7 @@
 
 int main(void) {
     int pid = Fork();
+    TracePrintf(1, "Fork returned %d\n", pid);
     if (pid == 0) {
         TracePrintf(1, "Child back from fork!\n", pid);
         while(1) {
