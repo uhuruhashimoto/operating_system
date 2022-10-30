@@ -28,10 +28,34 @@ int handle_Fork(void)
   // unique structures not created by pcb initialization functions
   int child_pid = helper_new_pid(child_pcb->region_1_page_table);
   child_pcb->pid = child_pid;
-  //TODO: copy all of region 1 page table into another, as was done with kernel stack in KCCopy
-
-  int rc = clone_process(child_pcb);
+  print_region_1_page_table_contents(running_process, 1);
+  TracePrintf(1, "CHILD\n");
   print_reg_1_page_table(child_pcb, 1);
+  print_region_1_page_table_contents(child_pcb, 1);
+  //TODO: copy all of region 1 page table into another, as was done with kernel stack in KCCopy
+  int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
+  memcpy(child_pcb->region_1_page_table, running_process->region_1_page_table, region_1_page_table_size);
+  // walk through the page table and copy over all allocated pages into a buffer page (with a new pfn)
+  int bufpage_index = (KERNEL_STACK_BASE >> PAGESHIFT) - 1;
+  pte_t *bufpage = &region_0_page_table[bufpage_index];
+  for (int i=0; i<region_1_page_table_size; i++) {
+    if (child_pcb->region_1_page_table[i].valid) {
+      int new_frame = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, 0);
+      // use the page below the stack as a buffer to write stack pages into frames
+      bufpage->valid = 1;
+      bufpage->prot = (PROT_READ | PROT_WRITE);
+      bufpage->pfn = new_frame;
+      // keep the existing permissions, but update the pfn of the page
+      child_pcb->region_1_page_table[i].pfn = bufpage->pfn; 
+      // write bytes in question to the frame 
+      TracePrintf(1, "Copying %d bytes from %x to %x\n", PAGESIZE, VMEM_1_BASE + (i << PAGESHIFT), bufpage_index << PAGESHIFT);
+      memcpy((void *)(bufpage_index << PAGESHIFT), (void *)(VMEM_1_BASE + (i << PAGESHIFT)), PAGESIZE);
+    }
+  }
+  print_reg_1_page_table(child_pcb, 1);
+  print_region_1_page_table_contents(child_pcb, 1);
+  int rc = clone_process(child_pcb);
+  print_reg_1_page_table(child_pcb, 1); 
   child_pcb->parent = running_process;
   add_to_queue(ready_queue, child_pcb);
   //TODO: deal with return codes

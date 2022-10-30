@@ -24,6 +24,9 @@ void print_kernel_stack(int level);
 // print region 1 page table for a given process
 void print_reg_1_page_table(pcb_t *process, int level);
 
+// print bytes of valid reg 1 pages for a given process
+void print_region_1_page_table_contents(pcb_t *process, int level);
+
 // print the frame table (all frames)
 void print_frame_table(int level); 
 

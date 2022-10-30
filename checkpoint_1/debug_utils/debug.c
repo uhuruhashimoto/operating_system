@@ -45,6 +45,22 @@ void print_kernel_stack(int level) {
     
 }
 
+void print_region_1_page_table_contents(pcb_t *process, int level) {
+    pte_t *region_1_page_table = process->region_1_page_table;
+    int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
+    TracePrintf(level, "=====Region 1 Page Table Contents for pid %d (%d pages)=====\n", process->pid, region_1_page_table_size);
+    for (int i = 0; i < region_1_page_table_size; i++) {
+        if (region_1_page_table[i].valid) {
+            int *addr = (int *) (VMEM_1_BASE + (i << PAGESHIFT)); 
+            TracePrintf(level, "Addr: %x, Pfn: %d, Bytes: %x\n",
+                        addr,
+                        region_1_page_table[i].pfn,
+                        *addr
+            );
+        } 
+    } 
+}
+
 // print region 1 page table for a given process
 void print_reg_1_page_table(pcb_t *process, int level) {
     pte_t *region_1_page_table = process->region_1_page_table;
