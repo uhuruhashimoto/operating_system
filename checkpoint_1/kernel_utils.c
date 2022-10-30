@@ -15,7 +15,8 @@ int clone_process(pcb_t *new_pcb) {
     TracePrintf(1, "Failed to clone kernel process; exiting...\n");
     Halt();
   }
-  return rc;
+  TracePrintf(1, "Returned from clone with exit code %d\n", new_pcb->rc);
+  return new_pcb->rc;
 }
 
 /*
@@ -168,6 +169,7 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
 KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   //copy current KernelContext into the new PCB
   pcb_t *new_pcb = (pcb_t  *)new_pcb_p;
+  new_pcb->rc = 0;
   memcpy(new_pcb->kctxt, kc_in, sizeof(KernelContext));
 
   int page_table_reg_0_size = UP_TO_PAGE(VMEM_0_SIZE) >> PAGESHIFT;

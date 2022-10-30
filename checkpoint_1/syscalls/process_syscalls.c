@@ -28,6 +28,7 @@ int handle_Fork(void)
   // unique structures not created by pcb initialization functions
   int child_pid = helper_new_pid(child_pcb->region_1_page_table);
   child_pcb->pid = child_pid;
+  running_process->rc = running_process->pid;
   print_region_1_page_table_contents(running_process, 1);
   TracePrintf(1, "CHILD\n");
   print_reg_1_page_table(child_pcb, 1);
@@ -48,20 +49,17 @@ int handle_Fork(void)
       // keep the existing permissions, but update the pfn of the page
       child_pcb->region_1_page_table[i].pfn = bufpage->pfn; 
       // write bytes in question to the frame 
-      TracePrintf(1, "Copying %d bytes from %x to %x\n", PAGESIZE, VMEM_1_BASE + (i << PAGESHIFT), bufpage_index << PAGESHIFT);
       memcpy((void *)(bufpage_index << PAGESHIFT), (void *)(VMEM_1_BASE + (i << PAGESHIFT)), PAGESIZE);
     }
   }
-  print_reg_1_page_table(child_pcb, 1);
-  print_region_1_page_table_contents(child_pcb, 1);
-  int rc = clone_process(child_pcb);
-  print_reg_1_page_table(child_pcb, 1); 
   child_pcb->parent = running_process;
   add_to_queue(ready_queue, child_pcb);
-  //TODO: deal with return codes
-  TracePrintf(1, "POST FORK\n\n");
-  print_reg_0_page_table(1); 
-  return rc;
+  int rc = clone_process(child_pcb);
+  TracePrintf(1, "PROC SYSCALL: returned from clone w code %d\n", rc);
+
+  // if we've done the bookkeeping in our round robin/clock trap, then our running process should 
+  // contain the correct pcb when returning from clone.
+  return running_process->rc;
 }
 
 /*

@@ -52,7 +52,7 @@ void print_region_1_page_table_contents(pcb_t *process, int level) {
     for (int i = 0; i < region_1_page_table_size; i++) {
         if (region_1_page_table[i].valid) {
             int *addr = (int *) (VMEM_1_BASE + (i << PAGESHIFT)); 
-            TracePrintf(level, "Addr: %x, Pfn: %d, Bytes: %x\n",
+            TracePrintf(level, "Addr: %x, Pfn: %d, Bytes: %08x\n",
                         addr,
                         region_1_page_table[i].pfn,
                         *addr
