@@ -14,18 +14,28 @@ extern void *trap_handler[16];
 extern pte_t *region_0_page_table;
 /*
  * Fork the process and create a new, separate address space
+ * TODO: Copy on write, eventually
  */
 int handle_Fork(void)
 {
+  TracePrintf(1, "PRE FORK\n\n");
   print_reg_0_page_table(1);  
 
-  // set up a child pcb
   pcb_t *child_pcb = allocate_pcb();
+  // by copying our current pcb, we get our PC, SP, and BP for free (in uctxt)
+  child_pcb = memcpy(child_pcb, running_process, sizeof(pcb_t));
+  // create the child's pid and region 1 page table by hand, since those are the 
+  // unique structures not created by pcb initialization functions
+  int child_pid = helper_new_pid(child_pcb->region_1_page_table);
+  child_pcb->pid = child_pid;
+  //TODO: copy all of region 1 page table into another, as was done with kernel stack in KCCopy
+
   int rc = clone_process(child_pcb);
+  print_reg_1_page_table(child_pcb, 1);
   child_pcb->parent = running_process;
   add_to_queue(ready_queue, child_pcb);
   //TODO: deal with return codes
-  //TODO: deal with PC/register locations?
+  TracePrintf(1, "POST FORK\n\n");
   print_reg_0_page_table(1); 
   return rc;
 }
