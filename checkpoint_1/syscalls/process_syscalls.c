@@ -61,6 +61,7 @@ int handle_Fork(void)
       child_pcb->region_1_page_table[i].valid = 0; 
     }
   }
+  bufpage->valid = 0;
 
   add_to_queue(ready_queue, child_pcb);
   int rc = clone_process(child_pcb);
