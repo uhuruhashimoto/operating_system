@@ -32,7 +32,7 @@ void handle_trap_kernel(UserContext* context) {
       handle_Wait((int *)context->regs[0]); //TODO cast args as temporary solution
       break;
     case YALNIX_GETPID:
-      handle_GetPid();
+      rc = handle_GetPid();
       break;
     case YALNIX_BRK:
       handle_Brk((void *)context->regs[0]); //TODO cast args as temporary solution
