@@ -15,7 +15,6 @@ int clone_process(pcb_t *new_pcb) {
     TracePrintf(1, "Failed to clone kernel process; exiting...\n");
     Halt();
   }
-  TracePrintf(1, "Returned from clone with exit code %d\n", new_pcb->rc);
   return new_pcb->rc;
 }
 

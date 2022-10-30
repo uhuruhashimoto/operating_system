@@ -12,35 +12,35 @@ extern bool is_idle;                                                  // if is_i
 extern queue_t* ready_queue;
 extern void *trap_handler[16];
 extern pte_t *region_0_page_table;
-/*
- * Fork the process and create a new, separate address space
- * TODO: Copy on write, eventually
- */
+
+  /*
+  * Fork the process and create a new, separate address space.
+  * We give the child a unique pid and copy over the user context and region 1 page table.
+  * Then we walk through the page table and copy the contents of valid pages into new frames.
+  * TODO: Copy on write, eventually
+  */
 int handle_Fork(void)
 {
-  print_reg_0_page_table(1, "PRE FORK");  
-
+  int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   pcb_t *child_pcb = allocate_pcb();
-  // by copying our current pcb, we get our PC, SP, and BP for free (in uctxt)
-  child_pcb = memcpy(child_pcb, running_process, sizeof(pcb_t));
-  // create the child's pid and region 1 page table by hand, since those are the 
-  // unique structures not created by pcb initialization functions
+
   int child_pid = helper_new_pid(child_pcb->region_1_page_table);
   child_pcb->pid = child_pid;
+  child_pcb->parent = running_process;
   running_process->rc = running_process->pid;
-  print_reg_1_page_table(running_process, 1, "RUNNING PROC");
-  print_reg_1_page_table(running_process, 1, "CHILD");
-  print_reg_1_page_table_contents(running_process, 1, "RUNNING PROC");
-  print_reg_1_page_table_contents(child_pcb, 1, "CHILD");
-  //TODO: copy all of region 1 page table into another, as was done with kernel stack in KCCopy
-  int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
-  memcpy(child_pcb->region_1_page_table, running_process->region_1_page_table, region_1_page_table_size);
+  memcpy(child_pcb->uctxt, running_process->uctxt, sizeof(UserContext));
+  memcpy(child_pcb->region_1_page_table, running_process->region_1_page_table, region_1_page_table_size * sizeof(pte_t));
+  
   // walk through the page table and copy over all allocated pages into a buffer page (with a new pfn)
   int bufpage_index = (KERNEL_STACK_BASE >> PAGESHIFT) - 1;
   pte_t *bufpage = &region_0_page_table[bufpage_index];
   for (int i=0; i<region_1_page_table_size; i++) {
     if (child_pcb->region_1_page_table[i].valid) {
-      int new_frame = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, 0);
+      int new_frame = get_free_frame(
+          frame_table_global->frame_table, 
+          frame_table_global->frame_table_size, 
+          0
+      );
       // use the page below the stack as a buffer to write stack pages into frames
       bufpage->valid = 1;
       bufpage->prot = (PROT_READ | PROT_WRITE);
@@ -51,10 +51,12 @@ int handle_Fork(void)
       memcpy((void *)(bufpage_index << PAGESHIFT), (void *)(VMEM_1_BASE + (i << PAGESHIFT)), PAGESIZE);
     }
   }
-  child_pcb->parent = running_process;
+  print_reg_1_page_table(running_process, 1, "RUNNING PROC");
+  print_reg_1_page_table_contents(running_process, 1, "RUNNING PROC");
+  print_reg_1_page_table(child_pcb, 1, "CHILD");
+  print_reg_1_page_table_contents(child_pcb, 1, "CHILD");
   add_to_queue(ready_queue, child_pcb);
   int rc = clone_process(child_pcb);
-  TracePrintf(1, "PROC SYSCALL: returned from clone w code %d\n", rc);
 
   // if we've done the bookkeeping in our round robin/clock trap, then our running process should 
   // contain the correct pcb when returning from clone.
