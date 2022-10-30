@@ -18,8 +18,7 @@ extern pte_t *region_0_page_table;
  */
 int handle_Fork(void)
 {
-  TracePrintf(1, "PRE FORK\n\n");
-  print_reg_0_page_table(1);  
+  print_reg_0_page_table(1, "PRE FORK");  
 
   pcb_t *child_pcb = allocate_pcb();
   // by copying our current pcb, we get our PC, SP, and BP for free (in uctxt)
@@ -29,10 +28,10 @@ int handle_Fork(void)
   int child_pid = helper_new_pid(child_pcb->region_1_page_table);
   child_pcb->pid = child_pid;
   running_process->rc = running_process->pid;
-  print_region_1_page_table_contents(running_process, 1);
-  TracePrintf(1, "CHILD\n");
-  print_reg_1_page_table(child_pcb, 1);
-  print_region_1_page_table_contents(child_pcb, 1);
+  print_reg_1_page_table(running_process, 1, "RUNNING PROC");
+  print_reg_1_page_table(running_process, 1, "CHILD");
+  print_reg_1_page_table_contents(running_process, 1, "RUNNING PROC");
+  print_reg_1_page_table_contents(child_pcb, 1, "CHILD");
   //TODO: copy all of region 1 page table into another, as was done with kernel stack in KCCopy
   int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   memcpy(child_pcb->region_1_page_table, running_process->region_1_page_table, region_1_page_table_size);

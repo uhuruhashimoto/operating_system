@@ -16,16 +16,16 @@ extern void *trap_handler[16];
 extern pte_t *region_0_page_table;
 
 // print current page table global
-void print_reg_0_page_table(int level);
+void print_reg_0_page_table(int level, char *header);
 
 // print current kernel stack (from page table)
 void print_kernel_stack(int level);
 
 // print region 1 page table for a given process
-void print_reg_1_page_table(pcb_t *process, int level);
+void print_reg_1_page_table(pcb_t *process, int level, char *header);
 
 // print bytes of valid reg 1 pages for a given process
-void print_region_1_page_table_contents(pcb_t *process, int level);
+void print_reg_1_page_table_contents(pcb_t *process, int level, char *header);
 
 // print the frame table (all frames)
 void print_frame_table(int level); 

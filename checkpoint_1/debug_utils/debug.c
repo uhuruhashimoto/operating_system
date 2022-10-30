@@ -13,12 +13,13 @@ extern void *trap_handler[16];
 extern pte_t *region_0_page_table;
 
 // print current page table global
-void print_reg_0_page_table(int level) {
+void print_reg_0_page_table(int level, char *header) {
     int region_0_page_table_size = UP_TO_PAGE(VMEM_0_SIZE) >> PAGESHIFT; 
     TracePrintf(level, "=====Region 0 Page Table (%d pages)=====\n", region_0_page_table_size);
     for (int i = 0; i < region_0_page_table_size; i++) {
         if (region_0_page_table[i].valid) {
-            TracePrintf(level, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+            TracePrintf(level, "%s | Addr: %x to %x, Valid: %d, Pfn: %d\n",
+                        header,
                         VMEM_0_BASE + (i << PAGESHIFT),
                         VMEM_0_BASE + ((i+1) << PAGESHIFT)-1,
                         region_0_page_table[i].valid,
@@ -45,14 +46,16 @@ void print_kernel_stack(int level) {
     
 }
 
-void print_region_1_page_table_contents(pcb_t *process, int level) {
+// print bytes of valid reg 1 pages for a given process
+void print_reg_1_page_table_contents(pcb_t *process, int level, char *header) {
     pte_t *region_1_page_table = process->region_1_page_table;
     int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
     TracePrintf(level, "=====Region 1 Page Table Contents for pid %d (%d pages)=====\n", process->pid, region_1_page_table_size);
     for (int i = 0; i < region_1_page_table_size; i++) {
         if (region_1_page_table[i].valid) {
             int *addr = (int *) (VMEM_1_BASE + (i << PAGESHIFT)); 
-            TracePrintf(level, "Addr: %x, Pfn: %d, Bytes: %08x\n",
+            TracePrintf(level, "%s | Addr: %x, Pfn: %d, Bytes: %08x\n",
+                        header,
                         addr,
                         region_1_page_table[i].pfn,
                         *addr
@@ -62,13 +65,14 @@ void print_region_1_page_table_contents(pcb_t *process, int level) {
 }
 
 // print region 1 page table for a given process
-void print_reg_1_page_table(pcb_t *process, int level) {
+void print_reg_1_page_table(pcb_t *process, int level, char *header) {
     pte_t *region_1_page_table = process->region_1_page_table;
     int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
     TracePrintf(level, "=====Region 1 Page Table for pid %d (%d pages)=====\n", process->pid, region_1_page_table_size);
     for (int i = 0; i < region_1_page_table_size; i++) {
         if (region_1_page_table[i].valid) {
-            TracePrintf(level, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+            TracePrintf(level, "%s | Addr: %x to %x, Valid: %d, Pfn: %d\n",
+                        header,
                         VMEM_1_BASE + (i << PAGESHIFT),
                         VMEM_1_BASE + ((i+1) << PAGESHIFT)-1,
                         region_1_page_table[i].valid,
