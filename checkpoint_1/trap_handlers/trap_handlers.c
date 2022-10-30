@@ -12,6 +12,7 @@
  * Handle traps to the kernel
  */
 void handle_trap_kernel(UserContext* context) {
+  int rc = 0;
   int trap_type = context->code;
   TracePrintf(1, "Handling kernel trap with code %x\n", trap_type);
 
@@ -19,7 +20,7 @@ void handle_trap_kernel(UserContext* context) {
   switch (trap_type) {
     // process syscalls
     case YALNIX_FORK:
-      handle_Fork();
+      rc = handle_Fork();
       break;
     case YALNIX_EXEC:
       handle_Exec((char *)context->regs[0], (char **) context->regs[1]); //TODO cast args as temporary solution
@@ -96,7 +97,7 @@ void handle_trap_kernel(UserContext* context) {
     // TODO -- YALNIX_BOOT
   }
 
-  // context->regs[0] = return_val
+  context->regs[0] = rc;
 }
 
 /*
