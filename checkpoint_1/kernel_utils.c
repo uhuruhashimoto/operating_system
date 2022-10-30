@@ -95,7 +95,7 @@ int switch_between_processes(pcb_t *current_process, pcb_t *next_process) {
 */
 KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_p) {
   // store current KernelContext in current pcb
-  pcb_t *curr_pcb = (pcb_t  *)curr_pcb_p;
+  pcb_t *curr_pcb = (pcb_t *)curr_pcb_p;
   pcb_t *next_pcb = (pcb_t *)next_pcb_p;
   memcpy(curr_pcb->kctxt, kc_in, sizeof(KernelContext));
 
@@ -168,7 +168,6 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
 
   // set the kernel stack in region 0 to the kernel stack in the new pcb
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);
-
   return next_pcb->kctxt;
 }
 
@@ -181,9 +180,6 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   pcb_t *new_pcb = (pcb_t  *)new_pcb_p;
   new_pcb->rc = 0;
   memcpy(new_pcb->kctxt, kc_in, sizeof(KernelContext));
-
-  print_reg_1_page_table(new_pcb, 1, "KC COPY BEGINNING");
-  print_reg_1_page_table_contents(new_pcb, 1, "KC COPY BEGINNING");
 
   int page_table_reg_0_size = UP_TO_PAGE(VMEM_0_SIZE) >> PAGESHIFT;
   TracePrintf(5, "=====Region 0 Page Table Before Clone=====\n");
@@ -269,7 +265,5 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   // flush TLB
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);
   // return kc_in (See Page 40)
-  print_reg_1_page_table(new_pcb, 1, "KC COPY END");
-  print_reg_1_page_table_contents(new_pcb, 1, "KC COPY END");
   return kc_in;
 }

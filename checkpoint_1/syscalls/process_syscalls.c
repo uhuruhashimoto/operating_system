@@ -29,13 +29,14 @@ int handle_Fork(void)
   child_pcb->parent = running_process;
   running_process->rc = running_process->pid;
   memcpy(child_pcb->uctxt, running_process->uctxt, sizeof(UserContext));
-  memcpy(child_pcb->region_1_page_table, running_process->region_1_page_table, region_1_page_table_size * sizeof(pte_t));
-  
+
   // walk through the page table and copy over all allocated pages into a buffer page (with a new pfn)
+  // Note: because our TLB caches pages, we need to either move our buffer page down or overwrite that single page
+  // in our TLB. I choose the latter.
   int bufpage_index = (KERNEL_STACK_BASE >> PAGESHIFT) - 1;
   pte_t *bufpage = &region_0_page_table[bufpage_index];
   for (int i=0; i<region_1_page_table_size; i++) {
-    if (child_pcb->region_1_page_table[i].valid) {
+    if (running_process->region_1_page_table[i].valid) {
       int new_frame = get_free_frame(
           frame_table_global->frame_table, 
           frame_table_global->frame_table_size, 
@@ -46,18 +47,27 @@ int handle_Fork(void)
       bufpage->prot = (PROT_READ | PROT_WRITE);
       bufpage->pfn = new_frame;
       // keep the existing permissions, but update the pfn of the page
+      child_pcb->region_1_page_table[i].valid = running_process->region_1_page_table[i].valid;
+      child_pcb->region_1_page_table[i].prot = running_process->region_1_page_table[i].prot; 
       child_pcb->region_1_page_table[i].pfn = bufpage->pfn; 
       // write bytes in question to the frame 
-      memcpy((void *)(bufpage_index << PAGESHIFT), (void *)(VMEM_1_BASE + (i << PAGESHIFT)), PAGESIZE);
+      TracePrintf(5, "FORK HANLDER: Writing bytes %08x from %p to %p\n", * (int *)(VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_0_BASE + (bufpage_index << PAGESHIFT)));
+      TracePrintf(5, "FORK HANDLER: Bufpage: Addr %x, valid %d, prot %d, pfn %d\n", bufpage_index << PAGESHIFT, bufpage->valid, bufpage->prot, bufpage->pfn);
+      memcpy((void *)(VMEM_0_BASE + (bufpage_index << PAGESHIFT)), (void *)(VMEM_1_BASE + (i << PAGESHIFT)), PAGESIZE);
+      // flush the page from the TLB so it doesn't cache and overwrite the same frame
+      WriteRegister(REG_TLB_FLUSH, (int) (VMEM_0_BASE + (bufpage_index << PAGESHIFT)));
+    } 
+    else {
+      child_pcb->region_1_page_table[i].valid = 0; 
     }
   }
 
   add_to_queue(ready_queue, child_pcb);
   int rc = clone_process(child_pcb);
 
-  TracePrintf(1, "BACK FROM CLONE. MY PAGE TABLES ARE AS FOLLOWS.\n");
-  print_reg_1_page_table(running_process, 1, "POST CLONE");
-  print_reg_1_page_table_contents(running_process, 1, "POST CLONE");
+  TracePrintf(1, "Back from clone; return code is %d\n", running_process->rc);
+  print_reg_1_page_table(running_process, 1, "POST FLUSH");
+  print_reg_1_page_table_contents(running_process, 1, "POST FLUSH");
 
   // if we've done the bookkeeping in our round robin/clock trap, then our running process should 
   // contain the correct pcb when returning from clone.
