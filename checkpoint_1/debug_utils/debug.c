@@ -88,6 +88,6 @@ void print_reg_1_page_table(pcb_t *process, int level, char *header) {
 // print the frame table (all frames)
 void print_frame_table(int level) {
     for (int i=0; i<frame_table_global->frame_table_size; i++) {
-        TracePrintf(level, "Frame %d: %d\n", i, frame_table_global[i]);
+        TracePrintf(level, "Frame %d: %d\n", i, frame_table_global->frame_table[i]);
     }
 }
