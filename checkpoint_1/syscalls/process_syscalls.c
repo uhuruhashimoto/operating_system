@@ -84,6 +84,7 @@ int handle_Fork(void)
 int handle_Exec(char *filename, char **argvec)
 {
   int rc = 0;
+  TracePrintf(1, "Exec handler: my pid is %d\n", running_process->pid);
   print_reg_1_page_table(running_process, 1, "PRE EXEC");
   print_reg_1_page_table_contents(running_process, 1, "PRE EXEC");
   // wipe out the page table for the old process 
@@ -95,6 +96,8 @@ int handle_Exec(char *filename, char **argvec)
       running_process->region_1_page_table[i].valid = 0;
     }
   }
+  print_reg_1_page_table(running_process, 1, "PRE LOAD PROGRAM");
+  print_reg_1_page_table_contents(running_process, 1, "POST LOAD PROGRAM");
   // load the ELF file from *filename
   // get the page table for the new process
   // place the arguments to be executed by the new process
@@ -104,8 +107,9 @@ int handle_Exec(char *filename, char **argvec)
   }
   print_reg_1_page_table(running_process, 1, "POST EXEC");
   print_reg_1_page_table_contents(running_process, 1, "POST EXEC");
-  // TODO how to avoid returning to the old process?
-  return 0;
+  // if load program returns an error, then exec should return error. Otherwise, return statement
+  // won't be reached.
+  return rc;
 }
 
 /*

@@ -17,7 +17,7 @@ K_INCS = $(K_SRCS:%.c=%.h)
 U_SRC_DIR = $(K_SRC_DIR)/test_processes
 
 # What are the user c and include files?
-U_SRCS = iterator.c brk_test.c delay_test.c pid_test.c init.c fork_test.c exec_test.c
+U_SRCS = iterator.c brk_test.c delay_test.c pid_test.c init.c fork_test.c exec_test.c fork_bomb.c
 U_INCS =
 
 
@@ -73,7 +73,7 @@ LINK_KERNEL = $(LINK.c)
 
 USER_LIBS = $(LIBDIR)/libuser.a
 ASFLAGS = -D__ASM__
-CPPFLAGS= -D_FILE_OFFSET_BITS=64 -m32 -fno-builtin -I. -I$(INCDIR) -g -DLINUX
+CPPFLAGS= -D_FILE_OFFSET_BITS=64 -m32 -fno-builtin -fno-stack-protector -I. -I$(INCDIR) -g -DLINUX
 
 
 ##########################
