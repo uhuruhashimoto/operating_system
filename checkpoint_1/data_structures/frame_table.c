@@ -31,3 +31,12 @@ int get_free_frame(char *frame_table, int frame_table_size, int iterator_start) 
   }
   return MEMFULL;
 }
+
+/*
+* Free a frame in the frame table
+*/
+void free_frame(char *frame_table, int frame_table_size, int frame_num) {
+  if (frame_num < frame_table_size) {
+    frame_table[frame_num] = 0;
+  }
+}

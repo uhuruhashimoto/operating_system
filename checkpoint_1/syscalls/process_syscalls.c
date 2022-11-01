@@ -83,10 +83,27 @@ int handle_Fork(void)
  */
 int handle_Exec(char *filename, char **argvec)
 {
+  int rc = 0;
+  print_reg_1_page_table(running_process, 1, "PRE EXEC");
   // wipe out the page table for the old process
+  int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
+  for (int i=0; i<region_1_page_table_size; i++) {
+    if (running_process->region_1_page_table[i].valid) {
+      int frame = running_process->region_1_page_table[i].pfn;
+      free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, frame);
+      running_process->region_1_page_table[i].valid = 0;
+    }
+  }
   // load the ELF file from *filename
   // get the page table for the new process
   // place the arguments to be executed by the new process
+  if ((rc = LoadProgram(filename, argvec, running_process)) != SUCCESS) {
+    TracePrintf(1, "Loading the init process failed with exit code %d\n", rc);
+    Halt();
+  }
+  print_reg_1_page_table(running_process, 1, "POST EXEC");
+  // TODO how to avoid returning to the old process?
+  return 0;
 }
 
 /*

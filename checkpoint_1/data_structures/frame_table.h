@@ -21,4 +21,9 @@ int get_free_frame(char *frame_table, int frame_table_size, int iteration_start)
 */
 int get_num_free_frames(char *frame_table, int frame_table_size);
 
+/*
+* Free a frame in the frame table
+*/
+void free_frame(char *frame_table, int frame_table_size, int frame_num);
+
 #endif //CURRENT_CHUNGUS_FRAME_TABLE_H
