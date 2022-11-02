@@ -93,11 +93,12 @@ int handle_Exec(char *filename, char **argvec)
     if (running_process->region_1_page_table[i].valid) {
       int frame = running_process->region_1_page_table[i].pfn;
       free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, frame);
+      running_process->region_1_page_table[i].pfn = (PROT_READ | PROT_WRITE);
       running_process->region_1_page_table[i].valid = 0;
     }
   }
-  print_reg_1_page_table(running_process, 1, "PRE LOAD PROGRAM");
-  print_reg_1_page_table_contents(running_process, 1, "POST LOAD PROGRAM");
+  print_reg_1_page_table(running_process, 1, "MIDDLE");
+  print_reg_1_page_table_contents(running_process, 1, "MIDDLE");
   // load the ELF file from *filename
   // get the page table for the new process
   // place the arguments to be executed by the new process
@@ -105,10 +106,10 @@ int handle_Exec(char *filename, char **argvec)
     TracePrintf(1, "Loading the init process failed with exit code %d\n", rc);
     Halt();
   }
-  print_reg_1_page_table(running_process, 1, "POST EXEC");
-  print_reg_1_page_table_contents(running_process, 1, "POST EXEC");
+  print_reg_1_page_table(running_process, 1, "POST LOAD PROGRAM");
+  print_reg_1_page_table_contents(running_process, 1, "POST LOAD PROGRAM");
   // if load program returns an error, then exec should return error. Otherwise, return statement
-  // won't be reached.
+  // will return to the original PC position and the return code doesn't matter. 
   return rc;
 }
 
