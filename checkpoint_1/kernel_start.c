@@ -241,6 +241,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   int num_kernel_stack_pages = stack_end_page - stack_start_page;
   int pid = helper_new_pid(region_1_page_table);
   idle_process = allocate_pcb();
+  idle_process->pid = pid;
   idle_process = set_pcb_values(idle_process, pid, region_1_page_table, uctxt);
   for (int i=0; i<num_kernel_stack_pages; i++) {
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
