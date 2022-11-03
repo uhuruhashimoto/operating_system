@@ -115,15 +115,29 @@ int handle_Exec(char *filename, char **argvec)
  */
 void handle_Exit(int status)
 {
-  TracePrintf(1, "Handling exit with rc=%d for process with pid %d\n", status, running_process->pid);
+  TracePrintf(1, "EXIT: Handling exit with rc=%d for process with pid %d\n", status, running_process->pid);
   // iterate over children, setting their parent to be NULL
   pcb_t* next_child = running_process->children;
+  TracePrintf(1, "EXIT: Passed 120\n");
+
+  if (next_child == NULL) {
+    TracePrintf(1, "EXIT: NULL\n");
+  }
+  else {
+    TracePrintf(1, "EXIT: something else %d\n", next_child->rc);
+    if (next_child->parent != NULL || next_child->next_sibling == NULL) {
+      TracePrintf(1, "EXIT: NULL inside\n");
+    }
+  }
+
   while (next_child != NULL) {
     next_child->parent = NULL;
-    next_child = next_child->next_pcb;
+    next_child = next_child->next_sibling;
+    TracePrintf(1, "EXIT: Looped\n");
   }
   running_process->children = NULL;
 
+  TracePrintf(1, "EXIT: Calling the delete_process handler\n");
   delete_process(running_process, status);
 }
 
