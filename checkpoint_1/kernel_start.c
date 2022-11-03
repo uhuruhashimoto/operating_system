@@ -272,7 +272,7 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   //clone the current process into init_pcb
   TracePrintf(1, "Attempting to clone into init_pcb\n");
   int rc = clone_process(init_pcb);
-  if (rc != 0) {
+  if (rc < 0) {
     TracePrintf(1, "Kernel boot code encountered an error and was unable to clone from idle into init_pcb.\n");
     Halt();
   }

@@ -12,9 +12,13 @@ pcb_t *allocate_pcb() {
   pcb -> region_1_page_table = malloc(reg_1_page_table_size * sizeof(pte_t));
   pcb -> uctxt = malloc(sizeof(UserContext));
   pcb -> kctxt = malloc(sizeof(KernelContext));
+  pcb->children = NULL;
   pcb->next_pcb = NULL;
   pcb->prev_pcb = NULL;
+  pcb->next_sibling = NULL;
+  pcb->prev_sibling = NULL;
   pcb->hasExited = false;
+  pcb->waitingForChildExit = false;
   return pcb;
 }
 

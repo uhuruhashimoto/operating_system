@@ -27,10 +27,13 @@ typedef struct pcb {
   KernelContext *kctxt;
 
   bool hasExited;                                      // whether the process is dead yet
+  bool waitingForChildExit;                            // whether this pcb is a parent waiting for a child
   int rc;                                              // the return code of the process
   struct pcb *next_pcb;                                     // the next pcb in the queue
   struct pcb *prev_pcb;                                     // the previous pcb in the queue
   struct pcb *children;                                     // null unless there are children
+  struct pcb *next_sibling;                            // null unless there are other siblings
+  struct pcb *prev_sibling;                            // null unless there are other siblings
   int num_children;                                    // 0 unless there are children
   struct pcb *parent;                                       // the parent, if any
   int delayed_clock_cycles;                            // 0 unless it is delayed

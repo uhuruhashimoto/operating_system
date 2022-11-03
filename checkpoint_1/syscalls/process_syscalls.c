@@ -1,5 +1,6 @@
 #include <ykernel.h>
 #include "../kernel_start.h"
+#include "../kernel_utils.h"
 #include "../data_structures/pcb.h"
 #include "../data_structures/queue.h"
 #include "../data_structures/frame_table.h"
@@ -48,32 +49,34 @@ int handle_Fork(void)
       bufpage->prot = (PROT_READ | PROT_WRITE);
       bufpage->pfn = new_frame;
       // keep the existing permissions, but update the pfn of the page
-      child_pcb->region_1_page_table[i].valid = running_process->region_1_page_table[i].valid;
+      child_pcb->region_1_page_table[i].valid = 1;
       child_pcb->region_1_page_table[i].prot = running_process->region_1_page_table[i].prot; 
       child_pcb->region_1_page_table[i].pfn = bufpage->pfn; 
       // write bytes in question to the frame 
-      TracePrintf(5, "FORK HANLDER: Writing bytes %08x from %p to %p\n", * (int *)(VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_0_BASE + (bufpage_index << PAGESHIFT)));
-      TracePrintf(5, "FORK HANDLER: Bufpage: Addr %x, valid %d, prot %d, pfn %d\n", bufpage_index << PAGESHIFT, bufpage->valid, bufpage->prot, bufpage->pfn);
+      TracePrintf(5, "FORK HANDLER: Writing bytes %08x from %p to %p\n", * (int *)(VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_0_BASE + (bufpage_index << PAGESHIFT)));
+      TracePrintf(1, "FORK HANDLER: Bufpage: Addr %x, valid %d, prot %d, pfn %d\n", bufpage_index << PAGESHIFT, bufpage->valid, bufpage->prot, bufpage->pfn);
       memcpy((void *)(VMEM_0_BASE + (bufpage_index << PAGESHIFT)), (void *)(VMEM_1_BASE + (i << PAGESHIFT)), PAGESIZE);
       // flush the page from the TLB so it doesn't cache and overwrite the same frame
+      bufpage->valid = 0;
       WriteRegister(REG_TLB_FLUSH, (int) (VMEM_0_BASE + (bufpage_index << PAGESHIFT)));
-    } 
+//      WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
+    }
     else {
       child_pcb->region_1_page_table[i].valid = 0; 
     }
   }
-  bufpage->valid = 0;
 
   add_to_queue(ready_queue, child_pcb);
+  // return the right thing for fork
   int rc = clone_process(child_pcb);
 
   TracePrintf(2, "Back from clone; return code is %d\n", running_process->rc);
-  print_reg_1_page_table(running_process, 2, "POST FLUSH");
+  print_reg_1_page_table(running_process, 1, "POST FLUSH");
   print_reg_1_page_table_contents(running_process, 2, "POST FLUSH");
 
   // if we've done the bookkeeping in our round robin/clock trap, then our running process should 
   // contain the correct pcb when returning from clone.
-  return running_process->rc;
+  return rc;
 }
 
 /*
@@ -113,13 +116,64 @@ int handle_Exec(char *filename, char **argvec)
  */
 void handle_Exit(int status)
 {
-  Pause();
-  // wipe out the page table for the process
-  // free all other resources
-  // check to see if the parent is dead; if so, completely delete the PCB
-  // otherwise:
-  //  save the status on the PCB
-  //  place the parent on the ready queue if the parent is waiting for exit
+  TracePrintf(1, "EXIT: Handling exit with rc=%d for process with pid %d\n", status, running_process->pid);
+  // iterate over children, setting their parent to be NULL
+  pcb_t* next_child = running_process->children;
+  TracePrintf(1, "EXIT: Passed 120\n");
+
+  if (next_child == NULL) {
+    TracePrintf(1, "EXIT: NULL\n");
+  }
+  else {
+    TracePrintf(1, "EXIT: something else %d\n", next_child->rc);
+    if (next_child->parent != NULL || next_child->next_sibling == NULL) {
+      TracePrintf(1, "EXIT: NULL inside\n");
+    }
+  }
+
+  while (next_child != NULL) {
+    next_child->parent = NULL;
+    next_child = next_child->next_sibling;
+    TracePrintf(1, "EXIT: Looped\n");
+  }
+  running_process->children = NULL;
+
+  TracePrintf(1, "EXIT: Calling the delete_process handler\n");
+  delete_process(running_process, status);
+}
+
+/*
+ * Gets the first exited child, if any, from the parent's collection of children
+ */
+pcb_t* get_first_exited_child(pcb_t* parent) {
+  TracePrintf(1, "GET_FIRST_EXITED_CHILD: Checking children\n");
+  pcb_t* next_child = parent->children;
+  if (next_child == NULL) {
+    TracePrintf(1, "GET_FIRST_EXITED_CHILD: ARRAY IS NULL!!!\n");
+    return NULL;
+  }
+
+  while (next_child != NULL) {
+    TracePrintf(1, "GET_FIRST_EXITED_CHILD: child %d has exited %d\n", next_child->pid, (int)(next_child->hasExited));
+    if (next_child->hasExited) {
+      // remove the child from the parent's collection
+      if (next_child != NULL && parent->children == next_child) {
+        parent->children = next_child->prev_sibling;
+      }
+      if (next_child != NULL && next_child->prev_sibling != NULL) {
+        next_child->prev_sibling->next_sibling = next_child->next_sibling;
+      }
+      if (next_child != NULL && next_child->next_sibling != NULL) {
+        next_child->next_sibling->prev_sibling = next_child->prev_sibling;
+      }
+
+      return next_child;
+    }
+
+    next_child = next_child->next_sibling;
+  }
+
+  return NULL;
 }
 
 /*
@@ -130,12 +184,49 @@ void handle_Exit(int status)
  */
 int handle_Wait(int *status_ptr)
 {
-  // check child processes on the PCB
+  TracePrintf(1, "HANDLE_WAIT: triggered for process %d\n", running_process->pid);
+
   // return ERROR immediately if no remaining children, alive or dead
+  if (running_process->children == NULL) {
+    TracePrintf(1, "HANDLE_WAIT: Error: no children remaining for %d\n", running_process->pid);
+    *status_ptr = ERROR;
+    return ERROR;
+  }
+
+  // check child processes on the PCB
+  pcb_t* exited = get_first_exited_child(running_process);
+
   // return immediately if the child is already dead
+  if (exited != NULL) {
+    TracePrintf(1, "HANDLE_WAIT: Exited child found for parent %d with pid %d\n", running_process->pid, exited->pid);
+    int status = exited->rc;
+    *status_ptr = status;
+    return status;
+  }
+
   // otherwise:
-  //    block parent until next child exits
-  //    set the status_ptr and return
+  else {
+    //    block parent until next child exits
+    TracePrintf(1, "HANDLE_WAIT: blocking process %d and waiting for child death\n", running_process->pid);
+    running_process->waitingForChildExit = true;
+    install_next_from_queue(running_process, 1);
+    // NOTE -- this runs when a child dies and signals its parent
+    //    set the status_ptr and return
+    TracePrintf(1, "HANDLE_WAIT: Back to process %d after child death\n", running_process->pid);
+    exited = get_first_exited_child(running_process);
+    // this should never be NULL
+    if (exited == NULL) {
+      TracePrintf(1, "HANDLE_WAIT: Critical error: exited is NULL after swapping back to parent %d\n", running_process->pid);
+      Halt();
+    }
+    else {
+      TracePrintf(1, "HANDLE_WAIT: Exited child found for parent %d with pid %d\n", running_process->pid, exited->pid);
+      running_process->waitingForChildExit = false;
+      int status = exited->rc;
+      *status_ptr = status;
+      return status;
+    }
+  }
 }
 
 /*
@@ -263,6 +354,7 @@ ERROR is returned instead.
  */
 int handle_Delay(int clock_ticks)
 {
+  TracePrintf(1, "DELAY: Delaying for %d clock ticks\n", clock_ticks);
   // return ERROR if clock_ticks is negative
   if (clock_ticks < 0) {
     return ERROR;
@@ -277,7 +369,7 @@ int handle_Delay(int clock_ticks)
   running_process->next_pcb = NULL;
   running_process->prev_pcb = NULL;
 
-  // otherwise, block the process for clock_ticks (put in delay queue)
+  // otherwise, block the process for clock_ticks (put in delay collection)
   running_process->delayed_clock_cycles = clock_ticks;
 
   // stick in at the head of the linked list

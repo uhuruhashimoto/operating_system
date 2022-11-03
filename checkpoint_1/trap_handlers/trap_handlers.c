@@ -131,7 +131,7 @@ void handle_trap_clock(UserContext* context) {
     while (next_process != NULL) {
       // decrement their delays
       next_process->delayed_clock_cycles--;
-      TracePrintf(3, "Delayed process with id %d now has %d clock cycles remaining\n",
+      TracePrintf(1, "Delayed process with id %d now has %d clock cycles remaining\n",
                   next_process->pid, next_process->delayed_clock_cycles);
 
       // if any process gets a delay of 0 or less, put it back into the ready queue
@@ -211,6 +211,7 @@ void handle_trap_memory(UserContext* context) {
   // otherwise:
   //  abort the process
   //  run the next process on the ready queue
+  Halt();
 }
 
 /*
