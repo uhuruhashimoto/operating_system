@@ -184,10 +184,14 @@ delete_process(pcb_t* process, int status_code)
     //  switch to the parent if it is waiting for exit
     if (process->parent->waitingForChildExit == true) {
       TracePrintf(1, "DELETE PROCESS: Swapping to parent waiting for child\n");
+
       // switch back to parent, which will loop through children again
+      running_process = process->parent;
       switch_between_processes(process, process->parent);
+
       // THIS LINE RUNS WHEN PARENT (IN WAIT) SWITCHES TO CHILD
       TracePrintf(1, "DELETE PROCESS: Back to child from waiting parent\n");
+      running_process = process->parent;
       switch_between_processes_delete_old(process, process->parent);
       TracePrintf(1, "DELETING PROCESS: Parent should never switch back to child again\n");
       Halt();

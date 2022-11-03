@@ -131,24 +131,31 @@ void handle_Exit(int status)
  * Gets the first exited child, if any, from the parent's collection of children
  */
 pcb_t* get_first_exited_child(pcb_t* parent) {
+  TracePrintf(1, "GET_FIRST_EXITED_CHILD: Checking children\n");
   pcb_t* next_child = parent->children;
+  if (next_child == NULL) {
+    TracePrintf(1, "GET_FIRST_EXITED_CHILD: ARRAY IS NULL!!!\n");
+    return NULL;
+  }
+
   while (next_child != NULL) {
+    TracePrintf(1, "GET_FIRST_EXITED_CHILD: child %d has exited %d\n", next_child->pid, (int)(next_child->hasExited));
     if (next_child->hasExited) {
+      // remove the child from the parent's collection
+      if (next_child != NULL && parent->children == next_child) {
+        parent->children = next_child->prev_sibling;
+      }
+      if (next_child != NULL && next_child->prev_sibling != NULL) {
+        next_child->prev_sibling->next_sibling = next_child->next_sibling;
+      }
+      if (next_child != NULL && next_child->next_sibling != NULL) {
+        next_child->next_sibling->prev_sibling = next_child->prev_sibling;
+      }
+
       return next_child;
     }
 
     next_child = next_child->next_sibling;
-  }
-
-  // remove the child from the parent's collection
-  if (next_child != NULL && parent->children == next_child) {
-    parent->children = next_child->prev_sibling;
-  }
-  if (next_child != NULL && next_child->prev_sibling != NULL) {
-    next_child->prev_sibling->next_sibling = next_child->next_sibling;
-  }
-  if (next_child != NULL && next_child->next_sibling != NULL) {
-    next_child->next_sibling->prev_sibling = next_child->prev_sibling;
   }
 
   return NULL;
@@ -331,6 +338,7 @@ ERROR is returned instead.
  */
 int handle_Delay(int clock_ticks)
 {
+  TracePrintf(1, "DELAY: Delaying for %d clock ticks\n", clock_ticks);
   // return ERROR if clock_ticks is negative
   if (clock_ticks < 0) {
     return ERROR;
