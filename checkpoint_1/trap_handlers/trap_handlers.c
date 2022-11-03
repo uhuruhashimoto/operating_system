@@ -23,7 +23,7 @@ void handle_trap_kernel(UserContext* context) {
       rc = handle_Fork();
       break;
     case YALNIX_EXEC:
-      handle_Exec((char *)context->regs[0], (char **) context->regs[1]); //TODO cast args as temporary solution
+      rc = handle_Exec((char *)context->regs[0], (char **) context->regs[1]); //TODO cast args as temporary solution
       break;
     case YALNIX_EXIT:
       handle_Exit(context->regs[0]);
@@ -201,6 +201,7 @@ void handle_trap_illegal(UserContext* context) {
  */
 void handle_trap_memory(UserContext* context) {
   TracePrintf(1, "This trap is not yet implemented\n");
+  Pause();
   // implicit request for more memory -- stack, not the heap
   // check if the address being touched is one page or less away from the top of the stack
   // if so:
