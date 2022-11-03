@@ -74,11 +74,12 @@ void print_reg_1_page_table(pcb_t *process, int level, char *header) {
     TracePrintf(level, "=====Region 1 Page Table for pid %d (%d pages)=====\n", process->pid, region_1_page_table_size);
     for (int i = 0; i < region_1_page_table_size; i++) {
         if (region_1_page_table[i].valid) {
-            TracePrintf(level, "%s | Addr: %x to %x, Valid: %d, Pfn: %d\n",
+            TracePrintf(level, "%s | Addr: %x to %x, Valid: %d, Prot: %d, Pfn: %d\n",
                         header,
                         VMEM_1_BASE + (i << PAGESHIFT),
                         VMEM_1_BASE + ((i+1) << PAGESHIFT)-1,
                         region_1_page_table[i].valid,
+                        region_1_page_table[i].prot,
                         region_1_page_table[i].pfn
             );
         } 
@@ -90,4 +91,13 @@ void print_frame_table(int level) {
     for (int i=0; i<frame_table_global->frame_table_size; i++) {
         TracePrintf(level, "Frame %d: %d\n", i, frame_table_global->frame_table[i]);
     }
+}
+
+// print uctxt for a given process
+void print_uctxt(UserContext *uctxt, int level, char *header) {
+    TracePrintf(level, "%s | pc: %x, sp: %x\n",
+                header,
+                uctxt->pc,
+                uctxt->sp
+    );
 }

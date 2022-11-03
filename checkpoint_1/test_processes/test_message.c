@@ -6,6 +6,7 @@
 
 int main(const int argc, char **argv) {
     for (int i = 0; i<10; i++) {
-        TracePrintf(1, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
+        TracePrintf(1, "AAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
     }
+    Pause();
 }

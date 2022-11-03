@@ -151,6 +151,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    */
   TracePrintf(3, "Setting the Stack Pointer\n");
   proc->uctxt->sp = cp2;
+  proc->uctxt->ebp = (caddr_t)cpp; 
 
   /*
    * Now save the arguments in a separate buffer in region 0, since
