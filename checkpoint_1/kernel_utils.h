@@ -37,6 +37,11 @@ int
 delete_process(pcb_t* process, int status_code);
 
 /*
+* Switches kernel context, deleting curr_pcb_p
+*/
+KernelContext *KCSwitchDelete( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_p);
+
+/*
 * Switches kernel context, being careful to save special registers
 */
 KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_p);

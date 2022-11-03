@@ -106,12 +106,12 @@ int switch_between_processes(pcb_t *current_process, pcb_t *next_process) {
 int
 delete_process(pcb_t* process, int status_code)
 {
-  TracePrintf("DELETE PROCESS: Attempting to delete process %d with exit code %d\n", process->pid, status_code);
+  TracePrintf(1, "DELETE PROCESS: Attempting to delete process %d with exit code %d\n", (process->pid), status_code);
   // wipe out the page table for the process
   int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   for (int i = 0; i < region_1_page_table_size; i++) {
     process->region_1_page_table[i].valid = false;
-    frame_table_global[process->region_1_page_table[i].pfn] = 0;
+    frame_table_global->frame_table[process->region_1_page_table[i].pfn] = 0;
   }
 
   free(process->region_1_page_table);
@@ -132,7 +132,7 @@ delete_process(pcb_t* process, int status_code)
       // switch back to parent, which will loop through children again
       switch_between_processes(process, process->parent);
       // THIS LINE RUNS WHEN PARENT SWITCHES TO CHILD
-      int rc = KernelContextSwitch(&KCSwitchDelete, (void *)process, (void *)(process->parent);
+      int rc = KernelContextSwitch(&KCSwitchDelete, (void *)process, (void *)(process->parent));
       if (rc != 0) {
         TracePrintf(1, "Failed to delete current kernel context; exiting...\n");
         Halt();
@@ -170,7 +170,7 @@ KernelContext *KCSwitchDelete( KernelContext *kc_in, void *curr_pcb_p, void *nex
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
     // free the existing R0 kernel page tables
     region_0_page_table[stack_page_ind].valid = false;
-    frame_table_global[region_0_page_table[stack_page_ind].pfn] = 0;
+    frame_table_global->frame_table[region_0_page_table[stack_page_ind].pfn] = 0;
     TracePrintf(5, "Deleting page in PCB: Addr: %x to %x, Valid: %d, Pfn: %d\n",
                 VMEM_0_BASE + (stack_page_ind << PAGESHIFT),
                 VMEM_0_BASE + ((stack_page_ind+1) << PAGESHIFT)-1,

@@ -114,7 +114,7 @@ int handle_Exec(char *filename, char **argvec)
  */
 void handle_Exit(int status)
 {
-  TracePrintf(1, "Handling exit with rc=%d for process with pid %d\n", status, running_process->pid)
+  TracePrintf(1, "Handling exit with rc=%d for process with pid %d\n", status, running_process->pid);
   // iterate over children, setting their parent to be NULL
   pcb_t* next_child = running_process->children;
   while (next_child != NULL) {
@@ -155,7 +155,7 @@ int handle_Wait(int *status_ptr)
   // return ERROR immediately if no remaining children, alive or dead
   if (running_process->children == NULL) {
     TracePrintf(1, "HANDLE_WAIT: Error: no children remaining for %d\n", running_process->pid);
-    &status_ptr = ERROR;
+    *status_ptr = ERROR;
     return ERROR;
   }
 
@@ -166,7 +166,7 @@ int handle_Wait(int *status_ptr)
   if (exited != NULL) {
     TracePrintf(1, "HANDLE_WAIT: Exited child found for parent %d with pid %d\n", running_process->pid, exited->pid);
     int status = exited->rc;
-    &status_ptr = status;
+    *status_ptr = status;
     return status;
   }
 
@@ -187,7 +187,7 @@ int handle_Wait(int *status_ptr)
     else {
       TracePrintf(1, "HANDLE_WAIT: Exited child found for parent %d with pid %d\n", running_process->pid, exited->pid);
       int status = exited->rc;
-      &status_ptr = status;
+      *status_ptr = status;
       return status;
     }
   }
