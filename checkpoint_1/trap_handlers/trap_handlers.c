@@ -7,6 +7,7 @@
 #include "../syscalls/process_syscalls.h"
 #include "../syscalls/sync_syscalls.h"
 #include "../data_structures/queue.h"
+#include "../debug_utils/debug.h"
 
 /*
  * Handle traps to the kernel
@@ -24,6 +25,8 @@ void handle_trap_kernel(UserContext* context) {
       break;
     case YALNIX_EXEC:
       rc = handle_Exec((char *)context->regs[0], (char **) context->regs[1]); //TODO cast args as temporary solution
+      context->pc = running_process->uctxt->pc;
+      context->sp = running_process->uctxt->sp;
       break;
     case YALNIX_EXIT:
       handle_Exit(context->regs[0]);
@@ -201,7 +204,6 @@ void handle_trap_illegal(UserContext* context) {
  */
 void handle_trap_memory(UserContext* context) {
   TracePrintf(1, "This trap is not yet implemented\n");
-  Pause();
   // implicit request for more memory -- stack, not the heap
   // check if the address being touched is one page or less away from the top of the stack
   // if so:

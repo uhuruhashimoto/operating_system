@@ -92,3 +92,12 @@ void print_frame_table(int level) {
         TracePrintf(level, "Frame %d: %d\n", i, frame_table_global->frame_table[i]);
     }
 }
+
+// print uctxt for a given process
+void print_uctxt(UserContext *uctxt, int level, char *header) {
+    TracePrintf(level, "%s | pc: %x, sp: %x\n",
+                header,
+                uctxt->pc,
+                uctxt->sp
+    );
+}

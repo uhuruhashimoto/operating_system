@@ -67,9 +67,9 @@ int handle_Fork(void)
   add_to_queue(ready_queue, child_pcb);
   int rc = clone_process(child_pcb);
 
-  TracePrintf(1, "Back from clone; return code is %d\n", running_process->rc);
-  print_reg_1_page_table(running_process, 1, "POST FLUSH");
-  print_reg_1_page_table_contents(running_process, 1, "POST FLUSH");
+  TracePrintf(2, "Back from clone; return code is %d\n", running_process->rc);
+  print_reg_1_page_table(running_process, 2, "POST FLUSH");
+  print_reg_1_page_table_contents(running_process, 2, "POST FLUSH");
 
   // if we've done the bookkeeping in our round robin/clock trap, then our running process should 
   // contain the correct pcb when returning from clone.
@@ -84,9 +84,7 @@ int handle_Fork(void)
 int handle_Exec(char *filename, char **argvec)
 {
   int rc = 0;
-  TracePrintf(1, "Exec handler: my pid is %d\n", running_process->pid);
-  print_reg_1_page_table(running_process, 1, "PRE EXEC");
-  print_reg_1_page_table_contents(running_process, 1, "PRE EXEC");
+
   // wipe out the page table for the old process 
   // load the ELF file from *filename
   // get the page table for the new process
@@ -95,8 +93,14 @@ int handle_Exec(char *filename, char **argvec)
     TracePrintf(1, "Loading the init process failed with exit code %d\n", rc);
     Halt();
   }
-  print_reg_1_page_table(running_process, 1, "POST LOAD PROGRAM");
-  print_reg_1_page_table_contents(running_process, 1, "POST LOAD PROGRAM");
+
+  TracePrintf(5, "Exec handler: my pid is %d\n", running_process->pid);
+  print_reg_0_page_table(5, "POST EXEC");
+  print_kernel_stack(5);
+  print_reg_1_page_table(running_process, 5, "POST EXEC");
+  print_reg_1_page_table_contents(running_process, 5, "POST EXEC");
+  print_uctxt(running_process->uctxt, 5, "POST EXEC RUNNING PROCESS");
+
   // if load program returns an error, then exec should return error. Otherwise, return statement
   // will return to the original PC position and the return code doesn't matter. 
   return rc;

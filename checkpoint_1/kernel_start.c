@@ -33,6 +33,7 @@
 #include "data_structures/queue.h"
 #include "data_structures/frame_table.h"
 #include "process_management/load_program.h"
+#include "debug_utils/debug.h"
 
 
 extern void *_kernel_data_start;
