@@ -49,28 +49,29 @@ int handle_Fork(void)
       bufpage->prot = (PROT_READ | PROT_WRITE);
       bufpage->pfn = new_frame;
       // keep the existing permissions, but update the pfn of the page
-      child_pcb->region_1_page_table[i].valid = running_process->region_1_page_table[i].valid;
+      child_pcb->region_1_page_table[i].valid = 1;
       child_pcb->region_1_page_table[i].prot = running_process->region_1_page_table[i].prot; 
       child_pcb->region_1_page_table[i].pfn = bufpage->pfn; 
       // write bytes in question to the frame 
       TracePrintf(5, "FORK HANDLER: Writing bytes %08x from %p to %p\n", * (int *)(VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_0_BASE + (bufpage_index << PAGESHIFT)));
-      TracePrintf(5, "FORK HANDLER: Bufpage: Addr %x, valid %d, prot %d, pfn %d\n", bufpage_index << PAGESHIFT, bufpage->valid, bufpage->prot, bufpage->pfn);
+      TracePrintf(1, "FORK HANDLER: Bufpage: Addr %x, valid %d, prot %d, pfn %d\n", bufpage_index << PAGESHIFT, bufpage->valid, bufpage->prot, bufpage->pfn);
       memcpy((void *)(VMEM_0_BASE + (bufpage_index << PAGESHIFT)), (void *)(VMEM_1_BASE + (i << PAGESHIFT)), PAGESIZE);
       // flush the page from the TLB so it doesn't cache and overwrite the same frame
+      bufpage->valid = 0;
       WriteRegister(REG_TLB_FLUSH, (int) (VMEM_0_BASE + (bufpage_index << PAGESHIFT)));
-    } 
+//      WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
+    }
     else {
       child_pcb->region_1_page_table[i].valid = 0; 
     }
   }
-  bufpage->valid = 0;
 
   add_to_queue(ready_queue, child_pcb);
   // return the right thing for fork
   int rc = clone_process(child_pcb);
 
   TracePrintf(2, "Back from clone; return code is %d\n", running_process->rc);
-  print_reg_1_page_table(running_process, 2, "POST FLUSH");
+  print_reg_1_page_table(running_process, 1, "POST FLUSH");
   print_reg_1_page_table_contents(running_process, 2, "POST FLUSH");
 
   // if we've done the bookkeeping in our round robin/clock trap, then our running process should 
@@ -220,6 +221,7 @@ int handle_Wait(int *status_ptr)
     }
     else {
       TracePrintf(1, "HANDLE_WAIT: Exited child found for parent %d with pid %d\n", running_process->pid, exited->pid);
+      running_process->waitingForChildExit = false;
       int status = exited->rc;
       *status_ptr = status;
       return status;

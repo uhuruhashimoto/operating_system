@@ -263,16 +263,16 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
   pcb_t *next_pcb = (pcb_t *)next_pcb_p;
   memcpy(curr_pcb->kctxt, kc_in, sizeof(KernelContext));
 
-  TracePrintf(5, "=====Region 0 Page Table Before Switch=====\n");
-  print_reg_0_page_table(5, "");
+  TracePrintf(1, "=====Region 0 Page Table Before Switch=====\n");
+  print_reg_0_page_table(1, "");
 
-  TracePrintf(5, "=====Copying KernelStack into Region 0=====\n");
+  TracePrintf(1, "=====Copying KernelStack into Region 0=====\n");
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
   for (int i=0; i<num_stack_pages; i++) {
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
     // store the existing Region 0 kernel stack mappings in the old PCB
     curr_pcb->kernel_stack[i] = region_0_page_table[stack_page_ind];
-    TracePrintf(5, "Storing page in PCB: Addr: %x to %x, Valid: %d, Pfn: %d\n",
+    TracePrintf(1, "Storing page in PCB: Addr: %x to %x, Valid: %d, Pfn: %d\n",
                 VMEM_0_BASE + (stack_page_ind << PAGESHIFT),
                 VMEM_0_BASE + ((stack_page_ind+1) << PAGESHIFT)-1,
                 region_0_page_table[stack_page_ind].valid,
@@ -280,7 +280,7 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
     );
     // change the Region 0 kernel stack mappings to those for the new PCB
     region_0_page_table[stack_page_ind] = next_pcb->kernel_stack[i];
-    TracePrintf(5, "Copying page to KERNEL: Addr: %x to %x, Valid: %d, Pfn: %d\n",
+    TracePrintf(1, "Copying page to KERNEL: Addr: %x to %x, Valid: %d, Pfn: %d\n",
                 VMEM_0_BASE + (stack_page_ind << PAGESHIFT),
                 VMEM_0_BASE + ((stack_page_ind+1) << PAGESHIFT)-1,
                 region_0_page_table[stack_page_ind].valid,
@@ -288,12 +288,12 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
     );
   }
 
-  TracePrintf(5, "=====Region 0 Page Table After Switch=====\n");
-  print_reg_0_page_table(5, "");
+  TracePrintf(1, "=====Region 0 Page Table After Switch=====\n");
+  print_reg_0_page_table(1, "");
 
-  TracePrintf(5, "=====OLD PCB Kernel Stack=====\n");
+  TracePrintf(1, "=====OLD PCB Kernel Stack=====\n");
   for (int i=0; i<num_stack_pages; i++) {
-    TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+    TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
                 KERNEL_STACK_BASE + (i << PAGESHIFT),
                 KERNEL_STACK_BASE + ((i+1) << PAGESHIFT)-1,
                 curr_pcb->kernel_stack[i].valid,
@@ -301,7 +301,16 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
     );
   }
 
-  print_kernel_stack(5);
+  TracePrintf(1, "=====New PCB Kernel Stack=====\n");
+  for (int i=0; i<num_stack_pages; i++) {
+    TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+                KERNEL_STACK_BASE + (i << PAGESHIFT),
+                KERNEL_STACK_BASE + ((i+1) << PAGESHIFT)-1,
+                next_pcb->kernel_stack[i].valid,
+                next_pcb->kernel_stack[i].pfn
+    );
+  }
+  print_kernel_stack(1);
 
   // set the kernel stack in region 0 to the kernel stack in the new pcb
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);
