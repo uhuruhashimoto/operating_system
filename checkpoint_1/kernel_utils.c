@@ -110,33 +110,48 @@ delete_process(pcb_t* process, int status_code)
   // wipe out the page table for the process
   int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   for (int i = 0; i < region_1_page_table_size; i++) {
-    process->region_1_page_table[i].valid = false;
-    frame_table_global->frame_table[process->region_1_page_table[i].pfn] = 0;
+    if (process->region_1_page_table[i].valid) {
+      TracePrintf(1, "DELETE PROCESS: Removing %d from frame table\n", process->region_1_page_table[i].pfn);
+      frame_table_global->frame_table[process->region_1_page_table[i].pfn] = 0;
+      process->region_1_page_table[i].valid = false;
+    }
   }
 
+  TracePrintf(1, "DELETE PROCESS: Zeroed R1 page table\n");
   free(process->region_1_page_table);
+  TracePrintf(1, "DELETE PROCESS: Wiped out R1 page table\n");
+  process->region_1_page_table = NULL;
 
   // check to see if the parent is dead; if so, completely delete the PCB and switch to the next possible process
   if (process->parent == NULL || process->parent->hasExited == true) {
     // installs the next element from the queue and COMPLETELY DELETES THE CURRENT PROCESS
+    TracePrintf(1, "DELETE PROCESS: No parent -- installing next from queue\n");
     install_next_from_queue(process, -1);
   }
 
     // otherwise:
   else {
+    TracePrintf(1, "DELETE PROCESS: Parent exists -- will not delete PCB\n");
+
     process->hasExited = true;
     process->rc = status_code;
 
     //  switch to the parent if it is waiting for exit
     if (process->parent->waitingForChildExit == true) {
+      TracePrintf(1, "DELETE PROCESS: Swapping to parent waiting for child\n");
       // switch back to parent, which will loop through children again
       switch_between_processes(process, process->parent);
       // THIS LINE RUNS WHEN PARENT SWITCHES TO CHILD
+      TracePrintf(1, "DELETE PROCESS: Back to child from waiting parent\n");
       int rc = KernelContextSwitch(&KCSwitchDelete, (void *)process, (void *)(process->parent));
       if (rc != 0) {
         TracePrintf(1, "Failed to delete current kernel context; exiting...\n");
         Halt();
       }
+    }
+    else {
+      TracePrintf(1, "DELETE PROCESS: Parent is not waiting: installing next from queue\n");
+      install_next_from_queue(process, 1);
     }
   }
 }

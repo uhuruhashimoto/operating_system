@@ -212,6 +212,7 @@ void handle_trap_memory(UserContext* context) {
   // otherwise:
   //  abort the process
   //  run the next process on the ready queue
+  Halt();
 }
 
 /*
