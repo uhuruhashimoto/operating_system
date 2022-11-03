@@ -130,8 +130,26 @@ int switch_between_processes(pcb_t *current_process, pcb_t *next_process) {
  * A special case, where we delete the old process
  */
 int switch_between_processes_delete_old(pcb_t *current_process, pcb_t *next_process) {
+  // free the pid for the process
+  helper_retire_pid(current_process->pid);
+
+  // wipe out the page table for the process
+  int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
+  for (int i = 0; i < region_1_page_table_size; i++) {
+    if (current_process->region_1_page_table[i].valid) {
+      TracePrintf(1, "DELETE PROCESS: Removing %d from frame table\n", current_process->region_1_page_table[i].pfn);
+      frame_table_global->frame_table[current_process->region_1_page_table[i].pfn] = 0;
+      current_process->region_1_page_table[i].valid = false;
+    }
+  }
+
+  TracePrintf(1, "DELETE PROCESS: Zeroed R1 page table\n");
+  free(current_process->region_1_page_table);
+  TracePrintf(1, "DELETE PROCESS: Wiped out R1 page table\n");
+  current_process->region_1_page_table = NULL;
+
   // sets the R1 PT
-  WriteRegister(REG_PTBR1, (int) running_process->region_1_page_table);
+  WriteRegister(REG_PTBR1, (int) next_process->region_1_page_table);
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
   int rc = KernelContextSwitch(&KCSwitchDelete, (void *)current_process, (void *)(running_process));
   if (rc != 0) {
@@ -152,20 +170,6 @@ int
 delete_process(pcb_t* process, int status_code)
 {
   TracePrintf(1, "DELETE PROCESS: Attempting to delete process %d with exit code %d\n", (process->pid), status_code);
-  // wipe out the page table for the process
-  int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
-  for (int i = 0; i < region_1_page_table_size; i++) {
-    if (process->region_1_page_table[i].valid) {
-      TracePrintf(1, "DELETE PROCESS: Removing %d from frame table\n", process->region_1_page_table[i].pfn);
-      frame_table_global->frame_table[process->region_1_page_table[i].pfn] = 0;
-      process->region_1_page_table[i].valid = false;
-    }
-  }
-
-  TracePrintf(1, "DELETE PROCESS: Zeroed R1 page table\n");
-  free(process->region_1_page_table);
-  TracePrintf(1, "DELETE PROCESS: Wiped out R1 page table\n");
-  process->region_1_page_table = NULL;
 
   // check to see if the parent is dead; if so, completely delete the PCB and switch to the next possible process
   if (process->parent == NULL || process->parent->hasExited == true) {

@@ -44,8 +44,6 @@ int main(const int argc, char **argv) {
     Exit(-2);
   }
 
-  Delay(1);
-
   pid = Fork();
   if (pid == 0) {
     TracePrintf(1, "WAIT_TEST: Forked child exec-ing. Should EXIT immediately\n");
