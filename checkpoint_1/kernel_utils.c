@@ -12,6 +12,8 @@ extern queue_t* ready_queue;
 extern void *trap_handler[16];
 extern pte_t *region_0_page_table;
 
+int switch_between_processes_delete_old(pcb_t *current_process, pcb_t *next_process);
+
 /*
 * This is the highest level function for creating and cloning a new process.
 * Note that there is no bookkeeping required in running processes.
@@ -42,7 +44,7 @@ int install_next_from_queue(pcb_t* current_process, int code) {
   pcb_t* next_process;
   // check if there is another process in the ready queue
   if (is_empty(ready_queue)) {
-    TracePrintf(3, "INSTALL_NEXT: Queue is empty, the next process is idle\n");
+    TracePrintf(1, "INSTALL_NEXT: Queue is empty, the next process is idle\n");
     // if not, swap in the idle pcb and put the old pcb in the ready queue
     next_process = idle_process;
     // we add the valid process back into the ready queue
@@ -52,7 +54,7 @@ int install_next_from_queue(pcb_t* current_process, int code) {
     is_idle = true;
   }
   else {
-    TracePrintf(3, "INSTALL_NEXT: Getting next item from the queue\n");
+    TracePrintf(1, "INSTALL_NEXT: Getting next item from the queue\n");
     // if so, swap in the next process in the ready queue
     next_process = remove_from_queue(ready_queue);
     if (is_idle) {
@@ -64,17 +66,20 @@ int install_next_from_queue(pcb_t* current_process, int code) {
     }
   }
 
-  TracePrintf(3, "INSTALL_NEXT: ABOUT TO SWAP PROCESSES\n");
-  TracePrintf(3, "INSTALL_NEXT: PID of next process: %d\n", next_process->pid);
+  TracePrintf(1, "INSTALL_NEXT: ABOUT TO SWAP PROCESSES\n");
+  TracePrintf(1, "INSTALL_NEXT: PID of next process: %d\n", next_process->pid);
   running_process = next_process;
 
   // deletes the old process and swaps in the new one
+  // this is a special case of switching between two processes
   if (code == -1) {
-    KernelContextSwitch(&KCSwitchDelete, (void *)current_process, (void *)(next_process));
+    TracePrintf(1, "INSTALL_NEXT: SWAPPING AND DELETING\n");
+    switch_between_processes_delete_old(current_process, running_process);
   }
   else {
     // saves the current user context in the old pcb
     // clears the TLB
+    TracePrintf(1, "INSTALL_NEXT: SWAPPING\n");
     switch_between_processes(current_process, running_process);
   }
 }
@@ -89,6 +94,22 @@ int switch_between_processes(pcb_t *current_process, pcb_t *next_process) {
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
 
   int rc = KernelContextSwitch(&KCSwitch, (void *)current_process, (void *)next_process);
+  if (rc != 0) {
+    TracePrintf(1, "Failed to switch kernel contexts; exiting...\n");
+    Halt();
+  }
+
+  return 0;
+}
+
+/*
+ * A special case, where we delete the old process
+ */
+int switch_between_processes_delete_old(pcb_t *current_process, pcb_t *next_process) {
+  // sets the R1 PT
+  WriteRegister(REG_PTBR1, (int) running_process->region_1_page_table);
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
+  int rc = KernelContextSwitch(&KCSwitchDelete, (void *)current_process, (void *)(running_process));
   if (rc != 0) {
     TracePrintf(1, "Failed to switch kernel contexts; exiting...\n");
     Halt();
@@ -143,11 +164,7 @@ delete_process(pcb_t* process, int status_code)
       switch_between_processes(process, process->parent);
       // THIS LINE RUNS WHEN PARENT SWITCHES TO CHILD
       TracePrintf(1, "DELETE PROCESS: Back to child from waiting parent\n");
-      int rc = KernelContextSwitch(&KCSwitchDelete, (void *)process, (void *)(process->parent));
-      if (rc != 0) {
-        TracePrintf(1, "Failed to delete current kernel context; exiting...\n");
-        Halt();
-      }
+      switch_between_processes_delete_old(process, process->parent);
     }
     else {
       TracePrintf(1, "DELETE PROCESS: Parent is not waiting: installing next from queue\n");
@@ -167,31 +184,24 @@ KernelContext *KCSwitchDelete( KernelContext *kc_in, void *curr_pcb_p, void *nex
   memcpy(curr_pcb->kctxt, kc_in, sizeof(KernelContext));
 
   int page_table_reg_0_size = UP_TO_PAGE(VMEM_0_SIZE) >> PAGESHIFT;
-  TracePrintf(5, "=====Region 0 Page Table Before Switch=====\n");
-  for (int i = 0; i < page_table_reg_0_size; i++) {
-    if (region_0_page_table[i].valid) {
-      TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
-                  VMEM_0_BASE + (i << PAGESHIFT),
-                  VMEM_0_BASE + ((i+1) << PAGESHIFT)-1,
-                  region_0_page_table[i].valid,
-                  region_0_page_table[i].pfn
-      );
-    }
-  }
+  print_reg_0_page_table(5, "=====Region 0 Page Table Before Switch/Delete=====\n");
 
   TracePrintf(5, "=====Freeing KernelStack=====\n");
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
   for (int i=0; i<num_stack_pages; i++) {
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
     // free the existing R0 kernel page tables
-    region_0_page_table[stack_page_ind].valid = false;
-    frame_table_global->frame_table[region_0_page_table[stack_page_ind].pfn] = 0;
-    TracePrintf(5, "Deleting page in PCB: Addr: %x to %x, Valid: %d, Pfn: %d\n",
-                VMEM_0_BASE + (stack_page_ind << PAGESHIFT),
-                VMEM_0_BASE + ((stack_page_ind+1) << PAGESHIFT)-1,
-                region_0_page_table[stack_page_ind].valid,
-                region_0_page_table[stack_page_ind].pfn
-    );
+    if (region_0_page_table[stack_page_ind].valid) {
+      region_0_page_table[stack_page_ind].valid = false;
+      frame_table_global->frame_table[region_0_page_table[stack_page_ind].pfn] = 0;
+      TracePrintf(5, "Deleting page in PCB: Addr: %x to %x, Valid: %d, Pfn: %d\n",
+                  VMEM_0_BASE + (stack_page_ind << PAGESHIFT),
+                  VMEM_0_BASE + ((stack_page_ind+1) << PAGESHIFT)-1,
+                  region_0_page_table[stack_page_ind].valid,
+                  region_0_page_table[stack_page_ind].pfn
+      );
+    }
+
     // change the Region 0 kernel stack mappings to those for the new PCB
     region_0_page_table[stack_page_ind] = next_pcb->kernel_stack[i];
     TracePrintf(5, "Copying page to KERNEL: Addr: %x to %x, Valid: %d, Pfn: %d\n",
@@ -202,27 +212,9 @@ KernelContext *KCSwitchDelete( KernelContext *kc_in, void *curr_pcb_p, void *nex
     );
   }
 
-  TracePrintf(5, "=====Region 0 Page Table After Switch=====\n");
-  for (int i = 0; i < page_table_reg_0_size; i++) {
-    if (region_0_page_table[i].valid) {
-      TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
-                  VMEM_0_BASE + (i << PAGESHIFT),
-                  VMEM_0_BASE + ((i+1) << PAGESHIFT)-1,
-                  region_0_page_table[i].valid,
-                  region_0_page_table[i].pfn
-      );
-    }
-  }
-
-  TracePrintf(5, "=====New PCB Kernel Stack=====\n");
-  for (int i=0; i<num_stack_pages; i++) {
-    TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
-                KERNEL_STACK_BASE + (i << PAGESHIFT),
-                KERNEL_STACK_BASE + ((i + 1) << PAGESHIFT) - 1,
-                next_pcb->kernel_stack[i].valid,
-                next_pcb->kernel_stack[i].pfn
-    );
-  }
+  TracePrintf(1, "=====Region 0 Page Table After Switch/Delete=====\n");
+  print_reg_0_page_table(1, "Switch/Delete");
+  print_kernel_stack(1);
 
   // delete the old pcb
   free(curr_pcb);
@@ -241,18 +233,8 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
   pcb_t *next_pcb = (pcb_t *)next_pcb_p;
   memcpy(curr_pcb->kctxt, kc_in, sizeof(KernelContext));
 
-  int page_table_reg_0_size = UP_TO_PAGE(VMEM_0_SIZE) >> PAGESHIFT;
   TracePrintf(5, "=====Region 0 Page Table Before Switch=====\n");
-  for (int i = 0; i < page_table_reg_0_size; i++) {
-    if (region_0_page_table[i].valid) {
-      TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
-                  VMEM_0_BASE + (i << PAGESHIFT),
-                  VMEM_0_BASE + ((i+1) << PAGESHIFT)-1,
-                  region_0_page_table[i].valid,
-                  region_0_page_table[i].pfn
-      );
-    }
-  }
+  print_reg_0_page_table(5, "");
 
   TracePrintf(5, "=====Copying KernelStack into Region 0=====\n");
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
@@ -277,16 +259,7 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
   }
 
   TracePrintf(5, "=====Region 0 Page Table After Switch=====\n");
-  for (int i = 0; i < page_table_reg_0_size; i++) {
-    if (region_0_page_table[i].valid) {
-      TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
-                  VMEM_0_BASE + (i << PAGESHIFT),
-                  VMEM_0_BASE + ((i+1) << PAGESHIFT)-1,
-                  region_0_page_table[i].valid,
-                  region_0_page_table[i].pfn
-      );
-    }
-  }
+  print_reg_0_page_table(5, "");
 
   TracePrintf(5, "=====OLD PCB Kernel Stack=====\n");
   for (int i=0; i<num_stack_pages; i++) {
@@ -298,15 +271,7 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
     );
   }
 
-  TracePrintf(5, "=====New PCB Kernel Stack=====\n");
-  for (int i=0; i<num_stack_pages; i++) {
-    TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
-                KERNEL_STACK_BASE + (i << PAGESHIFT),
-                KERNEL_STACK_BASE + ((i + 1) << PAGESHIFT) - 1,
-                next_pcb->kernel_stack[i].valid,
-                next_pcb->kernel_stack[i].pfn
-    );
-  }
+  print_kernel_stack(5);
 
   // set the kernel stack in region 0 to the kernel stack in the new pcb
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);
@@ -323,18 +288,8 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   new_pcb->rc = 0;
   memcpy(new_pcb->kctxt, kc_in, sizeof(KernelContext));
 
-  int page_table_reg_0_size = UP_TO_PAGE(VMEM_0_SIZE) >> PAGESHIFT;
   TracePrintf(5, "=====Region 0 Page Table Before Clone=====\n");
-  for (int i = 0; i < page_table_reg_0_size; i++) {
-    if (region_0_page_table[i].valid) {
-      TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
-                  VMEM_0_BASE + (i << PAGESHIFT),
-                  VMEM_0_BASE + ((i+1) << PAGESHIFT)-1,
-                  region_0_page_table[i].valid,
-                  region_0_page_table[i].pfn
-      );
-    }
-  }
+  print_reg_0_page_table(5, "");
 
   //copy current kernel stack into new kstack frames in initPCB
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
@@ -372,16 +327,7 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   }
 
   TracePrintf(5, "=====Region 0 Page Table After Clone=====\n");
-  for (int i = 0; i < page_table_reg_0_size; i++) {
-    if (region_0_page_table[i].valid) {
-      TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
-                  VMEM_0_BASE + (i << PAGESHIFT),
-                  VMEM_0_BASE + ((i+1) << PAGESHIFT)-1,
-                  region_0_page_table[i].valid,
-                  region_0_page_table[i].pfn
-      );
-    }
-  }
+  print_reg_0_page_table(5, "");
 
   TracePrintf(5, "=====OLD PCB Kernel Stack=====\n");
   for (int i=0; i<num_stack_pages; i++) {
@@ -393,15 +339,7 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
     );
   }
 
-  TracePrintf(5, "=====New PCB Kernel Stack=====\n");
-  for (int i=0; i<num_stack_pages; i++) {
-    TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
-                KERNEL_STACK_BASE + (i << PAGESHIFT),
-                KERNEL_STACK_BASE + ((i + 1) << PAGESHIFT) - 1,
-                new_pcb->kernel_stack[i].valid,
-                new_pcb->kernel_stack[i].pfn
-    );
-  }
+  print_kernel_stack(5);
 
 
   // flush TLB
