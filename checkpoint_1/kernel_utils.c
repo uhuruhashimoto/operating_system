@@ -19,6 +19,8 @@ int switch_between_processes_delete_old(pcb_t *current_process, pcb_t *next_proc
 * Note that there is no bookkeeping required in running processes.
 */
 int clone_process(pcb_t *new_pcb) {
+  pcb_t* parent = running_process;
+
   print_reg_1_page_table(new_pcb, 5, "PRE SWITCH CLONE UTILITY");
   print_reg_1_page_table_contents(new_pcb, 5, "PRE SWITCH CLONE UTILITY");
   int rc = KernelContextSwitch(&KCCopy, (void *)new_pcb, NULL);
@@ -28,7 +30,29 @@ int clone_process(pcb_t *new_pcb) {
   }
   print_reg_1_page_table(new_pcb, 5, "IN CLONE UTILITY");
   print_reg_1_page_table_contents(new_pcb, 5, "IN CLONE UTILITY");
-  return new_pcb->rc;
+
+  if (running_process == new_pcb) {
+    // this is the new pcb; we need to set its parent
+    running_process->parent = parent;
+    return 0;
+  } else {
+    new_pcb->next_pcb = NULL;
+    new_pcb->prev_pcb = NULL;
+
+    // this is the old pcb; we need to add a new child
+    if (parent->children == NULL) {
+      parent->children = new_pcb;
+    }
+    else {
+      // stick this in as a child process of the parent
+      new_pcb->next_sibling = parent->children;
+      parent->children = new_pcb;
+      if (new_pcb->next_sibling != NULL) {
+        new_pcb->next_sibling->prev_sibling = new_pcb;
+      }
+    }
+    return new_pcb->pid;
+  }
 }
 
 /*
@@ -162,9 +186,11 @@ delete_process(pcb_t* process, int status_code)
       TracePrintf(1, "DELETE PROCESS: Swapping to parent waiting for child\n");
       // switch back to parent, which will loop through children again
       switch_between_processes(process, process->parent);
-      // THIS LINE RUNS WHEN PARENT SWITCHES TO CHILD
+      // THIS LINE RUNS WHEN PARENT (IN WAIT) SWITCHES TO CHILD
       TracePrintf(1, "DELETE PROCESS: Back to child from waiting parent\n");
       switch_between_processes_delete_old(process, process->parent);
+      TracePrintf(1, "DELETING PROCESS: Parent should never switch back to child again\n");
+      Halt();
     }
     else {
       TracePrintf(1, "DELETE PROCESS: Parent is not waiting: installing next from queue\n");

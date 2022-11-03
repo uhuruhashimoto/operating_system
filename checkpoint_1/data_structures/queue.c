@@ -37,6 +37,8 @@ int add_to_queue(queue_t* queue, pcb_t* pcb)
   pcb_t* old_tail = queue->tail;
   queue->tail = pcb;
 
+  TracePrintf(1, "=========================ADDING pcb %d\n", pcb->pid);
+
   // muck with pointers so that the previous tail points to this tail
   pcb->prev_pcb = old_tail;
   if (old_tail != NULL) {
@@ -69,6 +71,10 @@ pcb_t* remove_from_queue(queue_t* queue)
   if (queue->head == NULL || queue->size <= 0) {
     queue->tail = NULL;
     queue->head = NULL;
+  }
+
+  if (pcb != NULL) {
+    TracePrintf(1, "=========================REMOVING pcb %d\n", pcb->pid);
   }
 
   // return the PCB

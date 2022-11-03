@@ -53,7 +53,7 @@ int handle_Fork(void)
       child_pcb->region_1_page_table[i].prot = running_process->region_1_page_table[i].prot; 
       child_pcb->region_1_page_table[i].pfn = bufpage->pfn; 
       // write bytes in question to the frame 
-      TracePrintf(5, "FORK HANLDER: Writing bytes %08x from %p to %p\n", * (int *)(VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_0_BASE + (bufpage_index << PAGESHIFT)));
+      TracePrintf(5, "FORK HANDLER: Writing bytes %08x from %p to %p\n", * (int *)(VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_0_BASE + (bufpage_index << PAGESHIFT)));
       TracePrintf(5, "FORK HANDLER: Bufpage: Addr %x, valid %d, prot %d, pfn %d\n", bufpage_index << PAGESHIFT, bufpage->valid, bufpage->prot, bufpage->pfn);
       memcpy((void *)(VMEM_0_BASE + (bufpage_index << PAGESHIFT)), (void *)(VMEM_1_BASE + (i << PAGESHIFT)), PAGESIZE);
       // flush the page from the TLB so it doesn't cache and overwrite the same frame
@@ -66,6 +66,7 @@ int handle_Fork(void)
   bufpage->valid = 0;
 
   add_to_queue(ready_queue, child_pcb);
+  // return the right thing for fork
   int rc = clone_process(child_pcb);
 
   TracePrintf(2, "Back from clone; return code is %d\n", running_process->rc);
@@ -74,7 +75,7 @@ int handle_Fork(void)
 
   // if we've done the bookkeeping in our round robin/clock trap, then our running process should 
   // contain the correct pcb when returning from clone.
-  return running_process->rc;
+  return rc;
 }
 
 /*
@@ -130,13 +131,24 @@ void handle_Exit(int status)
  * Gets the first exited child, if any, from the parent's collection of children
  */
 pcb_t* get_first_exited_child(pcb_t* parent) {
-  pcb_t* next_child = running_process->children;
+  pcb_t* next_child = parent->children;
   while (next_child != NULL) {
     if (next_child->hasExited) {
       return next_child;
     }
 
-    next_child = next_child->next_pcb;
+    next_child = next_child->next_sibling;
+  }
+
+  // remove the child from the parent's collection
+  if (next_child != NULL && parent->children == next_child) {
+    parent->children = next_child->prev_sibling;
+  }
+  if (next_child != NULL && next_child->prev_sibling != NULL) {
+    next_child->prev_sibling->next_sibling = next_child->next_sibling;
+  }
+  if (next_child != NULL && next_child->next_sibling != NULL) {
+    next_child->next_sibling->prev_sibling = next_child->prev_sibling;
   }
 
   return NULL;

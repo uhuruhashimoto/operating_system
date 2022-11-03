@@ -14,6 +14,8 @@ pcb_t *allocate_pcb() {
   pcb -> kctxt = malloc(sizeof(KernelContext));
   pcb->next_pcb = NULL;
   pcb->prev_pcb = NULL;
+  pcb->next_sibling = NULL;
+  pcb->prev_sibling = NULL;
   pcb->hasExited = false;
   pcb->waitingForChildExit = false;
   return pcb;
