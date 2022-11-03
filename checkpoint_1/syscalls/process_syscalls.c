@@ -186,6 +186,7 @@ int handle_Wait(int *status_ptr)
   else {
     //    block parent until next child exits
     TracePrintf(1, "HANDLE_WAIT: blocking process %d and waiting for child death\n", running_process->pid);
+    running_process->waitingForChildExit = true;
     install_next_from_queue(running_process, 1);
     // NOTE -- this runs when a child dies and signals its parent
     //    set the status_ptr and return
