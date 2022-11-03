@@ -98,8 +98,8 @@ void handle_trap_kernel(UserContext* context) {
     // TODO -- YALNIX_ABORT
     // TODO -- YALNIX_BOOT
   }
-
   context->regs[0] = rc;
+
 }
 
 /*
