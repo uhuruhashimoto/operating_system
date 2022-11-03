@@ -27,6 +27,7 @@ typedef struct pcb {
   KernelContext *kctxt;
 
   bool hasExited;                                      // whether the process is dead yet
+  bool waitingForChildExit;                            // whether this pcb is a parent waiting for a child
   int rc;                                              // the return code of the process
   struct pcb *next_pcb;                                     // the next pcb in the queue
   struct pcb *prev_pcb;                                     // the previous pcb in the queue

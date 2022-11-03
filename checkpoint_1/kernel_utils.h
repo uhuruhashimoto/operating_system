@@ -13,6 +13,8 @@ int clone_process();
 
 /*
  * Runs the next process from the queue
+ *  If code==-1
+ *    deletes the old process
  *  If code==0
  *    adds old process back into ready queue
  *  Otherwise
@@ -24,6 +26,15 @@ int install_next_from_queue(pcb_t* current_process, int code);
 * Top level helper to switch processes. Handles KernelContextSwitch call.
 */
 int switch_between_processes(pcb_t *current_process, pcb_t *next_process);
+
+/*
+ * Deletes the process if no parent
+ * If there is parent, triggers it
+ *
+ * returns ERROR on error, SUCCESS if
+ */
+int
+delete_process(pcb_t* process, int status_code);
 
 /*
 * Switches kernel context, being careful to save special registers

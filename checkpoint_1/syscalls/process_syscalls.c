@@ -1,5 +1,6 @@
 #include <ykernel.h>
 #include "../kernel_start.h"
+#include "../kernel_utils.h"
 #include "../data_structures/pcb.h"
 #include "../data_structures/queue.h"
 #include "../data_structures/frame_table.h"
@@ -120,12 +121,32 @@ int handle_Exec(char *filename, char **argvec)
  */
 void handle_Exit(int status)
 {
-  // wipe out the page table for the process
-  // free all other resources
-  // check to see if the parent is dead; if so, completely delete the PCB
-  // otherwise:
-  //  save the status on the PCB
-  //  place the parent on the ready queue if the parent is waiting for exit
+  TracePrintf(1, "Handling exit with rc=%d for process with pid %d\n", status, running_process->pid)
+  // iterate over children, setting their parent to be NULL
+  pcb_t* next_child = running_process->children;
+  while (next_child != NULL) {
+    next_child->parent = NULL;
+    next_child = next_child->next_pcb;
+  }
+  running_process->children = NULL;
+
+  delete_process(running_process, status);
+}
+
+/*
+ * Gets the first exited child, if any, from the parent's collection of children
+ */
+pcb_t* get_first_exited_child(pcb_t* parent) {
+  pcb_t* next_child = running_process->children;
+  while (next_child != NULL) {
+    if (next_child->hasExited) {
+      return next_child;
+    }
+
+    next_child = next_child->next_pcb;
+  }
+
+  return NULL;
 }
 
 /*
@@ -136,12 +157,47 @@ void handle_Exit(int status)
  */
 int handle_Wait(int *status_ptr)
 {
-  // check child processes on the PCB
+  TracePrintf(1, "HANDLE_WAIT: triggered for process %d\n", running_process->pid);
+
   // return ERROR immediately if no remaining children, alive or dead
+  if (running_process->children == NULL) {
+    TracePrintf(1, "HANDLE_WAIT: Error: no children remaining for %d\n", running_process->pid);
+    &status_ptr = ERROR;
+    return ERROR;
+  }
+
+  // check child processes on the PCB
+  pcb_t* exited = get_first_exited_child(running_process);
+
   // return immediately if the child is already dead
+  if (exited != NULL) {
+    TracePrintf(1, "HANDLE_WAIT: Exited child found for parent %d with pid %d\n", running_process->pid, exited->pid);
+    int status = exited->rc;
+    &status_ptr = status;
+    return status;
+  }
+
   // otherwise:
-  //    block parent until next child exits
-  //    set the status_ptr and return
+  else {
+    //    block parent until next child exits
+    TracePrintf(1, "HANDLE_WAIT: blocking process %d and waiting for child death\n", running_process->pid);
+    install_next_from_queue(running_process, 1);
+    // NOTE -- this runs when a child dies and signals its parent
+    //    set the status_ptr and return
+    TracePrintf(1, "HANDLE_WAIT: Back to process %d after child death\n", running_process->pid);
+    exited = get_first_exited_child(running_process);
+    // this should never be NULL
+    if (exited == NULL) {
+      TracePrintf(1, "HANDLE_WAIT: Critical error: exited is NULL after swapping back to parent %d\n", running_process->pid);
+      Halt();
+    }
+    else {
+      TracePrintf(1, "HANDLE_WAIT: Exited child found for parent %d with pid %d\n", running_process->pid, exited->pid);
+      int status = exited->rc;
+      &status_ptr = status;
+      return status;
+    }
+  }
 }
 
 /*
@@ -283,7 +339,7 @@ int handle_Delay(int clock_ticks)
   running_process->next_pcb = NULL;
   running_process->prev_pcb = NULL;
 
-  // otherwise, block the process for clock_ticks (put in delay queue)
+  // otherwise, block the process for clock_ticks (put in delay collection)
   running_process->delayed_clock_cycles = clock_ticks;
 
   // stick in at the head of the linked list
