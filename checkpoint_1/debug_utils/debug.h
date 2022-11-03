@@ -30,4 +30,8 @@ void print_reg_1_page_table_contents(pcb_t *process, int level, char *header);
 // print the frame table (all frames)
 void print_frame_table(int level); 
 
+
+// print uctxt for a given process
+void print_uctxt(UserContext *uctxt, int level, char *header);
+
 #endif

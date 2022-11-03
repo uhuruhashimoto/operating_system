@@ -113,6 +113,7 @@ int handle_Exec(char *filename, char **argvec)
  */
 void handle_Exit(int status)
 {
+  Pause();
   // wipe out the page table for the process
   // free all other resources
   // check to see if the parent is dead; if so, completely delete the PCB
