@@ -4,7 +4,7 @@ Elliot Potter
 Oct 27, 2022
 
 This is Yalnix, our operating system for COSC 58 22F. The current kernel boots and handles cloning and switching processes,
-as well as handling get_pid, delay, and setbrk syscalls. 
+as well as handling fork, exec and wait syscalls.
 
 ## <ins> Building </ins>
 
@@ -41,9 +41,9 @@ This process will continually fork until Yalnix runs out of memory and halts.
 ```
 Prints the arguments passed into yalnix on invocation. (foo bar baz)
 
-### Delay Test
+### Wait Test
 ```
-./yalnix ./checkpoint_1/test_processes/delay_test
+./yalnix ./checkpoint_1/test_processes/wait_test
 ```
 Tests three things. First, forks and executes a process that will terminate immediately (and waits for it). Second, forks
 and executes a process that will terminate after 3 ticks (and waits for it). Third, executes both processes simultaneously.
