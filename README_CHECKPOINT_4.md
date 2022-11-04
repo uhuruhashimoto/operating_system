@@ -23,37 +23,29 @@ Will halt after attempting to load program "init", unless this is in the top-lev
 We currently have an "init" executable, but it is located in the /checkpoint_1/test_processes directory.
 Options: `-W` to dump core, `-lk [level]` to TracePrint at a level below 1 (for more information).
 
-## Init 
+### Fork Test
 ```
-./yalnix ./checkpoint_1/test_processes/init
+./yalnix ./checkpoint_1/test_processes/fork_test
 ```
-In this case, the kernel simply bounces between idle and init process every clock trap. 
+In this test, the init process forks a child, and they both print in an infinite loop, switching back and forth.
 
-### Incrementer Test
+### Fork Bomb
 ```
-./yalnix ./checkpoint_1/test_processes/iterator
+./yalnix ./checkpoint_1/test_processes/fork_bomb
 ```
-In this test, the kernel alternates between init and idle. 
-The idle process will print "DoIdle", while the iterator will print an incrementing value. These two prints alternate.
-The program also prints the PID.
+This process will continually fork until Yalnix runs out of memory and halts.
+
+### Exec Test
+```
+./yalnix ./checkpoint_1/test_processes/exec_test foo bar baz
+```
+Prints the arguments passed into yalnix on invocation. (foo bar baz)
 
 ### Delay Test
 ```
 ./yalnix ./checkpoint_1/test_processes/delay_test
 ```
-
-### Brk Test
-```
-./yalnix ./checkpoint_1/test_processes/brk_test
-```
-Note -- to observe brk_test, stop the OS after about a second of execution.
-The idle process will print "DoIdle"; brk_test will malloc and then free some memory, which should trigger an increase
-in the brk of 3 pages.
-
-### GetPID Test (in isolation)
-```
-./yalnix ./checkpoint_1/test_processes/pid_test
-```
-Because fork is implemented in the next checkpoint, we can't check pid incrementation outside of the kernel. We can,
-however, observe the hardware alternation between pids. For our test, we check the user pid of a user process.
-
+Tests three things. First, forks and executes a process that will terminate immediately (and waits for it). Second, forks
+and executes a process that will terminate after 3 ticks (and waits for it). Third, executes both processes simultaneously.
+It waits for one of the two processes to execute.
+The expected behavior is (Wait ~1 tick, wait ~3 ticks, wait ~1 tick)
