@@ -70,9 +70,11 @@ int handle_Fork(void)
   // return the right thing for fork
   int rc = clone_process(child_pcb);
 
-  TracePrintf(2, "Back from clone; return code is %d\n", running_process->rc);
+  TracePrintf(1, "Back from clone; return code is %d\n", running_process->rc);
+
   print_reg_1_page_table(running_process, 1, "POST FLUSH");
   print_reg_1_page_table_contents(running_process, 2, "POST FLUSH");
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 
   // if we've done the bookkeeping in our round robin/clock trap, then our running process should 
   // contain the correct pcb when returning from clone.

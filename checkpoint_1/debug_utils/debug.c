@@ -82,7 +82,7 @@ void print_reg_1_page_table(pcb_t *process, int level, char *header) {
                         region_1_page_table[i].prot,
                         region_1_page_table[i].pfn
             );
-        } 
+        }
     }
 }
 

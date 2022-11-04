@@ -267,8 +267,8 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
   pcb_t *next_pcb = (pcb_t *)next_pcb_p;
   memcpy(curr_pcb->kctxt, kc_in, sizeof(KernelContext));
 
-  TracePrintf(1, "=====Region 0 Page Table Before Switch=====\n");
-  print_reg_0_page_table(1, "");
+  TracePrintf(5, "=====Region 0 Page Table Before Switch=====\n");
+  print_reg_0_page_table(5, "");
 
   TracePrintf(1, "=====Copying KernelStack into Region 0=====\n");
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
@@ -292,8 +292,8 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
     );
   }
 
-  TracePrintf(1, "=====Region 0 Page Table After Switch=====\n");
-  print_reg_0_page_table(1, "");
+  TracePrintf(5, "=====Region 0 Page Table After Switch=====\n");
+  print_reg_0_page_table(5, "");
 
   TracePrintf(1, "=====OLD PCB Kernel Stack=====\n");
   for (int i=0; i<num_stack_pages; i++) {
@@ -329,12 +329,14 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   //copy current KernelContext into the new PCB
   pcb_t *new_pcb = (pcb_t  *)new_pcb_p;
   new_pcb->rc = 0;
+  TracePrintf(1, "==================================================\n");
+  TracePrintf(1, "Copying kernel context for process %d\n", new_pcb->pid);
   memcpy(new_pcb->kctxt, kc_in, sizeof(KernelContext));
 
   TracePrintf(5, "=====Region 0 Page Table Before Clone=====\n");
   print_reg_0_page_table(5, "");
 
-  //copy current kernel stack into new kstack frames in initPCB
+  //copy current kernel stack into new kstack frames
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
   for (int i=0; i<num_stack_pages; i++) {
     // bufpage should be just below the stack (-1, then -2)
@@ -372,21 +374,24 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   TracePrintf(5, "=====Region 0 Page Table After Clone=====\n");
   print_reg_0_page_table(5, "");
 
-  TracePrintf(5, "=====OLD PCB Kernel Stack=====\n");
+  TracePrintf(1, "=====NEW PCB Kernel Stack=====\n");
   for (int i=0; i<num_stack_pages; i++) {
-    TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+    TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
                 KERNEL_STACK_BASE + (i << PAGESHIFT),
                 KERNEL_STACK_BASE + ((i+1) << PAGESHIFT)-1,
-                running_process->kernel_stack[i].valid,
-                running_process->kernel_stack[i].pfn
+                new_pcb->kernel_stack[i].valid,
+                new_pcb->kernel_stack[i].pfn
     );
   }
 
-  print_kernel_stack(5);
+  TracePrintf(1, "=====OLD PCB Kernel Stack=====\n");
+  print_kernel_stack(1);
 
 
   // flush TLB
+//  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
   // return kc_in (See Page 40)
   return kc_in;
 }
