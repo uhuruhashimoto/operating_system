@@ -168,7 +168,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   }
 
   for (i = 0; args[i] != NULL; i++) {
-    TracePrintf(3, "saving arg %d = '%s'\n", i, args[i]);
+    TracePrintf(1, "saving arg %d = '%s'\n", i, args[i]);
     strcpy(cp2, args[i]);
     cp2 += strlen(cp2) + 1;
   }

@@ -24,9 +24,8 @@ void handle_trap_kernel(UserContext* context) {
       rc = handle_Fork();
       break;
     case YALNIX_EXEC:
-      rc = handle_Exec((char *)context->regs[0], (char **) context->regs[1]); //TODO cast args as temporary solution
-      context->pc = running_process->uctxt->pc;
-      context->sp = running_process->uctxt->sp;
+      rc = handle_Exec((char *)context->regs[0], (char **) context->regs[1]); 
+      memcpy(context, running_process->uctxt, sizeof(UserContext));
       break;
     case YALNIX_EXIT:
       handle_Exit(context->regs[0]);
@@ -99,8 +98,8 @@ void handle_trap_kernel(UserContext* context) {
     // TODO -- YALNIX_ABORT
     // TODO -- YALNIX_BOOT
   }
-
   context->regs[0] = rc;
+
 }
 
 /*
