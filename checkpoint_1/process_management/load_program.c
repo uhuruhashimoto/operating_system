@@ -83,7 +83,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    *  arguments, to become the argc that the new "main" gets called with.
    */
   size = 0;
-  for (i = 0; args[i] != NULL; i++) {
+  for (i = 0; args != NULL && args[i] != NULL; i++) {
     TracePrintf(3, "counting arg %d = '%s'\n", i, args[i]);
     size += strlen(args[i]) + 1;
   }
@@ -167,8 +167,8 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
     return ERROR;
   }
 
-  for (i = 0; args[i] != NULL; i++) {
-    TracePrintf(1, "saving arg %d = '%s'\n", i, args[i]);
+  for (i = 0; args != NULL && args[i] != NULL; i++) {
+    TracePrintf(1, "saving arg %d = '%s' from %p\n", i, args[i], &args[i]);
     strcpy(cp2, args[i]);
     cp2 += strlen(cp2) + 1;
   }
@@ -376,6 +376,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   for (i = 0; i < argcount; i++) {      /* copy each argument and set argv */
     *cpp++ = cp;
     strcpy(cp, cp2);
+    TracePrintf(1, "recovered arg %d = '%s' at %p\n", i, cp, &cp);
     cp += strlen(cp) + 1;
     cp2 += strlen(cp2) + 1;
   }

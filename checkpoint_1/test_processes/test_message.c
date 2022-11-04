@@ -8,7 +8,9 @@ int main(const int argc, char **argv) {
     for (int i = 0; i<10; i++) {
         TracePrintf(1, "=======================\n");
     }
-    TracePrintf(1, "%s at %p\n", argv, argv);
+    for (int i=0; i<argc; i++) {
+        TracePrintf(1, "Arg %d: %s\n", i, argv[i]);
+    }
     for (int i = 0; i<10; i++) {
         TracePrintf(1, "=======================\n");
     }
