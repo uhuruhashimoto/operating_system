@@ -11,6 +11,8 @@
  * Create a new lock; save its identifier at *lock idp. In case of any error, the value ERROR is returned.
  */
 int handle_LockInit(int *lock_idp) {
+  TracePrintf(1, "HANDLE_LOCK_INIT: Creating a new lock!\n");
+
   if (check_memory(lock_idp, sizeof (int)) == ERROR) {
     return ERROR;
   }
@@ -20,7 +22,6 @@ int handle_LockInit(int *lock_idp) {
     TracePrintf(1, "HANDLE_LOCK_INIT: Unable to create a new lock\n");
     return ERROR;
   }
-
   lock_idp[0] = new_lock->lock_id;
 
   return SUCCESS;

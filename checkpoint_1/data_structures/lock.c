@@ -39,6 +39,7 @@ lock_t* create_lock(int lock_id)
   if (new_lock->blocked_queue == NULL) {
     return NULL;
   }
+  return new_lock;
 }
 
 /*
