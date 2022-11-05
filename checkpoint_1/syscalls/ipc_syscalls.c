@@ -13,7 +13,10 @@ buffer.) In case of any error, the value ERROR is returned.
 int handle_PipeInit(int *pipe_idp)
 {
   TracePrintf(1, "HANDLE_PIPE_INIT: attempting to create a new pipe\n");
-  // TODO -- where is pipe_idp? Is it somewhere sane, or somewhere ridiculous?
+
+  if (check_memory(buf, sizeof int) == ERROR) {
+    return ERROR;
+  }
 
   // probably unneeded, but never hurts to check!
   unsigned int max_signed_int = 2147483647;
@@ -53,7 +56,9 @@ int handle_PipeRead(int pipe_id, void *buf, int len)
 {
   TracePrintf(1, "HANDLE_PIPE_READ: Reading from a pipe with id %d\n", pipe_id);
 
-  // TODO -- where is buf? is it somewhere sane, or somewhere ridiculous?
+  if (check_memory(buf, (unsigned int) len) == ERROR) {
+    return ERROR;
+  }
 
   pipe_t* found_pipe = find_pipe(pipe_id);
   if (found_pipe == NULL) {
@@ -103,9 +108,11 @@ buffer. In case of any error, the value ERROR is returned. Otherwise, return the
  */
 int handle_PipeWrite(int pipe_id, void *buf, int len)
 {
-  // TODO -- where is buf? is it somewhere sane, or somewhere ridiculous?
-
   TracePrintf(1, "HANDLE_PIPE_WRITE: Writing %d bytes to pipe with id %d\n", len, pipe_id);
+
+  if (check_memory(buf, (unsigned int) len) == ERROR) {
+    return ERROR;
+  }
 
   pipe_t* found_pipe = find_pipe(pipe_id);
   if (found_pipe == NULL) {

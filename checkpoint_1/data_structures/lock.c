@@ -40,11 +40,23 @@ lock_t* create_lock(int lock_id)
 
 /*
  * Creates a lock with any id
+ *
+ * also puts it into the locks list
  */
 lock_t* create_lock_any_id()
 {
   int lock_id = ++max_lock_id;
-  return create_lock(lock_id);
+  lock_t* new_lock = create_lock(lock_id);
+  if (new_lock == NULL) {
+    return NULL;
+  }
+
+  // stick the lock into the locks list
+  lock_t* old_locks = locks;
+  locks = new_lock;
+  new_lock->next_lock = old_locks;
+
+  return new_lock;
 }
 
 /*

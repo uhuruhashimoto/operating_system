@@ -5,16 +5,20 @@
 #define CURRENT_CHUNGUS_SYNC_SYSCALL_HANDLERS
 #include <ykernel.h>
 #include "../data_structures/lock.h"
+#include "../memory/check_memory.h"
 
 /*
  * Create a new lock; save its identifier at *lock idp. In case of any error, the value ERROR is returned.
  */
 int handle_LockInit(int *lock_idp) {
-  // TODO -- check if this is valid memory
+  if (check_memory(lock_idp, sizeof int) == ERROR) {
+    return ERROR;
+  }
 
   lock_t* new_lock = create_lock_any_id();
   if (new_lock == NULL) {
     TracePrintf(1, "HANDLE_LOCK_INIT: Unable to create a new lock\n");
+    return ERROR;
   }
 
   lock_idp[0] = new_lock->lock_id;
