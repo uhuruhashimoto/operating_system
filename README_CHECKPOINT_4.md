@@ -6,6 +6,8 @@ Oct 27, 2022
 This is Yalnix, our operating system for COSC 58 22F. The current kernel boots and handles cloning and switching processes,
 as well as handling fork, exec and wait syscalls.
 
+No outstanding bugs (that we know of!)
+
 ## <ins> Building </ins>
 
     `make` or `make all` - builds kernel source and user code

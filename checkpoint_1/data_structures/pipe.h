@@ -6,29 +6,39 @@
 #define CURRENT_CHUNGUS_PIPE
 
 #include "queue.h"
+#include <yalnix.h>
 
 typedef struct pipe {
   int pipe_id;
-  char buf[/* TODO -- buf length */];
+  char buf[PIPE_BUFFER_LEN];
   int start_id=0;
   int end_id=0;
+  int max_size = PIPE_BUFFER_LEN;
+  int cur_size = 0;
   queue_t* blocked_queue;
 } pipe_t;
 
-bool is_full(int pipe_id);
+/*
+ * Creates a new pipe with this id
+ */
+pipe_t* create_pipe(int pipe_id)
 
-bool is_empty(int pipe_id);
+pipe_t* find_pipe(int pipe_id);
 
-char read_byte(int pipe_id);
+bool is_full(pipe_t* pipe);
 
-int write_byte(int pipe_id);
+bool pipe_is_empty(pipe_t* pipe);
 
-int block_pcb_on_pipe(int pipe_id, pcb_t* process_block);
+char read_byte(pipe_t* pipe);
+
+int write_byte(pipe_t* pipe);
+
+int block_pcb_on_pipe(pipe_t* pipe, pcb_t* process_block);
 
 /********** unblock_pcb_on_pipe *************/
 /*
  * Gets the pcb_t* at head of pipe, places it in ready queue, returns a pointer to it
  */
-pcb_t* unblock_pcb_on_pipe(int pipe_id);
+pcb_t* unblock_pcb_on_pipe(pipe_t* pipe);
 
 #endif //CURRENT_CHUNGUS_PIPE

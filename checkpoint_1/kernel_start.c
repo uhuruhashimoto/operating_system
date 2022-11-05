@@ -46,17 +46,26 @@ int vmem_on = 0;
 * Globals that persist indefinitely for the whole kernel:
     1. Memory storage, including the frame table and brk
     2. Process tracking, including pcbs and ready/idle/blocked queues
+    3. Pipes, TTYs, etc
 */
 
+// TRAP HANDLER
+void *trap_handler[NUM_TRAP_FUNCTIONS];
+
+// MEMORY
 int current_kernel_brk_page;
 frame_table_struct_t *frame_table_global;
+pte_t *region_0_page_table;
+
+// PROCESSES
 pcb_t* running_process;
 pcb_t* idle_process;                                           // the special idle process; use when nothing is in ready queue
 bool is_idle = false;                                          // if is_idle, we won't put the process back on the ready queue
 queue_t* ready_queue;
-void *trap_handler[NUM_TRAP_FUNCTIONS];
-pte_t *region_0_page_table;
 pcb_t *delayed_processes = NULL;                               // a linked list of processes being delayed
+
+// PIPES
+pipe_t* pipes = NULL;
 
 /*
 * We are given addresses in bytes corresponding to the following kernel address space:

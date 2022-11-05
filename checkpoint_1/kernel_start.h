@@ -10,6 +10,7 @@
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 #include "data_structures/frame_table.h"
+#include "data_structures/pipe.h"
 #include "trap_handlers/trap_handlers.h"
 #include "process_management/load_program.h"
 
@@ -18,17 +19,26 @@
 * Globals that persist indefinitely for the whole kernel: 
     1. Memory storage, including the frame table and brk
     2. Process tracking, including pcbs and ready/idle/blocked queues
+    3. Pipes, TTYs, etc
 */
 
+// TRAP VEC
+extern void *trap_handler[16];
+
+// MEMORY
 extern int current_kernel_brk_page;
 extern frame_table_struct_t *frame_table_global;
+extern pte_t *region_0_page_table;
+
+// PROCESSES
 extern pcb_t* running_process;
 extern pcb_t* idle_process;                                           // the special idle process; use when nothing is in ready queue
 extern bool is_idle;                                                  // if is_idle, we won't put the process back on the ready queue
 extern queue_t* ready_queue;
-extern void *trap_handler[16];
-extern pte_t *region_0_page_table;
 extern pcb_t *delayed_processes;
+
+// PIPES
+extern pipe_t* pipes;
 
 //=================== KERNEL FUNCTIONS =================//
 /*
