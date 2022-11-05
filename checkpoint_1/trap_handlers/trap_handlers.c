@@ -192,9 +192,9 @@ void handle_trap_unhandled(UserContext* context) {
  * Abort the current user process
  */
 void handle_trap_illegal(UserContext* context) {
-  TracePrintf(1, "This trap is not yet implemented\n");
+  TracePrintf(1, "TRAP_ILLEGAL: Killing the user process\n");
   // abort the current process
-  // get the next process from the ready queue
+  delete_process(running_process, ERROR);
 }
 
 /*
@@ -218,9 +218,10 @@ void handle_trap_memory(UserContext* context) {
  * Aborts current user process
  */
 void handle_trap_math(UserContext* context) {
-  TracePrintf(1, "This trap is not yet implemented\n");
+  TracePrintf(1, "TRAP_MATH: Aborting the user process\n");
   // abort the user process
   // run the next process on the ready queue
+  delete_process(running_process, ERROR);
 }
 
 /*

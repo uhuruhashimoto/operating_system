@@ -51,6 +51,10 @@ lock_t* create_lock(int lock_id)
 lock_t* create_lock_any_id()
 {
   int lock_id = ++max_lock_id;
+  if (lock_id > max_possible_lock_id) {
+    TracePrintf(1, "Run out of ID space to allocate more locks\n");
+    return NULL;
+  }
   lock_t* new_lock = create_lock(lock_id);
   if (new_lock == NULL) {
     return NULL;

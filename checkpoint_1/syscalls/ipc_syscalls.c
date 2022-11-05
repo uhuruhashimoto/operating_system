@@ -20,13 +20,11 @@ int handle_PipeInit(int *pipe_idp)
     return ERROR;
   }
 
-  // probably unneeded, but never hurts to check!
-  unsigned int max_signed_int = 2147483647;
   unsigned int next_id = ++max_pipe_id;
 
-  if (next_id > max_signed_int) {
-    TracePrintf(1, "HANDLE_PIPE_INIT: next pipe id is too large\n");
-    return ERROR;
+  if (lock_id > max_possible_pipe_id) {
+    TracePrintf(1, "Run out of ID space to allocate more pipes\n");
+    return NULL;
   }
 
   // create a new pipe
