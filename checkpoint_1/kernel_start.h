@@ -41,6 +41,10 @@ extern pcb_t *delayed_processes;
 extern pipe_t* pipes;
 extern unsigned int max_pipe_id;
 
+// LOCKS
+extern lock_t* locks;
+extern unsigned int max_lock_id;
+
 //=================== KERNEL FUNCTIONS =================//
 /*
  * Function that runs at kernel boot time. It initializes the different memory regions,

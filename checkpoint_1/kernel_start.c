@@ -32,6 +32,8 @@
 #include "data_structures/pcb.h"
 #include "data_structures/queue.h"
 #include "data_structures/frame_table.h"
+#include "data_structures/pipe.h"
+#include "data_structures/lock.h"
 #include "process_management/load_program.h"
 #include "debug_utils/debug.h"
 
@@ -46,7 +48,7 @@ int vmem_on = 0;
 * Globals that persist indefinitely for the whole kernel:
     1. Memory storage, including the frame table and brk
     2. Process tracking, including pcbs and ready/idle/blocked queues
-    3. Pipes, TTYs, etc
+    3. Pipes, TTYs, Locks, etc
 */
 
 // TRAP HANDLER
@@ -67,6 +69,10 @@ pcb_t *delayed_processes = NULL;                               // a linked list 
 // PIPES
 pipe_t* pipes = NULL;
 unsigned int max_pipe_id = -1;
+
+// LOCKS
+lock_t* locks = NULL;
+unsigned int max_lock_id = -1;
 
 /*
 * We are given addresses in bytes corresponding to the following kernel address space:

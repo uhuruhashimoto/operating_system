@@ -4,20 +4,29 @@
 #ifndef CURRENT_CHUNGUS_SYNC_SYSCALL_HANDLERS
 #define CURRENT_CHUNGUS_SYNC_SYSCALL_HANDLERS
 #include <ykernel.h>
+#include "../data_structures/lock.h"
 
 /*
  * Create a new lock; save its identifier at *lock idp. In case of any error, the value ERROR is returned.
  */
 int handle_LockInit(int *lock_idp) {
-   // initialize lock data structure, with fields for user and queue for waiters/procs waiting on the lock 
+  // TODO -- check if this is valid memory
+
+  lock_t* new_lock = create_lock_any_id();
+  if (new_lock == NULL) {
+    TracePrintf(1, "HANDLE_LOCK_INIT: Unable to create a new lock\n");
+  }
+
+  lock_idp[0] = new_lock->lock_id;
+
+  return SUCCESS;
 }
 
 /*
  * Acquire the lock identified by lock id. In case of any error, the value ERROR is returned.
  */
 int handle_Acquire(int lock_id) {
-    // if the lock is free, caller gets the lock
-    // otherwise, caller blocks the lock until it's free
+  return acquire(lock_id);
 }
 
 /*
@@ -25,8 +34,7 @@ int handle_Acquire(int lock_id) {
 ERROR is returned.
  */
 int handle_Release(int lock_id) {
-    // remove the current user from the lock
-    // check if anyone else is waiting for it
+  return release(lock_id);
 }
 
 /*

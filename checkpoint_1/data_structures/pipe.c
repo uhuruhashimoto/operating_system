@@ -11,11 +11,22 @@
 pipe_t* create_pipe(int pipe_id)
 {
   pipe_t* pipe_obj = malloc(sizeof pipe_t);
+
+  if (pipe_obj == NULL) {
+    TracePrintf(1, "CREATE_PIPE: Failed to allocate space for the pipe object\n");
+    return NULL;
+  }
+
   pipe_obj->pipe_id = pipe_id;
   pipe_obj->blocked_read_queue = create_queue();
   pipe_obj->blocked_write_queue = create_queue();
+  pipe_obj->read_lock = create_lock_any_id();
+  pipe_obj->write_lock = create_lock_any_id();
 
-  if (pipe_obj->blocked_read_queue == NULL || pipe_obj->blocked_write_queue == NULL) {
+  if (pipe_obj->blocked_read_queue == NULL || pipe_obj->blocked_write_queue == NULL ||
+      pipe_obj->read_lock || pipe_obj->write_lock
+  ) {
+    TracePrintf(1, "CREATE_PIPE: One of the malloc-d objects is NULL\n");
     free(pipe_obj);
     return NULL;
   }

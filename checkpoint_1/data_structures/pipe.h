@@ -6,6 +6,7 @@
 #define CURRENT_CHUNGUS_PIPE
 
 #include "queue.h"
+#include "lock.h"
 #include <yalnix.h>
 
 typedef struct pipe {
@@ -15,8 +16,10 @@ typedef struct pipe {
   int end_id=0;
   int max_size = PIPE_BUFFER_LEN;
   int cur_size = 0;
-  pipe_t* next_pipe = NULL;                       // the next pipe in the global pipe list
+  struct pipe next_pipe = NULL;                   // the next pipe in the global pipe list
+  lock_t* read_lock = NULL;                       // the lock for reading this pipe
   queue_t* blocked_read_queue = NULL;             // the queue of processes blocked on reads on this pipe
+  lock_t* write_lock = NULL;                      // the lock for writing this pipe
   queue_t* blocked_write_queue = NULL;            // the queue of processes blocked on writes on this pipe
 } pipe_t;
 
