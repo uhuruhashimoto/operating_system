@@ -12,6 +12,8 @@ int main(void) {
     TracePrintf(1, "LOCK_TEST: Child acquiring the lock\n");
     Acquire(lock_id);
     TracePrintf(1, "LOCK_TEST: Child finished acquiring the lock\n");
+
+    Exit(0);
   }
 
   TracePrintf(1, "LOCK_TEST: Parent acquiring the lock\n");

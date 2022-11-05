@@ -56,13 +56,13 @@ void handle_trap_kernel(UserContext* context) {
 
     // IPC
     case YALNIX_PIPE_INIT:
-      rc = handle_PipeInit(context->regs[0]);
+      rc = handle_PipeInit((int *)context->regs[0]);
       break;
     case YALNIX_PIPE_READ:
-//      handle_PipeRead(context->regs[0]);
+      rc = handle_PipeRead(context->regs[0], (void *)context->regs[1], context->regs[2]);
       break;
     case YALNIX_PIPE_WRITE:
-//      handle_PipeWrite(context->regs[0], context->regs[1], context->regs[2]);
+      rc = handle_PipeWrite(context->regs[0], (void *)context->regs[1], context->regs[2]);
       break;
 
     // NOP
@@ -73,13 +73,13 @@ void handle_trap_kernel(UserContext* context) {
     // TODO -- semaphore stuff?
 
     case YALNIX_LOCK_INIT:
-//      handle_LockInit(context->regs[0]);
+      rc = handle_LockInit((int *)context->regs[0]);
       break;
     case YALNIX_LOCK_ACQUIRE:
-//      handle_Acquire(context->regs[0]);
+      rc = handle_Acquire(context->regs[0]);
       break;
     case YALNIX_LOCK_RELEASE:
-//      handle_Release(context->regs[0]);
+      rc = handle_Release(context->regs[0]);
       break;
     case YALNIX_CVAR_INIT:
 //      handle_CvarInit(context->regs[0]);

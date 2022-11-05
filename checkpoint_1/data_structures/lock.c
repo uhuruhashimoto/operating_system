@@ -76,10 +76,13 @@ int acquire(int lock_id)
 
   // if the lock is open, claim it
   if (lock->locking_proc == NULL || lock->locking_proc == running_process) {
+    TracePrintf(1, "ACQUIRE_LOCK: Process with id %d acquiring open lock with id %d\n", running_process->pid, lock_id);
     lock->locking_proc = running_process;
     return SUCCESS;
   }
   else {
+    TracePrintf(1, "ACQUIRE_LOCK: Waiting for lock with id %d\n", lock_id);
+
     while (lock->locking_proc != NULL && lock->locking_proc != running_process) {
       TracePrintf(1, "ACQUIRE_LOCK: Waiting for lock with id %d\n", lock_id);
       // put the process in the blocked queue for the lock
