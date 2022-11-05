@@ -13,6 +13,7 @@ lock_t* find_lock(int lock_id)
     if (next_lock->lock_id == lock_id) {
       return next_lock;
     }
+    next_lock = next_lock->next_lock;
   }
 
   return NULL;
@@ -104,6 +105,8 @@ int acquire(int lock_id)
  */
 int release(int lock_id)
 {
+  TracePrintf(1, "RELEASE_LOCK: Attempting to release the lock with id %d\n", lock_id);
+
   lock_t* lock = find_lock(lock_id);
   if (lock == NULL) {
     TracePrintf(1, "RELEASE_LOCK: The lock with id %d does not exist\n", lock_id);
@@ -118,8 +121,11 @@ int release(int lock_id)
   }
 
   lock->locking_proc = NULL;
+  TracePrintf(1, "RELEASE_LOCK: Passed ifs %d\n", lock_id);
   // if there's another process waiting for the lock, give it the lock
   pcb_t* next_proc = remove_from_queue(lock->blocked_queue);
+  TracePrintf(1, "RELEASE_LOCK: Passed queue remove %d\n", lock_id);
+
   if (next_proc != NULL) {
     lock->locking_proc = next_proc;
     // put this process back into the ready queue

@@ -30,7 +30,7 @@ pipe_t* create_pipe(int pipe_id)
   pipe_obj->write_lock = create_lock_any_id();
 
   if (pipe_obj->blocked_read_queue == NULL || pipe_obj->blocked_write_queue == NULL ||
-      pipe_obj->read_lock || pipe_obj->write_lock
+      pipe_obj->read_lock == NULL || pipe_obj->write_lock == NULL
   ) {
     TracePrintf(1, "CREATE_PIPE: One of the malloc-d objects is NULL\n");
     free(pipe_obj);

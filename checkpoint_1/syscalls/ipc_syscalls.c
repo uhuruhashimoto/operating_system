@@ -3,6 +3,7 @@
 #include "../data_structures/pcb.h"
 #include "../data_structures/pipe.h"
 #include "../data_structures/queue.h"
+#include "../data_structures/lock.h"
 #include "../kernel_start.h"
 #include "../kernel_utils.h"
 #include "../memory/check_memory.h"
@@ -66,6 +67,10 @@ int handle_PipeRead(int pipe_id, void *buf, int len)
     TracePrintf(1, "HANDLE_PIPE_READ: Unable to find a pipe with id %d\n", pipe_id);
     return ERROR;
   }
+  TracePrintf(1, "HANDLE_PIPE_READ: Acquiring read lock on a pipe with id %d\n", pipe_id);
+  // acquire the lock for the pipe
+  acquire(found_pipe->read_lock->lock_id);
+  TracePrintf(1, "HANDLE_PIPE_READ: Acquired read lock on a pipe with id %d\n", pipe_id);
 
   // if the pipe is empty, block the caller:
   // this should only be hit once
@@ -89,12 +94,13 @@ int handle_PipeRead(int pipe_id, void *buf, int len)
 
   TracePrintf(1, "HANDLE_PIPE_READ: Finished reading bytes from pipe with id %d\n", pipe_id);
 
-  // unblock things that were blocked on read/write
-  pcb_t* new_reader = remove_from_queue(found_pipe->blocked_read_queue);
+  // release the lock for the pipe
+  release(found_pipe->read_lock->lock_id);
+
+  TracePrintf(1, "HANDLE_PIPE_READ: Released the lock\n");
+
   pcb_t* new_writer = remove_from_queue(found_pipe->blocked_write_queue);
-  if (new_reader != NULL) {
-    add_to_queue(ready_queue, new_reader);
-  }
+  TracePrintf(1, "HANDLE_PIPE_READ: Removed from queue\n");
   if (new_writer != NULL) {
     add_to_queue(ready_queue, new_writer);
   }
@@ -120,6 +126,8 @@ int handle_PipeWrite(int pipe_id, void *buf, int len)
     TracePrintf(1, "HANDLE_PIPE_WRITE: Unable to find a pipe with id %d\n", pipe_id);
     return ERROR;
   }
+  // acquire the lock for the pipe
+  acquire(found_pipe->write_lock->lock_id);
 
   int buf_index = 0;
   int num_left = len;
@@ -153,14 +161,13 @@ int handle_PipeWrite(int pipe_id, void *buf, int len)
     }
   }
 
+  // release the lock for the pipe
+  release(found_pipe->write_lock->lock_id);
+
   // unblock things that were blocked on read/write
   pcb_t* new_reader = remove_from_queue(found_pipe->blocked_read_queue);
-  pcb_t* new_writer = remove_from_queue(found_pipe->blocked_write_queue);
   if (new_reader != NULL) {
     add_to_queue(ready_queue, new_reader);
-  }
-  if (new_writer != NULL) {
-    add_to_queue(ready_queue, new_writer);
   }
 
   return len;

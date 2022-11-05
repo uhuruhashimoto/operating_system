@@ -1,10 +1,10 @@
 #include <yuser.h>
 
 int main(void) {
-  TracePrintf(1, "PIPE_TEST: initializing the pipe");
+  TracePrintf(1, "PIPE_TEST: initializing the pipe\n");
   int pipe_id;
   PipeInit(&pipe_id);
-  TracePrintf(1, "PIPE_TEST: finished initializing the pipe");
+  TracePrintf(1, "PIPE_TEST: finished initializing the pipe\n");
 
   int rc = Fork();
   if (rc == 0) {
@@ -33,9 +33,9 @@ int main(void) {
   rc = Fork();
   if (rc == 0) {
     int num_ints = 129;
-    TracePrintf(1, "PIPE_TEST: THIRD CHILD -- PREPARING TO READ %d INTS TO THE PIPE\n", num_ints);
+    TracePrintf(1, "PIPE_TEST: THIRD CHILD -- PREPARING TO READ %d INTS FROM THE PIPE\n", num_ints);
     int* buf = malloc(sizeof (int) * num_ints);
-    TracePrintf(1, "PIPE_TEST: THIRD CHILD -- READING %d INTS TO THE PIPE\n", num_ints);
+    TracePrintf(1, "PIPE_TEST: THIRD CHILD -- READING %d INTS FROM THE PIPE\n", num_ints);
     PipeRead(pipe_id, buf, num_ints*sizeof(int));
 
     for (int offset = 0; offset < num_ints; offset++) {
@@ -46,9 +46,9 @@ int main(void) {
   rc = Fork();
   if (rc == 0) {
     int num_ints = 129;
-    TracePrintf(1, "PIPE_TEST: FOURTH CHILD -- PREPARING TO READ %d INTS TO THE PIPE\n", num_ints);
+    TracePrintf(1, "PIPE_TEST: FOURTH CHILD -- PREPARING TO READ %d INTS FROM THE PIPE\n", num_ints);
     int* buf = malloc(sizeof (int) * num_ints);
-    TracePrintf(1, "PIPE_TEST: FOURTH CHILD -- READING %d INTS TO THE PIPE\n", num_ints);
+    TracePrintf(1, "PIPE_TEST: FOURTH CHILD -- READING %d INTS FROM THE PIPE\n", num_ints);
     PipeRead(pipe_id, buf, num_ints*sizeof(int));
 
     for (int offset = 0; offset < num_ints; offset++) {

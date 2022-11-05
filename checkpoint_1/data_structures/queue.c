@@ -62,6 +62,9 @@ pcb_t* remove_from_queue(queue_t* queue)
 {
   // get the PCB from the front of the ready queue
   pcb_t* pcb = queue->head;
+  if (pcb == NULL) {
+    return NULL;
+  }
   // move the head of the ready queue
   queue->head = pcb->next_pcb;
 
