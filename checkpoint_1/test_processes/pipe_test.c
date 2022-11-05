@@ -16,6 +16,7 @@ int main(void) {
     }
     TracePrintf(1, "PIPE_TEST: FIRST CHILD -- WRITING %d INTS TO THE PIPE\n", num_ints);
     PipeWrite(pipe_id, buf, num_ints*sizeof(int));
+    Exit(0);
   }
 
   rc = Fork();
@@ -28,6 +29,7 @@ int main(void) {
     }
     TracePrintf(1, "PIPE_TEST: SECOND CHILD -- WRITING %d INTS TO THE PIPE\n", num_ints);
     PipeWrite(pipe_id, buf, num_ints*sizeof(int));
+    Exit(0);
   }
 
   rc = Fork();
@@ -41,6 +43,7 @@ int main(void) {
     for (int offset = 0; offset < num_ints; offset++) {
       TracePrintf(1, "THIRD CHILD: %d\n", buf[offset]);
     }
+    Exit(0);
   }
 
   rc = Fork();
@@ -54,5 +57,20 @@ int main(void) {
     for (int offset = 0; offset < num_ints; offset++) {
       TracePrintf(1, "FOURTH CHILD: %d\n", buf[offset]);
     }
+    Exit(0);
+  }
+
+  rc = Fork();
+  if (rc == 0) {
+    int num_ints = 129;
+    TracePrintf(1, "PIPE_TEST: FIFTH CHILD -- PREPARING TO READ %d INTS FROM THE PIPE\n", num_ints);
+    int* buf = malloc(sizeof (int) * num_ints);
+    TracePrintf(1, "PIPE_TEST: FIFTH CHILD -- READING %d INTS FROM THE PIPE\n", num_ints);
+    PipeRead(pipe_id, buf, num_ints*sizeof(int));
+
+    for (int offset = 0; offset < num_ints; offset++) {
+      TracePrintf(1, "FIFTH CHILD: %d\n", buf[offset]);
+    }
+    Exit(0);
   }
 }
