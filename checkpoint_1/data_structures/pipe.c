@@ -2,6 +2,7 @@
 #include "queue.h"
 #include "../kernel_start.h"
 #include <ykernel.h>
+#include <yalnix.h>
 
 /****************** UTILITY FUNCTIONS ***********************/
 
@@ -10,7 +11,7 @@
  */
 pipe_t* create_pipe(int pipe_id)
 {
-  pipe_t* pipe_obj = malloc(sizeof pipe_t);
+  pipe_t* pipe_obj = malloc(sizeof (pipe_t));
 
   if (pipe_obj == NULL) {
     TracePrintf(1, "CREATE_PIPE: Failed to allocate space for the pipe object\n");
@@ -20,6 +21,11 @@ pipe_t* create_pipe(int pipe_id)
   pipe_obj->pipe_id = pipe_id;
   pipe_obj->blocked_read_queue = create_queue();
   pipe_obj->blocked_write_queue = create_queue();
+  pipe_obj->start_id = 0;
+  pipe_obj->end_id = 0;
+  pipe_obj->max_size = PIPE_BUFFER_LEN;
+  pipe_obj->cur_size = 0;
+  pipe_obj->next_pipe = NULL;
   pipe_obj->read_lock = create_lock_any_id();
   pipe_obj->write_lock = create_lock_any_id();
 
@@ -114,18 +120,36 @@ int block_pcb_on_pipe_write(pipe_t* pipe, pcb_t* process_block)
   return add_to_queue(pipe->blocked_write_queue, process_block);
 }
 
-/********** unblock_pcb_on_pipe *************/
+/********** unblock_pcb_on_pipe_read *************/
 /*
  * Gets the pcb_t* at head of pipe, places it in ready queue, returns a pointer to it
  */
-pcb_t* unblock_pcb_on_pipe(pipe_t* pipe)
+pcb_t* unblock_pcb_on_pipe_read(pipe_t* pipe)
 {
   // gets the next pcb in the blocked queue of the pipe
-  pcb_t* next_pcb = remove_from_queue(pipe->blocked_queue);
+  pcb_t* next_pcb = remove_from_queue(pipe->blocked_read_queue);
 
-  // adds the pcb to the ready queue
-  add_to_queue(ready_queue, next_pcb);
+  if (next_pcb != NULL) {
+    // adds the pcb to the ready queue
+    add_to_queue(ready_queue, next_pcb);
+  }
+  // returns the pcb
+  return next_pcb;
+}
 
+/********** unblock_pcb_on_pipe_write *************/
+/*
+ * Gets the pcb_t* at head of pipe, places it in ready queue, returns a pointer to it
+ */
+pcb_t* unblock_pcb_on_pipe_write(pipe_t* pipe)
+{
+  // gets the next pcb in the blocked queue of the pipe
+  pcb_t* next_pcb = remove_from_queue(pipe->blocked_write_queue);
+
+  if (next_pcb != NULL) {
+    // adds the pcb to the ready queue
+    add_to_queue(ready_queue, next_pcb);
+  }
   // returns the pcb
   return next_pcb;
 }

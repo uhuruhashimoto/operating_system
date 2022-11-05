@@ -11,7 +11,7 @@
  * Create a new lock; save its identifier at *lock idp. In case of any error, the value ERROR is returned.
  */
 int handle_LockInit(int *lock_idp) {
-  if (check_memory(lock_idp, sizeof int) == ERROR) {
+  if (check_memory(lock_idp, sizeof (int)) == ERROR) {
     return ERROR;
   }
 

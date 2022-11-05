@@ -24,7 +24,7 @@ int check_memory(void* mem_loc, unsigned int mem_size) {
 
   // check all the page table entries between start and end page to see if they're valid
   for (int i = start_page_idx; i <= end_page_idx; i++) {
-    if (!running_process->region_1_page_table[i]->valid) {
+    if (!running_process->region_1_page_table[i].valid) {
       return ERROR;
     }
   }

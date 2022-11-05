@@ -6,10 +6,10 @@
 
 typedef struct lock{
   int lock_id;
-  bool locked = false;
-  pcb_t* locking_proc = NULL;
-  queue_t* blocked_queue = NULL;
-  struct lock next_lock = NULL;
+  bool locked;
+  pcb_t* locking_proc;
+  queue_t* blocked_queue;
+  struct lock* next_lock;
 } lock_t;
 
 /*

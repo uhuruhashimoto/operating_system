@@ -5,6 +5,7 @@
 #include "../data_structures/queue.h"
 #include "../kernel_start.h"
 #include "../kernel_utils.h"
+#include "../memory/check_memory.h"
 
 /*
  * Create a new pipe; save its identifier at *pipe idp. (See the header files for the length of the pipe’s internal
@@ -14,7 +15,7 @@ int handle_PipeInit(int *pipe_idp)
 {
   TracePrintf(1, "HANDLE_PIPE_INIT: attempting to create a new pipe\n");
 
-  if (check_memory(buf, sizeof int) == ERROR) {
+  if (check_memory(pipe_idp, sizeof (int)) == ERROR) {
     return ERROR;
   }
 
@@ -82,7 +83,7 @@ int handle_PipeRead(int pipe_id, void *buf, int len)
   int buf_loc = 0;
   while (found_pipe->cur_size > 0 && buf_loc < len) {
     char new_char = read_byte(found_pipe);
-    buf[buf_loc] = new_char;
+    ((char *)buf)[buf_loc] = new_char;
     buf_loc++;
   }
 
@@ -134,8 +135,8 @@ int handle_PipeWrite(int pipe_id, void *buf, int len)
     //     write all bytes we can into the pipe buffer, checking return code
     int rc;
     while (next_byte_cluster_size > 0) {
-      char next_byte = buf[buf_index];
-      rc = write_byte(found_pipe);
+      char next_byte = ((char *)buf)[buf_index];
+      rc = write_byte(found_pipe, next_byte);
       if (rc == ERROR) {
         return ERROR;
       }

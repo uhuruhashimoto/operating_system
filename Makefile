@@ -7,17 +7,23 @@
 
 
 # Where's your kernel source?
-K_SRC_DIR = /home/cs58/vbs/yalnix_test/current_chungus/checkpoint_1
-# K_SRC_DIR = /media/sf_cs58/current_chungus/checkpoint_1
+#K_SRC_DIR = /home/cs58/vbs/yalnix_test/current_chungus/checkpoint_1
+ K_SRC_DIR = /media/sf_cs58/current_chungus/checkpoint_1
 # What are the kernel c and include files?
-K_SRCS = kernel_start.c kernel_utils.c data_structures/pcb.c data_structures/queue.c data_structures/frame_table.c trap_handlers/trap_handlers.c syscalls/process_syscalls.c process_management/load_program.c debug_utils/debug.c
+K_SRCS = kernel_start.c kernel_utils.c data_structures/pcb.c data_structures/queue.c data_structures/frame_table.c \
+trap_handlers/trap_handlers.c syscalls/io_syscalls.c syscalls/ipc_syscalls.c syscalls/process_syscalls.c \
+syscalls/sync_syscalls.c process_management/load_program.c debug_utils/debug.c \
+memory/check_memory.c data_structures/pipe.c data_structures/lock.c
+
 K_INCS = $(K_SRCS:%.c=%.h) 
 
 # Where's your user source?
 U_SRC_DIR = $(K_SRC_DIR)/test_processes
 
 # What are the user c and include files?
-U_SRCS = iterator.c brk_test.c delay_test.c pid_test.c init.c fork_test.c exec_test.c fork_bomb.c test_message.c exit_test.c exit_delayed_test.c wait_test.c
+U_SRCS = iterator.c brk_test.c delay_test.c pid_test.c init.c fork_test.c exec_test.c fork_bomb.c test_message.c \
+exit_test.c exit_delayed_test.c wait_test.c
+
 U_INCS =
 
 
