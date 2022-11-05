@@ -45,4 +45,6 @@ int block_pcb_on_pipe_write(pipe_t* pipe, pcb_t* process_block)
  */
 pcb_t* unblock_pcb_on_pipe(pipe_t* pipe);
 
+void delete_pipe(pipe_t* pipe);
+
 #endif //CURRENT_CHUNGUS_PIPE

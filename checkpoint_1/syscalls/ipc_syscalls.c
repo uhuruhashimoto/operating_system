@@ -161,9 +161,38 @@ int handle_PipeWrite(int pipe_id, void *buf, int len)
 /*
 * Kill pipe by pipe id, and any queued children waiting for pipe input. If necessary, 
 * we could specify a kill/don't kill option in our input args.
+ *
+ * kill_children = 0  --> don't kill
+ * kill_children = 1  --> do kill
 */
 int handle_PipeKill(int pipe_id, int kill_children) {
-  // free pipe buffer
-  // kill children and remove queue data structure
-  // return error code
+  TracePrintf(1, "HANDLE_PIPE_KILL: Unable to find a pipe with id %d\n", pipe_id);
+
+  pipe_t* found_pipe = find_pipe(pipe_id);
+  if (found_pipe == NULL) {
+    TracePrintf(1, "HANDLE_PIPE_KILL: Unable to find a pipe with id %d\n", pipe_id);
+    return ERROR;
+  }
+
+  // kill children
+  if (kill_children == 1) {
+    // clear the read-blocked children
+    pcb_t* next_child = remove_from_queue(found_pipe->blocked_read_queue);
+    while (next_child != NULL) {
+      delete_process(next_child, ERROR);
+      next_child = remove_from_queue(found_pipe->blocked_read_queue);
+    }
+
+    // clear the write-blocked children
+    next_child = remove_from_queue(found_pipe->blocked_write_queue);
+    while (next_child != NULL) {
+      delete_process(next_child, ERROR);
+      next_child = remove_from_queue(found_pipe->blocked_write_queue);
+    }
+  }
+
+  // delete the pipe
+  delete_pipe(found_pipe);
+
+  return SUCCESS;
 }

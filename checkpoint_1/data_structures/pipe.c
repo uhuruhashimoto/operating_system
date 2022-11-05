@@ -12,9 +12,10 @@ pipe_t* create_pipe(int pipe_id)
 {
   pipe_t* pipe_obj = malloc(sizeof pipe_t);
   pipe_obj->pipe_id = pipe_id;
-  pipe_obj->blocked_queue = create_queue();
+  pipe_obj->blocked_read_queue = create_queue();
+  pipe_obj->blocked_write_queue = create_queue();
 
-  if (pipe_obj->blocked_queue == NULL) {
+  if (pipe_obj->blocked_read_queue == NULL || pipe_obj->blocked_write_queue == NULL) {
     free(pipe_obj);
     return NULL;
   }
@@ -116,6 +117,13 @@ pcb_t* unblock_pcb_on_pipe(pipe_t* pipe)
 
   // returns the pcb
   return next_pcb;
+}
+
+void delete_pipe(pipe_t* pipe)
+{
+  free(pipe->blocked_write_queue);
+  free(pipe->blocked_write_queue);
+  free(pipe);
 }
 
 /***************** END UTILITY FUNCTIONS *********************/

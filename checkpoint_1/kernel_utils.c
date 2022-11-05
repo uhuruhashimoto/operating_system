@@ -164,7 +164,7 @@ int switch_between_processes_delete_old(pcb_t *current_process, pcb_t *next_proc
  * Deletes the process if no parent
  * If there is parent, triggers it
  *
- * returns ERROR on error, SUCCESS if
+ * returns ERROR on error, SUCCESS otherwise
  */
 int
 delete_process(pcb_t* process, int status_code)
