@@ -15,7 +15,9 @@ typedef struct pipe {
   int end_id=0;
   int max_size = PIPE_BUFFER_LEN;
   int cur_size = 0;
-  queue_t* blocked_queue;
+  pipe_t* next_pipe = NULL;                       // the next pipe in the global pipe list
+  queue_t* blocked_read_queue = NULL;             // the queue of processes blocked on reads on this pipe
+  queue_t* blocked_write_queue = NULL;            // the queue of processes blocked on writes on this pipe
 } pipe_t;
 
 /*
@@ -31,9 +33,11 @@ bool pipe_is_empty(pipe_t* pipe);
 
 char read_byte(pipe_t* pipe);
 
-int write_byte(pipe_t* pipe);
+int write_byte(pipe_t* pipe, char byte);
 
-int block_pcb_on_pipe(pipe_t* pipe, pcb_t* process_block);
+int block_pcb_on_pipe_read(pipe_t* pipe, pcb_t* process_block)
+
+int block_pcb_on_pipe_write(pipe_t* pipe, pcb_t* process_block)
 
 /********** unblock_pcb_on_pipe *************/
 /*

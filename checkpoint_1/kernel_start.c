@@ -66,6 +66,7 @@ pcb_t *delayed_processes = NULL;                               // a linked list 
 
 // PIPES
 pipe_t* pipes = NULL;
+unsigned int max_pipe_id = -1;
 
 /*
 * We are given addresses in bytes corresponding to the following kernel address space:

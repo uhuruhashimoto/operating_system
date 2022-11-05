@@ -39,6 +39,7 @@ extern pcb_t *delayed_processes;
 
 // PIPES
 extern pipe_t* pipes;
+extern unsigned int max_pipe_id;
 
 //=================== KERNEL FUNCTIONS =================//
 /*

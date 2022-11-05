@@ -1,6 +1,7 @@
 #include "pipe.h"
 #include "queue.h"
 #include "../kernel_start.h"
+#include <ykernel.h>
 
 /****************** UTILITY FUNCTIONS ***********************/
 
@@ -12,6 +13,13 @@ pipe_t* create_pipe(int pipe_id)
   pipe_t* pipe_obj = malloc(sizeof pipe_t);
   pipe_obj->pipe_id = pipe_id;
   pipe_obj->blocked_queue = create_queue();
+
+  if (pipe_obj->blocked_queue == NULL) {
+    free(pipe_obj);
+    return NULL;
+  }
+
+  return pipe_obj;
 }
 
 /*
@@ -58,6 +66,7 @@ char read_byte(pipe_t* pipe)
 
   // increments the start_index (rolls around if we exceed buf_size)
   pipe->start_id = (pipe->start_id + 1) % pipe->max_size;
+  pipe->cur_size--;
 
   // returns the byte
   return byte;
@@ -75,15 +84,22 @@ int write_byte(pipe_t* pipe, char byte)
 
   // increments the end_index (rolls around if necessary)
   pipe->end_id = (pipe->end_id + 1) % pipe->max_size;
+  pipe->cur_size++;
 
   // returns 0
   return SUCCESS;
 }
 
-int block_pcb_on_pipe(pipe_t* pipe, pcb_t* process_block)
+int block_pcb_on_pipe_read(pipe_t* pipe, pcb_t* process_block)
 {
   // place the pcb on the queue associated with this pipe
-  return add_to_queue(pipe->blocked_queue, process_block);
+  return add_to_queue(pipe->blocked_read_queue, process_block);
+}
+
+int block_pcb_on_pipe_write(pipe_t* pipe, pcb_t* process_block)
+{
+  // place the pcb on the queue associated with this pipe
+  return add_to_queue(pipe->blocked_write_queue, process_block);
 }
 
 /********** unblock_pcb_on_pipe *************/

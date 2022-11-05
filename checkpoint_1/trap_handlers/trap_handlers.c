@@ -31,16 +31,16 @@ void handle_trap_kernel(UserContext* context) {
       handle_Exit(context->regs[0]);
       break;
     case YALNIX_WAIT:
-      handle_Wait((int *)context->regs[0]); //TODO cast args as temporary solution
+      rc= handle_Wait((int *)context->regs[0]); //TODO cast args as temporary solution
       break;
     case YALNIX_GETPID:
       rc = handle_GetPid();
       break;
     case YALNIX_BRK:
-      handle_Brk((void *)context->regs[0]); //TODO cast args as temporary solution
+      rc = handle_Brk((void *)context->regs[0]); //TODO cast args as temporary solution
       break;
     case YALNIX_DELAY:
-      handle_Delay(context->regs[0]);
+      rc = handle_Delay(context->regs[0]);
       break;
 
     // TTY Syscalls
@@ -56,7 +56,7 @@ void handle_trap_kernel(UserContext* context) {
 
     // IPC
     case YALNIX_PIPE_INIT:
-//      handle_PipeInit(context->regs[0], context->regs[1]);
+      rc = handle_PipeInit(context->regs[0]);
       break;
     case YALNIX_PIPE_READ:
 //      handle_PipeRead(context->regs[0]);
