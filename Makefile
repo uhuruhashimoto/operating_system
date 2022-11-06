@@ -22,7 +22,7 @@ U_SRC_DIR = $(K_SRC_DIR)/test_processes
 
 # What are the user c and include files?
 U_SRCS = iterator.c brk_test.c delay_test.c pid_test.c init.c fork_test.c exec_test.c fork_bomb.c test_message.c \
-exit_test.c exit_delayed_test.c wait_test.c lock_test.c pipe_test.c
+exit_test.c exit_delayed_test.c wait_test.c lock_test.c pipe_test.c math_test.c
 
 U_INCS =
 

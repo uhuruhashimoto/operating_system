@@ -22,7 +22,7 @@ int handle_PipeInit(int *pipe_idp)
 
   unsigned int next_id = ++max_pipe_id;
 
-  if (lock_id > max_possible_pipe_id) {
+  if (next_id > max_possible_pipe_id) {
     TracePrintf(1, "Run out of ID space to allocate more pipes\n");
     return NULL;
   }

@@ -39,3 +39,9 @@ and is blocked until the parent releases the lock.
 Creates a process which creates a pipe, forks four times and exits. The first two children will both attempt to write to
 the pipe. The first will write more bytes than the length of the pipe; the second one will write a few additional bytes.
 The second two children will read out these bytes, 50-50. We expect to see the bytes in the pipes increment in a sane way.
+
+### Math Test
+```
+./yalnix ./checkpoint_1/test_processes/math_test
+```
+Attempts division by 0.

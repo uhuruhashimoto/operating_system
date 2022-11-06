@@ -206,7 +206,7 @@ void handle_trap_memory(UserContext* context) {
   // implicit request for more memory -- stack, not the heap
   // check if the address being touched is one page or less away from the top of the stack
   // if so:
-  //    set the brk to be a page lower
+  //    allocates a new stack page a page lower
   //    return
   // otherwise:
   //  abort the process

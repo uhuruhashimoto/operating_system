@@ -45,7 +45,7 @@ extern unsigned int max_possible_pipe_id;                             // the max
 // LOCKS
 extern lock_t* locks;
 extern unsigned int max_lock_id;                                      // the maximum lock id currently being used
-extern unsigned int max_possible_lock_id                              // the maximum lock id that may be allocated
+extern unsigned int max_possible_lock_id;                             // the maximum lock id that may be allocated
 
 //=================== KERNEL FUNCTIONS =================//
 /*
