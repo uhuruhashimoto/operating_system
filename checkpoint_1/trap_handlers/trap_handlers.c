@@ -82,16 +82,16 @@ void handle_trap_kernel(UserContext* context) {
       rc = handle_Release(context->regs[0]);
       break;
     case YALNIX_CVAR_INIT:
-//      handle_CvarInit(context->regs[0]);
+      rc = handle_CvarInit((int *)context->regs[0]);
       break;
     case YALNIX_CVAR_SIGNAL:
-//      handle_CvarSignal(context->regs[0]);
+      rc = handle_CvarSignal(context->regs[0]);
       break;
     case YALNIX_CVAR_BROADCAST:
-//      handle_CvarBroadcast(context->regs[0]);
+      rc = handle_CvarBroadcast(context->regs[0]);
       break;
     case YALNIX_CVAR_WAIT:
-//      handle_CvarWait(context->regs[0], context->regs[1]);
+      rc = handle_CvarWait(context->regs[0], context->regs[1]);
       break;
     // TODO -- YALNIX_RECLAIM
 
