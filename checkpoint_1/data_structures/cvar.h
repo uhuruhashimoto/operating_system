@@ -7,7 +7,7 @@
 typedef struct cvar_struct{
   int id;
   queue_t* blocked_queue;
-  struct cvar_struct next_cvar;
+  struct cvar_struct* next_cvar;
 } cvar_t;
 
 cvar_t* create_cvar(int cvar_id);
