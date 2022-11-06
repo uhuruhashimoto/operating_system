@@ -5,7 +5,9 @@
 #define CURRENT_CHUNGUS_SYNC_SYSCALL_HANDLERS
 #include <ykernel.h>
 #include "../data_structures/lock.h"
+#include "../data_structures/cvar.h"
 #include "../memory/check_memory.h"
+#include "../kernel_start.h"
 
 /*
  * Create a new lock; save its identifier at *lock idp. In case of any error, the value ERROR is returned.
@@ -47,7 +49,32 @@ int handle_Release(int lock_id) {
 returned.
  */
 int handle_CvarInit(int *cvar_idp) {
-    // create a condition variable, storing its value somewhere in the data structure that will be checked by cvar_wait
+  TracePrintf(1, "HANDLE_CVAR_INIT: attempting to create a new cvar\n");
+  if (check_memory(cvar_idp, sizeof (int)) == ERROR) {
+    return ERROR;
+  }
+
+  // create a condition variable, storing its value somewhere in the data structure that will be checked by cvar_wait
+  int cvar_id = ++max_cvar_id;
+  if (cvar_id > max_possible_cvar_id) {
+    TracePrintf(1, "HANDLE_CVAR_INIT: Ran out of space to allocate new cvar ids\n");
+    return ERROR;
+  }
+
+  cvar_t* new_cvar = create_cvar(cvar_id);
+  if (new_cvar == NULL) {
+    TracePrintf(1, "HANDLE_CVAR_INIT: Failed to allocate new cvar\n");
+    return ERROR;
+  }
+
+  // stick the cvar in
+  cvar_t* old_cvars = cvars;
+  cvars = new_cvar;
+  new_cvar->next_cvar = old_cvars;
+
+  // write cvar_idp
+  cvar_idp[0] = cvar_id;
+  return SUCCESS;
 }
 
 /*
@@ -55,7 +82,19 @@ int handle_CvarInit(int *cvar_idp) {
 ERROR is returned.
  */
 int handle_CvarSignal(int cvar_id) {
-    // signal one of the waiters on the cvar to wake up, and put it in the queue waiting to run
+  TracePrintf(1, "HANDLE_CVAR_SIGNAL: signaling one waiter to wake up\n");
+  // signal one of the waiters on the cvar to wake up, and put it in the queue waiting to run
+  cvar_t* cvar = find_cvar(cvar_id);
+  if (cvar == NULL) {
+    TracePrintf(1, "HANDLE_CVAR_SIGNAL: Unable to find a cvar with id %d\n", cvar_id);
+    return ERROR;
+  }
+  pcb_t* next_pcb = remove_from_queue(cvar->blocked_queue);
+
+  // stick the next pcb in the queue
+  if (next_pcb != NULL) {
+    add_to_queue(ready_queue, next_pcb);
+  }
 }
 
 /*
@@ -63,18 +102,47 @@ int handle_CvarSignal(int cvar_id) {
 value ERROR is returned.
  */
 int handle_CvarBroadcast(int cvar_id){
-    // wake up all of the waiters, and put them in the queue waiting to run
+  TracePrintf(1, "HANDLE_CVAR_BROADCAST: waking up all waiters\n");
+  // wake up all of the waiters, and put them in the queue waiting to run
+  cvar_t* cvar = find_cvar(cvar_id);
+  if (cvar == NULL) {
+    TracePrintf(1, "HANDLE_CVAR_BROADCAST: Unable to find a cvar with id %d\n", cvar_id);
+    return ERROR;
+  }
+  pcb_t* next_pcb = remove_from_queue(cvar->blocked_queue);
+  while (next_pcb != NULL) {
+    add_to_queue(ready_queue, next_pcb);
+    next_pcb = remove_from_queue(cvar->blocked_queue);
+  }
+
+  return SUCCESS;
 }
 
 /*
- * The kernel-level process releases the lock identified by lock id and waits on the condition variable indentified
+ * The kernel-level process releases the lock identified by lock id and waits on the condition variable identified
 by cvar id. When the kernel-level process wakes up (e.g., because the condition variable was signaled), it
 re-acquires the lock. (Use Mesa-style semantics.)
 When the lock is finally acquired, the call returns to userland.
 In case of any error, the value ERROR is returned.
  */
 int handle_CvarWait(int cvar_id, int lock_id) {
+  cvar_t* cvar = find_cvar(cvar_id);
+  if (cvar == NULL) {
+    TracePrintf(1, "HANDLE_CVAR_WAIT: Unable to find a cvar with id %d\n", cvar_id);
+    return ERROR;
+  }
 
+  int rc = release(lock_id);
+  if (rc == ERROR) {
+    TracePrintf(1, "HANDLE_CVAR_WAIT: Unable to release a lock with id %d\n", lock_id);
+  }
+
+  // block the running process
+  add_to_queue(cvar->blocked_queue, running_process);
+  install_next_from_queue(running_process, 1);
+
+  TracePrintf(1, "HANDLE_CVAR_WAIT: Back from block on cvar; now acquiring lock\n");
+  return acquire(lock_id);
 }
 
 

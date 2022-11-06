@@ -11,6 +11,7 @@
 #include "data_structures/queue.h"
 #include "data_structures/frame_table.h"
 #include "data_structures/pipe.h"
+#include "data_structures/cvar.h"
 #include "trap_handlers/trap_handlers.h"
 #include "process_management/load_program.h"
 
@@ -46,6 +47,11 @@ extern unsigned int max_possible_pipe_id;                             // the max
 extern lock_t* locks;
 extern unsigned int max_lock_id;                                      // the maximum lock id currently being used
 extern unsigned int max_possible_lock_id;                             // the maximum lock id that may be allocated
+
+// CVAR
+extern cvar_t* cvars;
+extern unsigned int max_cvar_id;                                      // the maximum cvar id currently being used
+extern unsigned int max_possible_cvar_id;                             // the maximum cvar id that may be allocated
 
 //=================== KERNEL FUNCTIONS =================//
 /*

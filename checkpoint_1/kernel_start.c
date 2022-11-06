@@ -76,6 +76,11 @@ lock_t* locks = NULL;
 unsigned int max_lock_id = 1999999;
 unsigned int max_possible_lock_id = 3000000;
 
+// CVARS
+cvar_t* cvars = NULL;
+unsigned int max_cvar_id = 3999999;
+unsigned int max_possible_cvar_id = 5000000;
+
 /*
 * We are given addresses in bytes corresponding to the following kernel address space:
 * ---------- Top of region 0 (KERNEL_STACK_LIMIT or VMEM_0_SIZE)
