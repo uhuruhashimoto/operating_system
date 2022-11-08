@@ -2,6 +2,7 @@
 #include "../kernel_start.h"
 #include "io_syscalls.h"
 #include "../data_structures/tty.h"
+#include "../data_structures/queue.h"
 
 extern frame_table_struct_t *frame_table_global;
 extern pcb_t* running_process;
@@ -52,12 +53,44 @@ Calls to TtyWrite for more than TERMINAL MAX LINE bytes should be supported.
  */
 int handle_TtyWrite(int tty_id, void *buf, int len)
 {
+  // get the data on the current tty object
+  tty_object_t tty = tty_objects[tty_id];
+
   // block the calling process
+  pcb_t *current_process = running_process;
+  add_to_queue(tty.blocked_writes, current_process);
+  
   // wait to acquire the write_lock on the tty
+  while (!tty.in_use) {
+    if (acquire(tty.lock->lock_id) == ERROR) {
+      return ERROR;
+    }
+  }
+  tty.in_use = true;
+  if (release_lock(tty.lock->lock_id) == ERROR) {
+    return ERROR;
+  }
 
   // loop until there are no more unconsumed bytes in the buf
   //  write TERMINAL_MAX_LINE bytes from the buf to the terminal
+  int num_lines = len / TERMINAL_MAX_LINE;
+  for (int i = 0; i < num_lines; i++) {
+    TtyWrite(tty_id, buf, TERMINAL_MAX_LINE);
+  }
+
+  // Update tty metadata
+  if (acquire(tty.lock->lock_id) == ERROR) {
+    return ERROR;
+  }
+  tty.in_use = false;
+  if (release_lock(tty.lock->lock_id) == ERROR) {
+    return ERROR;
+  }
 
   // unblock the calling process (place on the ready queue)
+  remove_from_queue(tty.blocked_writes, current_process);
+  add_to_queue(ready_queue, current_process);
+
   // return the number of bytes written
+  return len;
 }
