@@ -191,6 +191,8 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   WriteRegister(REG_PTBR0, (int) region_0_page_table);
   WriteRegister(REG_PTLR0, region_0_page_table_size);
 
+  // print_reg_0_page_table(1, "Before VmemInit");
+
   // turn on virtual memory permanently
   WriteRegister(REG_VM_ENABLE, 1);
   vmem_on = 1;
