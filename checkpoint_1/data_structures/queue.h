@@ -5,9 +5,14 @@
 #ifndef CURRENT_CHUNGUS_QUEUE
 #define CURRENT_CHUNGUS_QUEUE
 
+#include <ykernel.h>
 #include "pcb.h"
 
-typedef struct queue queue_t;
+typedef struct queue {
+  pcb_t* head;
+  pcb_t* tail;
+  int size;
+} queue_t;
 
 /*
  * Creates a new queue object

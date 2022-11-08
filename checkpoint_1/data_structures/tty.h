@@ -7,6 +7,7 @@
 
 #include <ykernel.h>
 #include "queue.h"
+#include "lock.h"
 #include "stdbool.h"
 #define MAX_BUFFER_LEN 100
 /*
@@ -16,6 +17,7 @@
 typedef struct tty_object {
   int id;
   lock_t *lock;
+  bool in_use;
   int num_unconsumed_chars;
   char buf[MAX_BUFFER_LEN];
   queue_t* blocked_reads; 

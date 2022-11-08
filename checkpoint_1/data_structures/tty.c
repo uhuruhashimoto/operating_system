@@ -1,6 +1,16 @@
 #include <ykernel.h>
+#include "lock.h"
 #include "queue.h"
+#include "stdbool.h"
 #include "tty.h"
+
+extern pcb_t* running_process;
+extern pcb_t* idle_process;
+extern bool is_idle;
+extern queue_t* ready_queue;
+extern void *trap_handler[16];
+extern pte_t *region_0_page_table;
+extern tty_object_t *tty_objects[NUM_TERMINALS];
 
 tty_object_t *init_tty_object(int id) {
     tty_object_t *tty_obj = malloc(sizeof(tty_object_t));
@@ -16,7 +26,7 @@ tty_object_t *init_tty_object(int id) {
 
 tty_object_t *get_tty_object(int id) {
     if (id < NUM_TERMINALS-1) {
-        return &tty_objects[id];
+        return tty_objects[id];
     }
     return NULL;
 }

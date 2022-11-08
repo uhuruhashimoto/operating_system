@@ -34,7 +34,9 @@
 #include "data_structures/frame_table.h"
 #include "data_structures/pipe.h"
 #include "data_structures/lock.h"
+#include "data_structures/tty.h"
 #include "process_management/load_program.h"
+#include "syscalls/io_syscalls.h"
 #include "debug_utils/debug.h"
 
 
@@ -82,7 +84,7 @@ unsigned int max_cvar_id = 3999999;
 unsigned int max_possible_cvar_id = 5000000;
 
 //TERMINALS
-tty_object_t tty_objects[NUM_TERMINALS];
+tty_object_t *tty_objects[NUM_TERMINALS];
 
 /*
 * We are given addresses in bytes corresponding to the following kernel address space:

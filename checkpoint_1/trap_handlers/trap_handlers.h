@@ -6,7 +6,27 @@
 #ifndef CURRENT_CHUNGUS_TRAP_HANDLERS
 #define CURRENT_CHUNGUS_TRAP_HANDLERS
 #include <ykernel.h>
+#include "../kernel_start.h"
+#include "../kernel_utils.h"
+#include "trap_handlers.h"
+#include "../syscalls/io_syscalls.h"
+#include "../syscalls/ipc_syscalls.h"
+#include "../syscalls/process_syscalls.h"
+#include "../syscalls/sync_syscalls.h"
+#include "../data_structures/queue.h"
+#include "../debug_utils/debug.h"
+#include "../data_structures/tty.h"
 #define NUM_TRAP_FUNCTIONS 16
+
+extern frame_table_struct_t *frame_table_global;
+extern pcb_t* running_process;
+extern pcb_t* idle_process;
+extern bool is_idle;
+extern queue_t* ready_queue;
+extern void *trap_handler[16];
+extern pte_t *region_0_page_table;
+extern tty_object_t *tty_objects[NUM_TERMINALS];
+
 
 // typedef void (*trap_handler_t) (UserContext* context);
 

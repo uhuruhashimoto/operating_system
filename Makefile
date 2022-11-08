@@ -9,12 +9,17 @@
 # Where's your kernel source?
 K_SRC_DIR = /home/cs58/vbs/yalnix_test/current_chungus/checkpoint_1
 #  K_SRC_DIR = /media/sf_cs58/current_chungus/checkpoint_1
+
 # What are the kernel c and include files?
+DATA_STRUCTURES = data_structures/pcb.c data_structures/queue.c data_structures/frame_table.c \
+data_structures/pipe.c data_structures/lock.c data_structures/cvar.c data_structures/tty.c
+
+#K_SRCS = $(DATA_STRUCTURES) debug_utils/*.c kernel_start.c kernel_utils.c syscalls/*.c process_management/*.c memory/*.c trap_handlers/*.c
 K_SRCS = kernel_start.c kernel_utils.c data_structures/pcb.c data_structures/queue.c data_structures/frame_table.c \
-trap_handlers/trap_handlers.c syscalls/io_syscalls.c syscalls/ipc_syscalls.c syscalls/process_syscalls.c \
+syscalls/io_syscalls.c syscalls/ipc_syscalls.c syscalls/process_syscalls.c \
 syscalls/sync_syscalls.c process_management/load_program.c debug_utils/debug.c \
 memory/check_memory.c data_structures/pipe.c data_structures/lock.c data_structures/cvar.c \
-data_structures/tty.c
+data_structures/tty.c trap_handlers/trap_handlers.c
 
 K_INCS = $(K_SRCS:%.c=%.h) 
 

@@ -1,12 +1,8 @@
+#include <ykernel.h>
 #include "queue.h"
 #include "pcb.h"
-#include <ykernel.h>
 
-typedef struct queue {
-  pcb_t* head;
-  pcb_t* tail;
-  int size;
-} queue_t;
+
 
 /*
  * Creates a new queue object
