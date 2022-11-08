@@ -7,7 +7,7 @@
 int main(const int argc, char **argv) {
   TracePrintf(1, "Test message program\n");
 
-  TTyPrintf(1, "Hello from userland\n");
+  TtyPrintf(1, "Hello from userland\n");
   
   Exit(0);
 }
