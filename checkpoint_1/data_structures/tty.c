@@ -6,6 +6,7 @@ tty_object_t *init_tty_object(int id) {
     tty_object_t *tty_obj = malloc(sizeof(tty_object_t));
     bzero(tty_obj->buf, MAX_BUFFER_LEN);
     tty_obj->id = id;
+    tty_obj->num_unconsumed_chars = 0;
     tty_obj->blocked_reads = create_queue();
     tty_obj->blocked_writes = create_queue();
     return tty_obj;

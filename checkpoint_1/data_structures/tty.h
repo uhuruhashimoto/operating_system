@@ -14,6 +14,7 @@
 */
 typedef struct tty_object {
   int id;
+  int num_unconsumed_chars;
   char buf[MAX_BUFFER_LEN];
   queue_t* blocked_reads;                               // blocked until
   queue_t* blocked_writes;
