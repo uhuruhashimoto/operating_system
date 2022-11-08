@@ -60,10 +60,9 @@ int handle_TtyWrite(int tty_id, void *buf, int len)
   add_to_queue(tty->blocked_writes, current_process);
   
   // wait to acquire the write_lock on the tty
-  while (!tty->in_use) {
-    if (acquire(tty->lock->lock_id) == ERROR) {
-      return ERROR;
-    }
+  while(tty->in_use){}
+  if (acquire(tty->lock->lock_id) == ERROR) {
+    return ERROR;
   }
   tty->in_use = true;
   if (release(tty->lock->lock_id) == ERROR) {
@@ -72,7 +71,8 @@ int handle_TtyWrite(int tty_id, void *buf, int len)
 
   // loop until there are no more unconsumed bytes in the buf
   //  write TERMINAL_MAX_LINE bytes from the buf to the terminal
-  int num_lines = len / TERMINAL_MAX_LINE;
+  // integer division and round up
+  int num_lines = len / TERMINAL_MAX_LINE + 1; 
   for (int i = 0; i < num_lines; i++) {
     TtyTransmit(tty_id, buf, TERMINAL_MAX_LINE);
   }
