@@ -1,10 +1,14 @@
-//
-// Created by smooth_operator on 10/8/22.
 // Specs are on Page 29 of Yalnix Manual
-//
 
 #ifndef CURRENT_CHUNGUS_IO_SYSCALL_HANDLERS
 #define CURRENT_CHUNGUS_IO_SYSCALL_HANDLERS
+
+#include <ykernel.h>
+#include "../data_structures/lock.h"
+#include "stdbool.h"
+
+extern tty_object_t tty_objects[NUM_TERMINALS];
+
 
 /*
  * Read the next line of input from terminal tty id, copying it into the buffer referenced by buf. The maximum

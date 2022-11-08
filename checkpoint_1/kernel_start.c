@@ -81,6 +81,9 @@ cvar_t* cvars = NULL;
 unsigned int max_cvar_id = 3999999;
 unsigned int max_possible_cvar_id = 5000000;
 
+//TERMINALS
+tty_object_t tty_objects[NUM_TERMINALS];
+
 /*
 * We are given addresses in bytes corresponding to the following kernel address space:
 * ---------- Top of region 0 (KERNEL_STACK_LIMIT or VMEM_0_SIZE)
@@ -191,8 +194,6 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   WriteRegister(REG_PTBR0, (int) region_0_page_table);
   WriteRegister(REG_PTLR0, region_0_page_table_size);
 
-  // print_reg_0_page_table(1, "Before VmemInit");
-
   // turn on virtual memory permanently
   WriteRegister(REG_VM_ENABLE, 1);
   vmem_on = 1;
@@ -208,6 +209,9 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
       );
     }
   }
+
+  // TERMINALS
+  init_kernel_tty_objects(NUM_TERMINALS);
 
   // TRAP HANDLERS
   // set up trap handler array

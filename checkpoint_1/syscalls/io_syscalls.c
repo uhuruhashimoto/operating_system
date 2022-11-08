@@ -1,6 +1,26 @@
+#include <ykernel.h>
+#include "../kernel_start.h"
 #include "io_syscalls.h"
+#include "../data_structures/tty.h"
 
-// TODO -- function to create new tty objects
+extern frame_table_struct_t *frame_table_global;
+extern pcb_t* running_process;
+extern pcb_t* idle_process;
+extern bool is_idle;
+extern queue_t* ready_queue;
+extern void *trap_handler[16];
+extern pte_t *region_0_page_table;
+extern tty_object_t tty_objects[NUM_TERMINALS];
+
+/* 
+* Function to create new tty objects
+* Called at boot time
+*/
+int init_kernel_tty_objects() {
+  for (int i = 0; i<NUM_TERMINALS; i++) {
+    tty_objects[i] = *init_tty_object(i);
+  }
+}
 
 /*
  * Read the next line of input from terminal tty id, copying it into the buffer referenced by buf. The maximum
