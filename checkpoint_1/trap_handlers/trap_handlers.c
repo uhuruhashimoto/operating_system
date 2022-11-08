@@ -45,10 +45,10 @@ void handle_trap_kernel(UserContext* context) {
 
     // TTY Syscalls
     case YALNIX_TTY_READ:
-//      handle_TtyRead(context->regs[0], context->regs[1], context->regs[2]);
+      handle_TtyRead(context->regs[0], (void *)context->regs[1], context->regs[2]);
       break;
     case YALNIX_TTY_WRITE:
-//      handle_TtyWrite(context->regs[0], context->regs[1], context->regs[2]);
+      handle_TtyWrite(context->regs[0], (void *)context->regs[1], context->regs[2]);
       break;
 
     // TODO -- what are YALNIX_REGISTER etc?

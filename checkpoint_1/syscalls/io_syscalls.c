@@ -41,3 +41,17 @@ int handle_TtyWrite(int tty_id, void *buf, int len)
   // unblock the calling process (place on the ready queue)
   // return the number of bytes written
 }
+  Reader:
+- get lock
+- while (writers > 0) {
+    cvar wait (lock, r cvar)
+}
+reader ++
+release lock
+read
+acquire lock
+reader --
+release lock
+if (reader == 0) {
+    signal w
+}
