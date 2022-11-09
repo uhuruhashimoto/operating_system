@@ -7,7 +7,10 @@
 int main(const int argc, char **argv) {
   TracePrintf(1, "Test message program\n");
 
-  TtyPrintf(0, "Hello from userland\n");
+  TtyPrintf(0, "Hello terminal 0 from userland\n");
+  TtyPrintf(1, "Hello terminal 1 from userland\n");
+  TtyPrintf(2, "Hello terminal 2 from userland\n");
+  TtyPrintf(3, "Hello terminal 3 from userland\n");
   
   Exit(0);
 }

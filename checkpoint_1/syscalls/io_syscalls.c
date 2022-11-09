@@ -39,63 +39,72 @@ int handle_TtyRead(int tty_id, void *buf, int len)
   tty_object_t *tty = tty_objects[tty_id];
   int num_bytes_to_copy = tty->num_unconsumed_chars;
 
-  // TODO: get the number of unconsumed chars
+  // get the number of unconsumed chars
+  int orig_len = len;
+  if (tty->num_unconsumed_chars > 0) {
+    if (tty->num_unconsumed_chars >= len) {
+      memcpy(buf, tty->buf, len); 
+      tty->num_unconsumed_chars -= len;
+      return len;
+    } else {
+      memcpy(buf, tty->buf, tty->num_unconsumed_chars);
+      tty->num_unconsumed_chars = 0;
+      len = len - tty->num_unconsumed_chars;
+    }
+  }
 
-  // if there is no available line on the terminal, block the calling process and wait for a line from terminal
-  if (tty->num_unconsumed_chars >= len) {
-    // if there is a line available, copy the line into the buffer
-    memcpy(buf, tty->unconsumed_chars, num_bytes_to_copy);
-    tty->num_unconsumed_chars = 0;
-    return num_bytes_to_copy;
-  } else {
-    // if there is no line available, block the calling process
-    // and wait for a line from terminal
-    pcb_t *current_process = running_process;
-    add_to_queue(tty->blocked_reads, current_process);
+  // if there is no line available, block the calling process and wait for a line from terminal
+  pcb_t *current_process = running_process;
+  add_to_queue(tty->blocked_reads, current_process);
 
-    // wait to acquire the write_lock on the tty
-    while(tty->in_use){}
-    if (acquire(tty->lock->lock_id) == ERROR) {
-      return ERROR;
-    }
-    tty->in_use = true;
-    if (release(tty->lock->lock_id) == ERROR) {
-      return ERROR;
-    }
+  // wait to acquire the write_lock on the tty
+  while(tty->in_use){}
+  if (acquire(tty->lock->lock_id) == ERROR) {
+    return ERROR;
+  }
+  tty->in_use = true;
+  if (release(tty->lock->lock_id) == ERROR) {
+    return ERROR;
+  }
 
-    // TODO: 
-    // copy line from terminal tty_id to buf, of max size len
-    // save any remaining bytes for later use by the kernel
-    int num_lines = len / TERMINAL_MAX_LINE + 1; 
-    int num_remaining_after_copy = len % TERMINAL_MAX_LINE;
-    for (int i = 0; i < num_lines; i++) {
-      int offset = TERMINAL_MAX_LINE * i;
-      if (i == num_lines - 1) {
-        // copy the last line
-        TtyRecieve(tty_id, (void *) (buf + offset), num_remaining_after_copy);
-      } else {
-        // copy the full line
-        TtyRecieve(tty_id, (void *) (buf + offset), TERMINAL_MAX_LINE);
-      }
+  // copy line from terminal tty_id to buf, of max size len
+  // save any remaining bytes for later use by the kernel
+  int num_lines = len / TERMINAL_MAX_LINE + 1; 
+  int num_remaining_after_copy = len % TERMINAL_MAX_LINE;
+  for (int i = 0; i < num_lines; i++) {
+    int offset = TERMINAL_MAX_LINE * i;
+    if (i == num_lines - 1) {
+      // copy the last line
+      TtyReceive(tty_id, (void *) (buf + offset), num_remaining_after_copy);
+    } else {
+      // copy the full line
+      TtyReceive(tty_id, (void *) (buf + offset), TERMINAL_MAX_LINE);
     }
+  }
 
-    // Update tty metadata
-    if (acquire(tty->lock->lock_id) == ERROR) {
-      return ERROR;
-    }
-    tty->in_use = false;
-    if (release(tty->lock->lock_id) == ERROR) {
-      return ERROR;
-    }
+  // if there are any chars left after copy, save them for later use
+  if (num_remaining_after_copy < len) {
+    tty->num_unconsumed_chars = len - num_remaining_after_copy;
+  }
+  
 
-    // unblock the calling process (place on the ready queue)
-    if (tty->blocked_reads->head == current_process) {
-      remove_from_queue(tty->blocked_reads);
-    }
-    add_to_queue(ready_queue, current_process);
+  // Update tty metadata
+  if (acquire(tty->lock->lock_id) == ERROR) {
+    return ERROR;
+  }
+  tty->in_use = false;
+  if (release(tty->lock->lock_id) == ERROR) {
+    return ERROR;
+  }
+
+  // unblock the calling process (place on the ready queue)
+  if (tty->blocked_reads->head == current_process) {
+    remove_from_queue(tty->blocked_reads);
+  }
+  add_to_queue(ready_queue, current_process);
 
   // return the number of bytes copied into buf
-    return len;
+  return orig_len;
 }
 
 /*

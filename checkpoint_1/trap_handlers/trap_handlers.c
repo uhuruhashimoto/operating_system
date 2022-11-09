@@ -238,11 +238,16 @@ void handle_trap_math(UserContext* context) {
  * Hardware detected a new line in the terminal
  */
 void handle_trap_tty_receive(UserContext* context) {
-  TracePrintf(1, "This trap is not yet implemented\n");
-  // int tty_id = context->code;
+  int tty_id = context->code;
+  //TODO:
   // read input from terminal with TtyReceive
   // save into a terminal buffer
   // wake up waiting read processes
+  int num_waiting_readers = tty_objects[tty_id]->blocked_reads->size;
+  for (int i=0; i<num_waiting_readers; i++) {
+    pcb_t *woken_proc = remove_from_queue(tty_objects[tty_id]->blocked_reads);
+    add_to_queue(ready_queue, woken_proc);
+  }
 }
 
 /*
