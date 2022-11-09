@@ -22,7 +22,14 @@ cvar_t* create_cvar(int cvar_id)
 
 cvar_t* find_cvar(int cvar_id)
 {
+  cvar_t* next_cvar = cvars;
+  while (next_cvar != NULL) {
+    if (next_cvar->id == cvar_id) {
+      return next_cvar;
+    }
+  }
 
+  return NULL;
 }
 
 cvar_t* delete_cvar(cvar_t* cvar)

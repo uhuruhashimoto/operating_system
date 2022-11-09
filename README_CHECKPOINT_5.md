@@ -45,3 +45,10 @@ The second two children will read out these bytes, 50-50. We expect to see the b
 ./yalnix ./checkpoint_1/test_processes/math_test
 ```
 Attempts division by 0.
+
+### Cvar Test
+```
+./yalnix ./checkpoint_1/test_processes/cvar_test
+```
+Tests cvars, using a simplification of the car problem. The process forks, and the child waits on the lock, and then
+the cvar.
