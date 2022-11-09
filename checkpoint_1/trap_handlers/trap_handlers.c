@@ -18,6 +18,7 @@ extern queue_t* ready_queue;
 extern void *trap_handler[16];
 extern pte_t *region_0_page_table;
 extern tty_object_t *tty_objects[NUM_TERMINALS];
+extern char tty_buffer[TTY_BUFFER_SIZE]; 
 
 /*
  * Handle traps to the kernel
@@ -239,9 +240,11 @@ void handle_trap_math(UserContext* context) {
  */
 void handle_trap_tty_receive(UserContext* context) {
   int tty_id = context->code;
-  // wake up waiting read processes who will
   // read input from terminal with TtyReceive
+  TtyReceive(tty_id, &tty_buffer, TERMINAL_MAX_LINE);
+  TracePrintf(1, "TRAP_TTY_RECEIVE RESULT: tty_id: %d, tty_buffer: %s\n", tty_id, tty_buffer);
   // save into a terminal buffer
+  // wake up waiting read processes
   int num_waiting_readers = tty_objects[tty_id]->blocked_reads->size;
   for (int i=0; i<num_waiting_readers; i++) {
     pcb_t *woken_proc = remove_from_queue(tty_objects[tty_id]->blocked_reads);

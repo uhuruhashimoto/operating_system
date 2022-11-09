@@ -11,6 +11,7 @@ extern queue_t* ready_queue;
 extern void *trap_handler[16];
 extern pte_t *region_0_page_table;
 extern tty_object_t *tty_objects[NUM_TERMINALS];
+extern char tty_buffer[TTY_BUFFER_SIZE];
 
 /* 
 * Function to create new tty objects
@@ -35,6 +36,7 @@ calling process’s buffer is returned; in case of any error, the value ERROR is
  */
 int handle_TtyRead(int tty_id, void *buf, int len)
 {
+  TracePrintf(1, "TtyRead: tty_id: %d, buf: %p, len: %d\n", tty_id, buf, len);
   // get the data on the current tty object
   tty_object_t *tty = tty_objects[tty_id];
   int num_bytes_to_copy = tty->num_unconsumed_chars;
@@ -45,6 +47,7 @@ int handle_TtyRead(int tty_id, void *buf, int len)
     if (tty->num_unconsumed_chars >= len) {
       memcpy(buf, tty->buf, len); 
       tty->num_unconsumed_chars -= len;
+      TracePrintf("TtyRead: read %s", buf);
       return len;
     } else {
       memcpy(buf, tty->buf, tty->num_unconsumed_chars);
@@ -104,6 +107,7 @@ int handle_TtyRead(int tty_id, void *buf, int len)
   add_to_queue(ready_queue, current_process);
 
   // return the number of bytes copied into buf
+  TracePrintf(1, "TtyRead: read %s", buf);
   return orig_len;
 }
 

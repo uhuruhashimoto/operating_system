@@ -56,7 +56,8 @@ extern unsigned int max_cvar_id;                                      // the max
 extern unsigned int max_possible_cvar_id;                             // the maximum cvar id that may be allocated
 
 //TERMINALS
-extern tty_object_t *tty_objects[NUM_TERMINALS];                                 // metadata tracking on all the terminals
+extern tty_object_t *tty_objects[NUM_TERMINALS];                     // metadata tracking on all the terminals
+extern char tty_buffer[TTY_BUFFER_SIZE];                             // the buffer for all terminal input
 
 //=================== KERNEL FUNCTIONS =================//
 /*

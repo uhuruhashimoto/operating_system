@@ -26,6 +26,7 @@ extern queue_t* ready_queue;
 extern void *trap_handler[16];
 extern pte_t *region_0_page_table;
 extern tty_object_t *tty_objects[NUM_TERMINALS];
+extern char tty_buffer[TTY_BUFFER_SIZE]; 
 
 
 // typedef void (*trap_handler_t) (UserContext* context);

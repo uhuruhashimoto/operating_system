@@ -9,7 +9,8 @@
 #include "queue.h"
 #include "lock.h"
 #include "stdbool.h"
-#define MAX_BUFFER_LEN 100
+#define MAX_BUFFER_LEN 100 //character storage in individual terminal
+#define TTY_BUFFER_SIZE 200 //total kernel storage for terminals
 /*
 * This struct holds the metadata about each terminal, allowing us to read and write to it. Currently, we only allow a single
 * process to read from a terminal at a time, and a single process to write to a terminal at a time.

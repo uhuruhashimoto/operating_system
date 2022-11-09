@@ -85,6 +85,7 @@ unsigned int max_possible_cvar_id = 5000000;
 
 //TERMINALS
 tty_object_t *tty_objects[NUM_TERMINALS];
+char tty_buffer[TTY_BUFFER_SIZE];
 
 /*
 * We are given addresses in bytes corresponding to the following kernel address space:
