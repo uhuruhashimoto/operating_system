@@ -10,6 +10,7 @@ typedef struct lock{
   pcb_t* locking_proc;
   queue_t* blocked_queue;
   struct lock* next_lock;
+  struct lock* prev_lock;
 } lock_t;
 
 /*

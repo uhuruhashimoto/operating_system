@@ -71,6 +71,9 @@ int handle_CvarInit(int *cvar_idp) {
   cvar_t* old_cvars = cvars;
   cvars = new_cvar;
   new_cvar->next_cvar = old_cvars;
+  if (old_cvars != NULL) {
+    old_cvars->prev_cvar = new_cvar;
+  }
 
   // write cvar_idp
   cvar_idp[0] = cvar_id;
@@ -145,6 +148,15 @@ int handle_CvarWait(int cvar_id, int lock_id) {
   return acquire(lock_id);
 }
 
+/*
+* Kill cvar by cvar id, and any queued children. If necessary,
+* we could specify a kill/don't kill option in our input args.
+ *
+ * kill_children = 0  --> don't kill
+ * kill_children = 1  --> do kill
+*/
+int handle_CvarKill(int cvar_id, int kill_children) {
 
+}
 
 #endif //CURRENT_CHUNGUS_SYNC_SYSCALL_HANDLERS

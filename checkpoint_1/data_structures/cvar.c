@@ -11,6 +11,7 @@ cvar_t* create_cvar(int cvar_id)
   new_cvar->id = cvar_id;
   new_cvar->blocked_queue = create_queue();
   new_cvar->next_cvar = NULL;
+  new_cvar->prev_cvar = NULL;
 
   if (new_cvar->blocked_queue == NULL) {
     TracePrintf(1, "CREATE_CVAR: Failed to allocate blocked queue\n");

@@ -25,6 +25,7 @@ pipe_t* create_pipe(int pipe_id)
   pipe_obj->end_id = 0;
   pipe_obj->max_size = PIPE_BUFFER_LEN;
   pipe_obj->cur_size = 0;
+  pipe_obj->prev_pipe = NULL;
   pipe_obj->next_pipe = NULL;
   pipe_obj->read_lock = create_lock_any_id();
   pipe_obj->write_lock = create_lock_any_id();

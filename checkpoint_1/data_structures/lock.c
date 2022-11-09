@@ -27,6 +27,7 @@ lock_t* create_lock(int lock_id)
   lock_t* new_lock = malloc(sizeof (lock_t));
   new_lock->locking_proc = NULL;
   new_lock->next_lock = NULL;
+  new_lock->prev_lock = NULL;
   new_lock->locked = false;
 
   if (new_lock == NULL) {
@@ -64,6 +65,9 @@ lock_t* create_lock_any_id()
   lock_t* old_locks = locks;
   locks = new_lock;
   new_lock->next_lock = old_locks;
+  if (old_locks != NULL) {
+    old_locks->prev_lock = new_lock;
+  }
 
   return new_lock;
 }

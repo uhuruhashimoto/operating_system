@@ -70,16 +70,19 @@ pcb_t *delayed_processes = NULL;                               // a linked list 
 
 // PIPES
 pipe_t* pipes = NULL;
+unsigned int min_possible_pipe_id = 0;
 unsigned int max_pipe_id = -1;
 unsigned int max_possible_pipe_id = 1000000;
 
 // LOCKS
 lock_t* locks = NULL;
+unsigned int min_possible_lock_id = 2000000;
 unsigned int max_lock_id = 1999999;
 unsigned int max_possible_lock_id = 3000000;
 
 // CVARS
 cvar_t* cvars = NULL;
+unsigned int min_possible_cvar_id = 4000000;
 unsigned int max_cvar_id = 3999999;
 unsigned int max_possible_cvar_id = 5000000;
 

@@ -16,6 +16,7 @@ typedef struct pipe {
   int end_id;
   int max_size;
   int cur_size;
+  struct pipe* prev_pipe;                  // the previous pipe in the global pipe list
   struct pipe* next_pipe;                  // the next pipe in the global pipe list
   lock_t* read_lock;                       // the lock for reading this pipe
   queue_t* blocked_read_queue;             // the queue of processes blocked on reads on this pipe

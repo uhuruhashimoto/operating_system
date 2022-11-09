@@ -42,16 +42,19 @@ extern pcb_t *delayed_processes;
 
 // PIPES
 extern pipe_t* pipes;
+extern unsigned int min_possible_pipe_id;                             // the minimum pipe id that may be allocated
 extern unsigned int max_pipe_id;                                      // the maximum pipe id currently being used
 extern unsigned int max_possible_pipe_id;                             // the maximum pipe id that may be allocated
 
 // LOCKS
 extern lock_t* locks;
+extern unsigned int min_possible_lock_id;                             // the minimum lock id that may be allocated
 extern unsigned int max_lock_id;                                      // the maximum lock id currently being used
 extern unsigned int max_possible_lock_id;                             // the maximum lock id that may be allocated
 
 // CVAR
 extern cvar_t* cvars;
+extern unsigned int min_possible_cvar_id;                             // the minimum cvar id that may be allocated
 extern unsigned int max_cvar_id;                                      // the maximum cvar id currently being used
 extern unsigned int max_possible_cvar_id;                             // the maximum cvar id that may be allocated
 

@@ -104,7 +104,21 @@ void handle_trap_kernel(UserContext* context) {
     case YALNIX_CVAR_WAIT:
       rc = handle_CvarWait(context->regs[0], context->regs[1]);
       break;
-    // TODO -- YALNIX_RECLAIM
+    // use the ranges for each type of object id to figure out what type of object we're killing
+    case YALNIX_RECLAIM:
+      int id = context->regs[0];
+      int kill_children = context->regs[1];
+
+      if (id >= min_possible_pipe_id && id <= max_possible_pipe_id) {
+        rc = handle_PipeKill(id, kill_children);
+      }
+      else if (id >= min_possible_lock_id && id <= max_possible_lock_id) {
+
+      }
+      else if (id >= min_possible_cvar_id && id <= max_possible_cvar_id) {
+
+      }
+      break;
 
     // TODO -- YALNIX_ABORT
     // TODO -- YALNIX_BOOT

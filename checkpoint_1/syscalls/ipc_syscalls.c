@@ -38,6 +38,9 @@ int handle_PipeInit(int *pipe_idp)
   pipe_t* prev_ll = pipes;
   pipes = new_pipe;
   new_pipe->next_pipe = prev_ll;
+  if (prev_ll != NULL) {
+    prev_ll->prev_pipe = new_pipe;
+  }
 
   pipe_idp[0] = next_id;
   return SUCCESS;
@@ -179,7 +182,7 @@ int handle_PipeWrite(int pipe_id, void *buf, int len)
  * kill_children = 1  --> do kill
 */
 int handle_PipeKill(int pipe_id, int kill_children) {
-  TracePrintf(1, "HANDLE_PIPE_KILL: Unable to find a pipe with id %d\n", pipe_id);
+  TracePrintf(1, "HANDLE_PIPE_KILL: Attempting to delete a pipe with id %d\n", pipe_id);
 
   pipe_t* found_pipe = find_pipe(pipe_id);
   if (found_pipe == NULL) {
@@ -203,6 +206,8 @@ int handle_PipeKill(int pipe_id, int kill_children) {
       next_child = remove_from_queue(found_pipe->blocked_write_queue);
     }
   }
+
+  // stitch the pipe list together
 
   // delete the pipe
   delete_pipe(found_pipe);
