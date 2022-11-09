@@ -8,6 +8,17 @@
 #include "../syscalls/sync_syscalls.h"
 #include "../data_structures/queue.h"
 #include "../debug_utils/debug.h"
+#include "../data_structures/tty.h"
+
+extern frame_table_struct_t *frame_table_global;
+extern pcb_t* running_process;
+extern pcb_t* idle_process;
+extern bool is_idle;
+extern queue_t* ready_queue;
+extern void *trap_handler[16];
+extern pte_t *region_0_page_table;
+extern tty_object_t *tty_objects[NUM_TERMINALS];
+extern char tty_buffer[TTY_BUFFER_SIZE]; 
 
 /*
  * Handle traps to the kernel
@@ -45,10 +56,10 @@ void handle_trap_kernel(UserContext* context) {
 
     // TTY Syscalls
     case YALNIX_TTY_READ:
-//      handle_TtyRead(context->regs[0], context->regs[1], context->regs[2]);
+      handle_TtyRead(context->regs[0], (void *)context->regs[1], context->regs[2]);
       break;
     case YALNIX_TTY_WRITE:
-//      handle_TtyWrite(context->regs[0], context->regs[1], context->regs[2]);
+      handle_TtyWrite(context->regs[0], (void *)context->regs[1], context->regs[2]);
       break;
 
     // TODO -- what are YALNIX_REGISTER etc?
@@ -228,18 +239,30 @@ void handle_trap_math(UserContext* context) {
  * Hardware detected a new line in the terminal
  */
 void handle_trap_tty_receive(UserContext* context) {
-  TracePrintf(1, "This trap is not yet implemented\n");
-  // int tty_id = context->code;
+  int tty_id = context->code;
   // read input from terminal with TtyReceive
+  TtyReceive(tty_id, &tty_buffer, TERMINAL_MAX_LINE);
+  TracePrintf(1, "TRAP_TTY_RECEIVE RESULT: tty_id: %d, tty_buffer: %s\n", tty_id, tty_buffer);
   // save into a terminal buffer
   // wake up waiting read processes
+  int num_waiting_readers = tty_objects[tty_id]->blocked_reads->size;
+  for (int i=0; i<num_waiting_readers; i++) {
+    pcb_t *woken_proc = remove_from_queue(tty_objects[tty_id]->blocked_reads);
+    add_to_queue(ready_queue, woken_proc);
+  }
 }
 
 /*
  * A line being written to the terminal has completed
  */
 void handle_trap_tty_transmit(UserContext* context) {
-  TracePrintf(1, "This trap is not yet implemented\n");
-  // int tty_id = context->code;
+  int tty_id = context->code;
+  TracePrintf(1, "TRAP_TTY_TRANSMIT: tty_id = %d\n", tty_id);
+  // wake up all waiting processes
+  int num_waiting_writers = tty_objects[tty_id]->blocked_writes->size;
+  for (int i=0; i<num_waiting_writers; i++) {
+    pcb_t *woken_proc = remove_from_queue(tty_objects[tty_id]->blocked_writes);
+    add_to_queue(ready_queue, woken_proc);
+  }
 }
 

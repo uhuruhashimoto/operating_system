@@ -34,7 +34,9 @@
 #include "data_structures/frame_table.h"
 #include "data_structures/pipe.h"
 #include "data_structures/lock.h"
+#include "data_structures/tty.h"
 #include "process_management/load_program.h"
+#include "syscalls/io_syscalls.h"
 #include "debug_utils/debug.h"
 
 
@@ -80,6 +82,10 @@ unsigned int max_possible_lock_id = 3000000;
 cvar_t* cvars = NULL;
 unsigned int max_cvar_id = 3999999;
 unsigned int max_possible_cvar_id = 5000000;
+
+//TERMINALS
+tty_object_t *tty_objects[NUM_TERMINALS];
+char tty_buffer[TTY_BUFFER_SIZE];
 
 /*
 * We are given addresses in bytes corresponding to the following kernel address space:
@@ -206,6 +212,9 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
       );
     }
   }
+
+  // TERMINALS
+  init_kernel_tty_objects(NUM_TERMINALS);
 
   // TRAP HANDLERS
   // set up trap handler array

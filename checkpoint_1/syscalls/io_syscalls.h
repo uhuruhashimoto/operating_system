@@ -1,10 +1,22 @@
-//
-// Created by smooth_operator on 10/8/22.
 // Specs are on Page 29 of Yalnix Manual
-//
 
 #ifndef CURRENT_CHUNGUS_IO_SYSCALL_HANDLERS
 #define CURRENT_CHUNGUS_IO_SYSCALL_HANDLERS
+
+#include <ykernel.h>
+#include "../data_structures/tty.h"
+#include "../data_structures/queue.h"
+
+extern pcb_t* running_process;
+extern pcb_t* idle_process;                                           // the special idle process; use when nothing is in ready queue
+extern bool is_idle;                                                  // if is_idle, we won't put the process back on the ready queue
+extern queue_t* ready_queue;
+extern void *trap_handler[16];
+extern pte_t *region_0_page_table;
+extern tty_object_t *tty_objects[NUM_TERMINALS];
+extern char tty_buffer[TTY_BUFFER_SIZE];
+
+int init_kernel_tty_objects();
 
 /*
  * Read the next line of input from terminal tty id, copying it into the buffer referenced by buf. The maximum

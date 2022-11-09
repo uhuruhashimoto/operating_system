@@ -12,8 +12,10 @@
 #include "data_structures/frame_table.h"
 #include "data_structures/pipe.h"
 #include "data_structures/cvar.h"
+#include "data_structures/tty.h"
 #include "trap_handlers/trap_handlers.h"
 #include "process_management/load_program.h"
+
 
 //=================== KERNEL GLOBALS ===================//
 /*
@@ -52,6 +54,10 @@ extern unsigned int max_possible_lock_id;                             // the max
 extern cvar_t* cvars;
 extern unsigned int max_cvar_id;                                      // the maximum cvar id currently being used
 extern unsigned int max_possible_cvar_id;                             // the maximum cvar id that may be allocated
+
+//TERMINALS
+extern tty_object_t *tty_objects[NUM_TERMINALS];                     // metadata tracking on all the terminals
+extern char tty_buffer[TTY_BUFFER_SIZE];                             // the buffer for all terminal input
 
 //=================== KERNEL FUNCTIONS =================//
 /*

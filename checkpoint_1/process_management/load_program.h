@@ -5,6 +5,8 @@
 #ifndef CURRENT_CHUNGUS_LOAD_PROGRAM
 #define CURRENT_CHUNGUS_LOAD_PROGRAM
 #include "../data_structures/pcb.h"
+#include "../kernel_start.h"
+#include "../data_structures/frame_table.h"
 
 /*
  *  Load a program into an existing address space.  The program comes from
