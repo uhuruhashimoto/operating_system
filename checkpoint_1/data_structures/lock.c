@@ -136,5 +136,6 @@ int release(int lock_id)
     add_to_queue(ready_queue, next_proc);
   }
 
+  TracePrintf(1, "RELEASE_LOCK: Finishing");
   return SUCCESS;
 }
