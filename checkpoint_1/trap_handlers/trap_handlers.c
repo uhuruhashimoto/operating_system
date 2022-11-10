@@ -254,15 +254,25 @@ void handle_trap_math(UserContext* context) {
  */
 void handle_trap_tty_receive(UserContext* context) {
   int tty_id = context->code;
+  tty_object_t* tty = get_tty_object(tty_id);
+  if (tty == NULL) {
+    TracePrintf(1, "There is no tty with id %d\n", tty_id);
+    return;
+  }
+
   // read input from terminal with TtyReceive
-  // TODO -- we don't get anything null-terminated out of this!
-  TtyReceive(tty_id, &tty_buffer, TERMINAL_MAX_LINE);
+  int line_length = TtyReceive(tty_id, &tty_buffer, TERMINAL_MAX_LINE);
   TracePrintf(1, "TRAP_TTY_RECEIVE RESULT: tty_id: %d, tty_buffer: %s\n", tty_id, tty_buffer);
+
   // save into a terminal buffer
+  for (int i = 0; i < line_length; i++) {
+    tty_buf_write_byte(tty, tty_buffer[i]);
+  }
+
   // wake up waiting read processes
-  int num_waiting_readers = tty_objects[tty_id]->blocked_reads->size;
+  int num_waiting_readers = tty->blocked_reads->size;
   for (int i=0; i<num_waiting_readers; i++) {
-    pcb_t *woken_proc = remove_from_queue(tty_objects[tty_id]->blocked_reads);
+    pcb_t *woken_proc = remove_from_queue(tty->blocked_reads);
     add_to_queue(ready_queue, woken_proc);
   }
 }

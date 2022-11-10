@@ -1,5 +1,6 @@
 #include <ykernel.h>
 #include "io_syscalls.h"
+#include "../memory/check_memory.h"
 #include "../data_structures/tty.h"
 #include "../data_structures/queue.h"
 #include "../data_structures/lock.h"
@@ -23,6 +24,36 @@ int init_kernel_tty_objects() {
   }
 }
 
+int read_helper(tty_object_t* tty, void* buf, int len) {
+  // wait to acquire the write_lock on the tty
+  while(tty->in_use){}
+  if (acquire(tty->lock->lock_id) == ERROR) {
+    return ERROR;
+  }
+  tty->in_use = true;
+  if (release(tty->lock->lock_id) == ERROR) {
+    return ERROR;
+  }
+
+  char next_char;
+  int index = 0;
+  while ((next_char = tty_buf_read_byte(tty)) != ERROR && index < len) {
+    buf[i] = next_char;
+    index++;
+  }
+
+  // Update tty metadata
+  if (acquire(tty->lock->lock_id) == ERROR) {
+    return ERROR;
+  }
+  tty->in_use = false;
+  if (release(tty->lock->lock_id) == ERROR) {
+    return ERROR;
+  }
+
+  return index;
+}
+
 /*
  * Read the next line of input from terminal tty id, copying it into the buffer referenced by buf. The maximum
 length of the line to be returned is given by len. The line returned in the buffer is not null-terminated.
@@ -37,78 +68,35 @@ calling process’s buffer is returned; in case of any error, the value ERROR is
 int handle_TtyRead(int tty_id, void *buf, int len)
 {
   TracePrintf(1, "TtyRead: tty_id: %d, buf: %p, len: %d\n", tty_id, buf, len);
+
+  // check the memory locations of this buffer
+  if (check_memory(buf, len) == ERROR) {
+    TracePrintf(1, "TtyRead: This buffer is not valid\n");
+    return ERROR;
+  }
+
   // get the data on the current tty object
-  tty_object_t *tty = tty_objects[tty_id];
+  tty_object_t *tty = get_tty_object(tty_id);
+  if (tty == NULL) {
+    TracePrintf(1, "TtyRead: A TTY with Id %d does not exist\n", tty_id);
+    return ERROR;
+  }
+
   int num_bytes_to_copy = tty->num_unconsumed_chars;
 
   // get the number of unconsumed chars
   int orig_len = len;
+
+  // if there are no bytes to copy, wait until there are bytes
   if (tty->num_unconsumed_chars > 0) {
-    if (tty->num_unconsumed_chars >= len) {
-      memcpy(buf, tty->buf, len); 
-      tty->num_unconsumed_chars -= len;
-      TracePrintf(1, "TtyRead: read %s", buf);
-      return len;
-    } else {
-      memcpy(buf, tty->buf, tty->num_unconsumed_chars);
-      tty->num_unconsumed_chars = 0;
-      len = len - tty->num_unconsumed_chars;
-    }
+    // if there is no line available, block the calling process and wait for a line from terminal
+    pcb_t *current_process = running_process;
+    add_to_queue(tty->blocked_reads, current_process);
+    TracePrintf(1, "TtyRead: Back from block on read\n");
   }
 
-  // if there is no line available, block the calling process and wait for a line from terminal
-  pcb_t *current_process = running_process;
-  add_to_queue(tty->blocked_reads, current_process);
-
-  // wait to acquire the write_lock on the tty
-  while(tty->in_use){}
-  if (acquire(tty->lock->lock_id) == ERROR) {
-    return ERROR;
-  }
-  tty->in_use = true;
-  if (release(tty->lock->lock_id) == ERROR) {
-    return ERROR;
-  }
-
-  // copy line from terminal tty_id to buf, of max size len
-  // save any remaining bytes for later use by the kernel
-  int num_lines = len / TERMINAL_MAX_LINE + 1; 
-  int num_remaining_after_copy = len % TERMINAL_MAX_LINE;
-  for (int i = 0; i < num_lines; i++) {
-    int offset = TERMINAL_MAX_LINE * i;
-    if (i == num_lines - 1) {
-      // copy the last line
-      TtyReceive(tty_id, (void *) (buf + offset), num_remaining_after_copy);
-    } else {
-      // copy the full line
-      TtyReceive(tty_id, (void *) (buf + offset), TERMINAL_MAX_LINE);
-    }
-  }
-
-  // if there are any chars left after copy, save them for later use
-  if (num_remaining_after_copy < len) {
-    tty->num_unconsumed_chars = len - num_remaining_after_copy;
-  }
-  
-
-  // Update tty metadata
-  if (acquire(tty->lock->lock_id) == ERROR) {
-    return ERROR;
-  }
-  tty->in_use = false;
-  if (release(tty->lock->lock_id) == ERROR) {
-    return ERROR;
-  }
-
-  // unblock the calling process (place on the ready queue)
-  if (tty->blocked_reads->head == current_process) {
-    remove_from_queue(tty->blocked_reads);
-  }
-  //add_to_queue(ready_queue, current_process);
-
-  // return the number of bytes copied into buf
-  TracePrintf(1, "TtyRead: read %s", buf);
-  return orig_len;
+  TracePrintf(1, "TtyRead: There are supposedly chars to consume!\n");
+  return read_helper(tty, buf, len);
 }
 
 /*
@@ -120,8 +108,20 @@ Calls to TtyWrite for more than TERMINAL MAX LINE bytes should be supported.
  */
 int handle_TtyWrite(int tty_id, void *buf, int len)
 {
+  TracePrintf(1, "TtyWrite: Attempting to write bytes to a tty\n");
+
+  // check the memory locations of this buffer
+  if (check_memory(buf, len) == ERROR) {
+    TracePrintf(1, "TtyWrite: This buffer is not valid\n");
+    return ERROR;
+  }
+
   // get the data on the current tty object
-  tty_object_t *tty = tty_objects[tty_id];
+  tty_object_t *tty = get_tty_object(tty_id);
+  if (tty == NULL) {
+    TracePrintf(1, "TtyRead: A TTY with Id %d does not exist\n", tty_id);
+    return ERROR;
+  }
 
   // block the calling process
   pcb_t *current_process = running_process;

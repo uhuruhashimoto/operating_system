@@ -19,8 +19,11 @@ typedef struct tty_object {
   int id;
   lock_t *lock;
   bool in_use;
-  int num_unconsumed_chars;
   char buf[MAX_BUFFER_LEN];
+  int start_id;
+  int end_id;
+  int num_unconsumed_chars;
+  int max_size;
   queue_t* blocked_reads; 
   queue_t* blocked_writes;
 } tty_object_t;
@@ -34,18 +37,13 @@ tty_object_t *get_tty_object(int id);
  */
 pcb_t* unblock_pcb_on_tty(int tty_id);
 
+bool tty_buf_is_full(tty_object_t* tty);
 
-// // PIPE FUNCTIONS //
+bool tty_buf_is_empty(tty_object_t* tty);
 
-// bool is_full(int tty_id);
+char tty_buf_read_byte(tty_object_t* tty);
 
-// bool is_empty(int tty_id);
-
-// char read_byte(int tty_id);
-
-// int write_byte(int tty_id);
-
-// int block_pcb_on_pipe(int tty_id, pcb_t* process_block);
+int tty_buf_write_byte(tty_object_t* tty, char byte);
 
 
 #endif //CURRENT_CHUNGUS_TTY
