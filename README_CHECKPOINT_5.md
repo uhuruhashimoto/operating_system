@@ -56,6 +56,13 @@ to make sure we exterminated them in a safe manner.
 Tests cvars, using a simplification of the car problem. The process forks, and the child waits on the lock, and then
 the cvar.
 
+### Cvar Destructor Test
+```
+./yalnix ./checkpoint_1/test_processes/pipe_lock_cvar_tests/cvar_destructor_test
+```
+The process forks, and the child waits on the lock, and then
+the cvar. The parent destroys the cvar, killing the child.
+
 ### Math Test
 ```
 ./yalnix ./checkpoint_1/test_processes/math_test
