@@ -39,12 +39,26 @@ tty_object_t *get_tty_object(int id);
  */
 pcb_t* unblock_pcb_on_tty(int tty_id);
 
+/*
+ * Checks if the terminal buffer is full
+ */
 bool tty_buf_is_full(tty_object_t* tty);
 
+/*
+ * Checks if the terminal buffer is empty
+ */
 bool tty_buf_is_empty(tty_object_t* tty);
 
+/*
+ * Read a byte from the tty buf
+ * returns the byte if it exists, ERROR upon error
+ */
 char tty_buf_read_byte(tty_object_t* tty);
 
+/*
+ * Write a byte to the tty buf
+ * returns SUCCESS or ERROR
+ */
 int tty_buf_write_byte(tty_object_t* tty, char byte);
 
 

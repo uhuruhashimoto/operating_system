@@ -266,7 +266,12 @@ void handle_trap_tty_receive(UserContext* context) {
 
   // save into a terminal buffer
   for (int i = 0; i < line_length; i++) {
-    tty_buf_write_byte(tty, tty_buffer[i]);
+    // stop writing if we hit ERROR (run out of space on the buffer)
+    if (tty_buf_write_byte(tty, tty_buffer[i]) == ERROR) {
+      TracePrintf(1, "HANDLE_TTY_RECEIVE: Rotary queue has no more space to store terminal input\n");
+      // TODO -- do we want to somehow swap this process out?
+      break;
+    }
   }
 
   // wake up waiting read processes

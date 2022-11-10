@@ -60,6 +60,9 @@ pcb_t* unblock_pcb_on_tty(int tty_id) {
     return pcb;
 }
 
+/*
+ * Checks if the terminal buffer is full
+ */
 bool tty_buf_is_full(tty_object_t* tty) {
   // check to see if the tty is full
   if (tty->num_unconsumed_chars == tty->max_size) {
@@ -68,6 +71,9 @@ bool tty_buf_is_full(tty_object_t* tty) {
   return false;
 }
 
+/*
+ * Checks if the terminal buffer is empty
+ */
 bool tty_buf_is_empty(tty_object_t* tty) {
   // check to see if the tty is empty
   if (tty->num_unconsumed_chars == 0) {
@@ -76,6 +82,10 @@ bool tty_buf_is_empty(tty_object_t* tty) {
   return false;
 }
 
+/*
+ * Read a byte from the tty buf
+ * returns the byte if it exists, ERROR upon error
+ */
 char tty_buf_read_byte(tty_object_t* tty) {
   // returns ERROR if there is no byte to read (is_empty)
   if (tty_buf_is_empty(tty)) {
