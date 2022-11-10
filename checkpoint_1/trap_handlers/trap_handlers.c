@@ -233,9 +233,14 @@ void handle_trap_memory(UserContext* context) {
 
   // check if the address being touched is PAGES_AWAY_FROM_USER_STACK pages or less away from the top of the stack
   int address = (int)(context->addr);
-  int page = address >> PAGESHIFT;
+  int page = (address - UP_TO_PAGE(VMEM_1_SIZE)) >> PAGESHIFT;
 
-  if (stack_page_id <= page + PAGES_AWAY_FROM_USER_STACK) {
+  // make sure we're close to the stack and not close to the heap, and that we're not above user space
+  if (stack_page_id <= page + PAGES_AWAY_FROM_USER_STACK && stack_page_id > page &&
+  !running_process->region_1_page_table[page-1].valid
+  ) {
+    TracePrintf(1, "TRAP_MEMORY: Close enough to the stack that we're giving you benefit of the doubt...\n");
+
     // allocates new stack pages
     int iteration_start = 0;
     while (page < stack_page_id) {
@@ -247,14 +252,19 @@ void handle_trap_memory(UserContext* context) {
         delete_process(running_process, -1, true);
       }
 
+      TracePrintf(1, "TRAP_MEMORY: Found a free frame to handle segfault!\n");
       running_process->region_1_page_table[page].valid = 1;
       running_process->region_1_page_table[page].prot = (PROT_READ | PROT_WRITE);
       running_process->region_1_page_table[page].pfn = iteration_start;
 
       page++;
     }
+
+
   }
   else {
+    TracePrintf(1, "TRAP_MEMORY: Somewhere you shouldn't be, buddy. Die!\n");
+
     // deletes the process
     delete_process(running_process, -1, true);
   }

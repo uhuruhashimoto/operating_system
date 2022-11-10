@@ -74,13 +74,14 @@ void print_reg_1_page_table(pcb_t *process, int level, char *header) {
     TracePrintf(level, "=====Region 1 Page Table for pid %d (%d pages)=====\n", process->pid, region_1_page_table_size);
     for (int i = 0; i < region_1_page_table_size; i++) {
         if (region_1_page_table[i].valid) {
-            TracePrintf(level, "%s | Addr: %x to %x, Valid: %d, Prot: %d, Pfn: %d\n",
+            TracePrintf(level, "%s | Addr: %x to %x, Valid: %d, Prot: %d, Pfn: %d, index: %d\n",
                         header,
                         VMEM_1_BASE + (i << PAGESHIFT),
                         VMEM_1_BASE + ((i+1) << PAGESHIFT)-1,
                         region_1_page_table[i].valid,
                         region_1_page_table[i].prot,
-                        region_1_page_table[i].pfn
+                        region_1_page_table[i].pfn,
+                        i
             );
         }
     }

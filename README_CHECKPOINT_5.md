@@ -68,3 +68,16 @@ the cvar. The parent destroys the cvar, killing the child.
 ./yalnix ./checkpoint_1/test_processes/math_test
 ```
 Attempts division by 0.
+
+### Segfault Stack Test
+```
+./yalnix ./checkpoint_1/test_processes/segfault_stack_test
+```
+This test infinitely adds stack frames to the stack. It should continue implicitly adding frames to the stack until the
+stack approaches the heap, in which case it terminates the process.
+
+### Segfault Random Access Test
+```
+./yalnix ./checkpoint_1/test_processes/segfault_random_access_test
+```
+This test probes 4 different parts of the address space: \0, kernel space, the middle of user space, and above user space

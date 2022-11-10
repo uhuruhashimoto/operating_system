@@ -31,7 +31,7 @@ U_SRCS = iterator.c brk_test.c delay_test.c pid_test.c init.c test_message.c exi
 fork_exec_wait_tests/fork_test.c fork_exec_wait_tests/exec_test.c fork_exec_wait_tests/fork_bomb.c fork_exec_wait_tests/wait_test.c \
 pipe_lock_cvar_tests/lock_test.c pipe_lock_cvar_tests/pipe_test.c pipe_lock_cvar_tests/cvar_test.c \
 pipe_lock_cvar_tests/lock_destructor_test.c pipe_lock_cvar_tests/pipe_destructor_test.c pipe_lock_cvar_tests/cvar_destructor_test.c \
-tty_tests/tty_print_test.c sync_tty_print_test.c
+tty_tests/tty_print_test.c sync_tty_print_test.c segfault_stack_test.c segfault_random_access_test.c
 
 U_INCS =
 
