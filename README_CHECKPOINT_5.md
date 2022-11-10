@@ -27,28 +27,29 @@ Options: `-W` to dump core, `-lk [level]` to TracePrint at a level below 1 (for 
 
 ### Lock Test
 ```
-./yalnix ./checkpoint_1/test_processes/lock_test
+./yalnix ./checkpoint_1/test_processes/pipe_lock_cvar_tests/lock_test
 ```
 Creates a process which creates a lock, forks, then acquires the lock. The child process also attempts to acquire the lock,
 and is blocked until the parent releases the lock.
 
 ### Pipe Test
 ```
-./yalnix ./checkpoint_1/test_processes/lock_test
+./yalnix ./checkpoint_1/test_processes/pipe_lock_cvar_tests/pipe_test
 ```
 Creates a process which creates a pipe, forks four times and exits. The first two children will both attempt to write to
-the pipe. The first will write more bytes than the length of the pipe; the second one will write a few additional bytes.
-The second two children will read out these bytes, 50-50. We expect to see the bytes in the pipes increment in a sane way.
+the pipe. The first will write more bytes (512) than the length of the pipe; the second one will write a few additional bytes.
+The last three children will read out these bytes. We expect to see the bytes in the pipes increment in a sane way, with
+Child 3 reading 64 ints / 256 bytes, Child 4 reading 64 ints / 256 bytes, and Child 5 reading 2 ints / 8 bytes.
+
+### Cvar Test
+```
+./yalnix ./checkpoint_1/test_processes/pipe_lock_cvar_tests/cvar_test
+```
+Tests cvars, using a simplification of the car problem. The process forks, and the child waits on the lock, and then
+the cvar.
 
 ### Math Test
 ```
 ./yalnix ./checkpoint_1/test_processes/math_test
 ```
 Attempts division by 0.
-
-### Cvar Test
-```
-./yalnix ./checkpoint_1/test_processes/cvar_test
-```
-Tests cvars, using a simplification of the car problem. The process forks, and the child waits on the lock, and then
-the cvar.
