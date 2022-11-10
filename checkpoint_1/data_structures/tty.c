@@ -42,7 +42,7 @@ tty_object_t *init_tty_object(int id) {
 }
 
 tty_object_t *get_tty_object(int id) {
-    if (id < NUM_TERMINALS-1) {
+    if (id <= NUM_TERMINALS-1) {
         return tty_objects[id];
     }
     return NULL;

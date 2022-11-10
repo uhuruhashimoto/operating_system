@@ -12,7 +12,5 @@ int main(const int argc, char **argv) {
   TtyPrintf(2, "Hello terminal 2 from userland\n");
   TtyPrintf(3, "Hello terminal 3 from userland\n");
 
-  TracePrintf(1, "2: Test message program\n"); 
   Exit(0);
-  TracePrintf(1, "3: Test message program\n");
 }
