@@ -6,3 +6,4 @@ yalnix
 checkpoint_1/test_processes/*[^*.c]
 .DS_Store
 .vscode/
+checkpoint_1/test_processes/iterator

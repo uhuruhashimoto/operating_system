@@ -138,11 +138,17 @@ int handle_TtyWrite(int tty_id, void *buf, int len)
   }
 
   // loop until there are no more unconsumed bytes in the buf
-  //  write TERMINAL_MAX_LINE bytes from the buf to the terminal
-  // integer division and round up
-  int num_lines = len / TERMINAL_MAX_LINE + 1; 
-  for (int i = 0; i < num_lines; i++) {
-    TtyTransmit(tty_id, buf, TERMINAL_MAX_LINE);
+  int remaining_bytes = len;
+  while (remaining_bytes > 0) {
+    // unless this is the last line, transmit TERMINAL_MAX_LENGTH
+    int bytes_to_transmit = TERMINAL_MAX_LENGTH;
+    if (remaining_bytes < bytes_to_transmit) {
+      bytes_to_transmit = remaining_bytes;
+    }
+    // make sure we're transmitting from the correct spot in the buffer
+    TtyTransmit(tty_id, buf+(len - remaining_bytes), bytes_to_transmit);
+
+    remaining_bytes -= bytes_to_transmit;
   }
 
   // Update tty metadata

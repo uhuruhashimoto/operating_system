@@ -255,6 +255,7 @@ void handle_trap_math(UserContext* context) {
 void handle_trap_tty_receive(UserContext* context) {
   int tty_id = context->code;
   // read input from terminal with TtyReceive
+  // TODO -- we don't get anything null-terminated out of this!
   TtyReceive(tty_id, &tty_buffer, TERMINAL_MAX_LINE);
   TracePrintf(1, "TRAP_TTY_RECEIVE RESULT: tty_id: %d, tty_buffer: %s\n", tty_id, tty_buffer);
   // save into a terminal buffer
