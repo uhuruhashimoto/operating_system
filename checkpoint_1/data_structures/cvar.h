@@ -13,6 +13,8 @@ typedef struct cvar_struct{
 
 cvar_t* create_cvar(int cvar_id);
 
+cvar_t* create_cvar_any_id();
+
 cvar_t* find_cvar(int cvar_id);
 
 cvar_t* delete_cvar(cvar_t* cvar);

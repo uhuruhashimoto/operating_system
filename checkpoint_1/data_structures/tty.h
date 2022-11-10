@@ -19,7 +19,7 @@
 typedef struct tty_object {
   int id;
   lock_t *lock;
-  
+  cvar_t* cvar;
   bool in_use;
   char buf[MAX_BUFFER_LEN];
   int start_id;

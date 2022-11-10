@@ -54,29 +54,10 @@ int handle_CvarInit(int *cvar_idp) {
     return ERROR;
   }
 
-  // create a condition variable, storing its value somewhere in the data structure that will be checked by cvar_wait
-  int cvar_id = ++max_cvar_id;
-  if (cvar_id > max_possible_cvar_id) {
-    TracePrintf(1, "HANDLE_CVAR_INIT: Ran out of space to allocate new cvar ids\n");
-    return ERROR;
-  }
-
-  cvar_t* new_cvar = create_cvar(cvar_id);
-  if (new_cvar == NULL) {
-    TracePrintf(1, "HANDLE_CVAR_INIT: Failed to allocate new cvar\n");
-    return ERROR;
-  }
-
-  // stick the cvar in
-  cvar_t* old_cvars = cvars;
-  cvars = new_cvar;
-  new_cvar->next_cvar = old_cvars;
-  if (old_cvars != NULL) {
-    old_cvars->prev_cvar = new_cvar;
-  }
+  cvar_t* cvar = create_cvar_any_id();
 
   // write cvar_idp
-  cvar_idp[0] = cvar_id;
+  cvar_idp[0] = cvar->id;
   return SUCCESS;
 }
 

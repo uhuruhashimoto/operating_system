@@ -270,11 +270,7 @@ void handle_trap_tty_receive(UserContext* context) {
   }
 
   // wake up waiting read processes
-  int num_waiting_readers = tty->blocked_reads->size;
-  for (int i=0; i<num_waiting_readers; i++) {
-    pcb_t *woken_proc = remove_from_queue(tty->blocked_reads);
-    add_to_queue(ready_queue, woken_proc);
-  }
+  handle_CvarBroadcast(tty->cvar->id);
 }
 
 /*

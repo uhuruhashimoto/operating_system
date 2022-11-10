@@ -1,5 +1,6 @@
 #include <ykernel.h>
 #include "io_syscalls.h"
+#include "sync_syscalls.h"
 #include "../memory/check_memory.h"
 #include "../data_structures/tty.h"
 #include "../data_structures/queue.h"
@@ -90,8 +91,7 @@ int handle_TtyRead(int tty_id, void *buf, int len)
   // if there are no bytes to copy, wait until there are bytes
   while (tty->num_unconsumed_chars > 0) {
     // if there is no line available, block the calling process and wait for a line from terminal
-    pcb_t *current_process = running_process;
-    add_to_queue(tty->blocked_reads, current_process);
+    handle_CvarWait(tty->cvar->id, tty->lock->lock_id);
     TracePrintf(1, "TtyRead: Back from block on read\n");
   }
 

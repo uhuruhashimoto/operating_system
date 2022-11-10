@@ -3,6 +3,7 @@
 #include "queue.h"
 #include "stdbool.h"
 #include "tty.h"
+#include "cvar.h"
 
 extern pcb_t* running_process;
 extern pcb_t* idle_process;
@@ -14,16 +15,29 @@ extern tty_object_t *tty_objects[NUM_TERMINALS];
 
 tty_object_t *init_tty_object(int id) {
     tty_object_t *tty_obj = malloc(sizeof(tty_object_t));
+
+    if (tty_obj == NULL) {
+      TracePrintf(1, "INIT_TTY_OBJECT: Not enough space to allocate tty obj\n");
+    }
+
     bzero(tty_obj->buf, MAX_BUFFER_LEN);
     tty_obj->id = id;
     tty_obj->in_use = false;
     tty_obj->lock = create_lock_any_id();
+    tty_obj->cvar = create_cvar_any_id();
     tty_obj->num_unconsumed_chars = 0;
     tty_obj->max_size = MAX_BUFFER_LEN;
     tty_obj->start_id = 0;
     tty_obj->end_id = 0;
     tty_obj->blocked_reads = create_queue();
     tty_obj->blocked_writes = create_queue();
+
+    if (tty_obj->blocked_reads == NULL || tty_obj->blocked_writes == NULL ||
+        tty_obj->lock == NULL || tty_obj->cvar == NULL
+    ) {
+      TracePrintf(1, "INIT_TTY_OBJECT: One of the subobjects is NULL\n");
+    }
+
     return tty_obj;
 }
 
