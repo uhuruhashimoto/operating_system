@@ -4,6 +4,12 @@ TTYLOG*
 yalnix
 *.o
 checkpoint_1/test_processes/*[^*.c]
+!checkpoint_1/test_processes/fork_exec_wait_tests
+checkpoint_1/test_processes/fork_exec_wait_tests/*[^*.c]
+!checkpoint_1/test_processes/pipe_lock_cvar_tests
+checkpoint_1/test_processes/pipe_lock_cvar_tests/*[^*.c]
+!checkpoint_1/test_processes/tty_tests
+!checkpoint_1/test_processes/tty_tests/*[^*.c]
 .DS_Store
 .vscode/
 checkpoint_1/test_processes/iterator

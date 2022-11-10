@@ -17,20 +17,19 @@ Note: Makefile paths are set to VBox defaults and may need to be changed. If cor
 
 ## <ins> Testing </ins>
 
-### Simply running the OS
-```
-./yalnix
-```
-Will halt after attempting to load program "init", unless this is in the top-level directory of the project.
-We currently have an "init" executable, but it is located in the /checkpoint_1/test_processes directory.
-Options: `-W` to dump core, `-lk [level]` to TracePrint at a level below 1 (for more information).
-
 ### Lock Test
 ```
 ./yalnix ./checkpoint_1/test_processes/pipe_lock_cvar_tests/lock_test
 ```
 Creates a process which creates a lock, forks, then acquires the lock. The child process also attempts to acquire the lock,
 and is blocked until the parent releases the lock.
+
+#### Lock Destructor Test
+```
+./yalnix ./checkpoint_1/test_processes/pipe_lock_cvar_tests/lock_destructor_test
+```
+Creates a process which creates a lock, forks twice, then acquires the lock. The child processes also attempt to acquire
+the lock, and are blocked. The parent then destroys the lock and should kill all the children.
 
 ### Pipe Test
 ```

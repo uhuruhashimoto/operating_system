@@ -113,10 +113,10 @@ void handle_trap_kernel(UserContext* context) {
         rc = handle_PipeKill(id, 1);
       }
       else if (id >= min_possible_lock_id && id <= max_possible_lock_id) {
-
+        rc = handle_LockKill(id, 1);
       }
       else if (id >= min_possible_cvar_id && id <= max_possible_cvar_id) {
-
+        rc = handle_CvarKill(id, 1);
       }
       break;
 
