@@ -47,7 +47,7 @@ int handle_TtyRead(int tty_id, void *buf, int len)
     if (tty->num_unconsumed_chars >= len) {
       memcpy(buf, tty->buf, len); 
       tty->num_unconsumed_chars -= len;
-      TracePrintf("TtyRead: read %s", buf);
+      TracePrintf(1, "TtyRead: read %s", buf);
       return len;
     } else {
       memcpy(buf, tty->buf, tty->num_unconsumed_chars);
@@ -104,7 +104,7 @@ int handle_TtyRead(int tty_id, void *buf, int len)
   if (tty->blocked_reads->head == current_process) {
     remove_from_queue(tty->blocked_reads);
   }
-  add_to_queue(ready_queue, current_process);
+  //add_to_queue(ready_queue, current_process);
 
   // return the number of bytes copied into buf
   TracePrintf(1, "TtyRead: read %s", buf);
@@ -158,7 +158,7 @@ int handle_TtyWrite(int tty_id, void *buf, int len)
   if (tty->blocked_writes->head == current_process) {
     remove_from_queue(tty->blocked_writes);
   }
-  add_to_queue(ready_queue, current_process);
+  //add_to_queue(ready_queue, current_process);
 
   // return the number of bytes written
   return len;
