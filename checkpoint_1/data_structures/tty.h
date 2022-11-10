@@ -8,6 +8,7 @@
 #include <ykernel.h>
 #include "queue.h"
 #include "lock.h"
+#include "cvar.h"
 #include "stdbool.h"
 #define MAX_BUFFER_LEN 100 //character storage in individual terminal
 #define TTY_BUFFER_SIZE 200 //total kernel storage for terminals
@@ -18,6 +19,7 @@
 typedef struct tty_object {
   int id;
   lock_t *lock;
+  
   bool in_use;
   char buf[MAX_BUFFER_LEN];
   int start_id;

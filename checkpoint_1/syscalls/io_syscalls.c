@@ -88,7 +88,7 @@ int handle_TtyRead(int tty_id, void *buf, int len)
   int orig_len = len;
 
   // if there are no bytes to copy, wait until there are bytes
-  if (tty->num_unconsumed_chars > 0) {
+  while (tty->num_unconsumed_chars > 0) {
     // if there is no line available, block the calling process and wait for a line from terminal
     pcb_t *current_process = running_process;
     add_to_queue(tty->blocked_reads, current_process);
