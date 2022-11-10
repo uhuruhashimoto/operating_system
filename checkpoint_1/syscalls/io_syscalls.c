@@ -83,10 +83,8 @@ int handle_TtyRead(int tty_id, void *buf, int len)
     return ERROR;
   }
 
-  int num_bytes_to_copy = tty->num_unconsumed_chars;
-
   // get the number of unconsumed chars
-  int orig_len = len;
+  int num_bytes_to_copy = tty->num_unconsumed_chars;
 
   // if there are no bytes to copy, wait until there are bytes
   while (tty->num_unconsumed_chars > 0) {
@@ -97,6 +95,7 @@ int handle_TtyRead(int tty_id, void *buf, int len)
 
   TracePrintf(1, "TtyRead: There are supposedly chars to consume!\n");
   return read_helper(tty, buf, len);
+  TracePrintf(1, "TtyRead: read %d chars of %s\n", len, buf);
 }
 
 /*

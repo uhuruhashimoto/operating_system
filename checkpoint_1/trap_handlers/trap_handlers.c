@@ -270,7 +270,9 @@ void handle_trap_tty_receive(UserContext* context) {
   }
 
   // wake up waiting read processes
-  handle_CvarBroadcast(tty->cvar->id);
+  if (tty->blocked_reads->size) {
+     handle_CvarBroadcast(tty->cvar->id);
+  }
 }
 
 /*
