@@ -1,7 +1,9 @@
 #include <ykernel.h>
+#include <hardware.h>
 #include "../kernel_start.h"
 #include "../kernel_utils.h"
 #include "trap_handlers.h"
+#include "../data_structures/frame_table.h"
 #include "../syscalls/io_syscalls.h"
 #include "../syscalls/ipc_syscalls.h"
 #include "../syscalls/process_syscalls.h"
@@ -10,15 +12,8 @@
 #include "../debug_utils/debug.h"
 #include "../data_structures/tty.h"
 
-extern frame_table_struct_t *frame_table_global;
-extern pcb_t* running_process;
-extern pcb_t* idle_process;
-extern bool is_idle;
-extern queue_t* ready_queue;
-extern void *trap_handler[16];
-extern pte_t *region_0_page_table;
-extern tty_object_t *tty_objects[NUM_TERMINALS];
-extern char tty_buffer[TTY_BUFFER_SIZE]; 
+// the number of pages away from the user stack we can be and still allow the stack to expand
+int PAGES_AWAY_FROM_USER_STACK = 2;
 
 /*
  * Handle traps to the kernel
@@ -225,16 +220,44 @@ void handle_trap_illegal(UserContext* context) {
  * otherwise kills the process
  */
 void handle_trap_memory(UserContext* context) {
-  TracePrintf(1, "This trap is not yet implemented\n");
-  // implicit request for more memory -- stack, not the heap
-  // check if the address being touched is one page or less away from the top of the stack
-  // if so:
-  //    allocates a new stack page a page lower
-  //    return
-  // otherwise:
-  //  abort the process
-  //  run the next process on the ready queue
-  Halt();
+  TracePrintf(1, "TRAP_MEMORY: Attempting to handle a segfault in user space!\n");
+
+  // what is the lowest page in the stack?
+  int stack_page_id = (UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT) - 1;
+  // keep running down the page table until we hit an invalid page
+  while (running_process->region_1_page_table[stack_page_id].valid) {
+    stack_page_id--;
+  }
+  // set the stack page id to be the last valid page
+  stack_page_id++;
+
+  // check if the address being touched is PAGES_AWAY_FROM_USER_STACK pages or less away from the top of the stack
+  int address = (int)(context->addr);
+  int page = address >> PAGESHIFT;
+
+  if (stack_page_id <= page + PAGES_AWAY_FROM_USER_STACK) {
+    // allocates new stack pages
+    int iteration_start = 0;
+    while (page < stack_page_id) {
+      iteration_start = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, iteration_start);
+
+      if (iteration_start == MEMFULL) {
+        TracePrintf(1, "TRAP_MEMORY: No free frames to handle segfault!\n");
+        // deletes the process
+        delete_process(running_process, -1, true);
+      }
+
+      running_process->region_1_page_table[page].valid = 1;
+      running_process->region_1_page_table[page].prot = (PROT_READ | PROT_WRITE);
+      running_process->region_1_page_table[page].pfn = iteration_start;
+
+      page++;
+    }
+  }
+  else {
+    // deletes the process
+    delete_process(running_process, -1, true);
+  }
 }
 
 /*
