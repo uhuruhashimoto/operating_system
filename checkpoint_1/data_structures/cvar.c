@@ -1,7 +1,7 @@
 #include "cvar.h"
 #include "queue.h"
 #include "../kernel_start.h"
-#include <kernel.h>
+#include <ykernel.h>
 
 cvar_t* create_cvar(int cvar_id)
 {

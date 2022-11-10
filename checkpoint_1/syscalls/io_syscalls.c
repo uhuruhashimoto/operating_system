@@ -25,7 +25,7 @@ int init_kernel_tty_objects() {
   }
 }
 
-int read_helper(tty_object_t* tty, void* buf, int len) {
+int read_helper(tty_object_t* tty, char* buf, int len) {
   // wait to acquire the write_lock on the tty
   while(tty->in_use){}
   if (acquire(tty->lock->lock_id) == ERROR) {
@@ -39,7 +39,7 @@ int read_helper(tty_object_t* tty, void* buf, int len) {
   char next_char;
   int index = 0;
   while ((next_char = tty_buf_read_byte(tty)) != ERROR && index < len) {
-    buf[i] = next_char;
+    buf[index] = next_char;
     index++;
   }
 
@@ -140,8 +140,8 @@ int handle_TtyWrite(int tty_id, void *buf, int len)
   // loop until there are no more unconsumed bytes in the buf
   int remaining_bytes = len;
   while (remaining_bytes > 0) {
-    // unless this is the last line, transmit TERMINAL_MAX_LENGTH
-    int bytes_to_transmit = TERMINAL_MAX_LENGTH;
+    // unless this is the last line, transmit TERMINAL_MAX_LINE
+    int bytes_to_transmit = TERMINAL_MAX_LINE;
     if (remaining_bytes < bytes_to_transmit) {
       bytes_to_transmit = remaining_bytes;
     }

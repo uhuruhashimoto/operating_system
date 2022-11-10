@@ -87,7 +87,7 @@ char tty_buf_read_byte(tty_object_t* tty) {
 
   // increments the start_index (rolls around if we exceed buf_size)
   tty->start_id = (tty->start_id + 1) % tty->max_size;
-  tty->num_unconsumed_bytes--;
+  tty->num_unconsumed_chars--;
 
   // returns the byte
   return byte;
@@ -104,7 +104,7 @@ int tty_buf_write_byte(tty_object_t* tty, char byte) {
 
   // increments the end_index (rolls around if necessary)
   tty->end_id = (tty->end_id + 1) % tty->max_size;
-  tty->num_unconsumed_bytes++;
+  tty->num_unconsumed_chars++;
 
   // returns 0
   return SUCCESS;
