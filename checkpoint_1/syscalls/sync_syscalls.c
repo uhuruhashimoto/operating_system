@@ -45,6 +45,52 @@ int handle_Release(int lock_id) {
 }
 
 /*
+* Kill lock by lock id, and any queued children waiting for lock. If necessary,
+* we could specify a kill/don't kill option in our input args.
+ *
+ * kill_children = 0  --> don't kill
+ * kill_children = 1  --> do kill
+*/
+int handle_LockKill(int lock_id, int kill_children) {
+  TracePrintf(1, "HANDLE_LOCK_KILL: Attempting to delete a lock with id %d\n", lock_id);
+
+  lock_t* found_lock = find_lock(lock_id);
+  if (found_lock == NULL) {
+    TracePrintf(1, "HANDLE_LOCK_KILL: Unable to find a lock with id %d\n", lock_id);
+    return ERROR;
+  }
+
+  // kill children, or put them in ready queue
+  // clear the read-blocked children
+  pcb_t* next_child = remove_from_queue(found_lock->blocked_queue);
+  while (next_child != NULL) {
+    if (kill_children == 1) {
+      delete_process(next_child, ERROR);
+    }
+    else {
+      add_to_queue(ready_queue, next_child);
+    }
+    next_child = remove_from_queue(found_lock->blocked_queue);
+  }
+
+  // stitch the lock list together
+  if (found_lock == locks) {
+    locks = found_lock->next_lock;
+  }
+  if (found_lock->prev_lock != NULL) {
+    found_lock->prev_lock->next_lock = found_lock->next_lock;
+  }
+  if (found_lock->next_lock != NULL) {
+    found_lock->next_lock->prev_lock = found_lock->prev_lock;
+  }
+
+  // delete the lock
+  delete_lock(found_lock);
+
+  return SUCCESS;
+}
+
+/*
  * Create a new condition variable; save its identifier at *cvar idp. In case of any error, the value ERROR is
 returned.
  */
@@ -137,7 +183,42 @@ int handle_CvarWait(int cvar_id, int lock_id) {
  * kill_children = 1  --> do kill
 */
 int handle_CvarKill(int cvar_id, int kill_children) {
+  TracePrintf(1, "HANDLE_CVAR_KILL: Attempting to delete a cvar with id %d\n", cvar_id);
 
+  cvar_t* found_cvar = find_cvar(cvar_id);
+  if (found_cvar == NULL) {
+    TracePrintf(1, "HANDLE_CVAR_KILL: Unable to find a cvar with id %d\n", cvar_id);
+    return ERROR;
+  }
+
+  // kill children, or put them in ready queue
+  // clear the blocked children
+  pcb_t* next_child = remove_from_queue(found_cvar->blocked_queue);
+  while (next_child != NULL) {
+    if (kill_children == 1) {
+      delete_process(next_child, ERROR);
+    }
+    else {
+      add_to_queue(ready_queue, next_child);
+    }
+    next_child = remove_from_queue(found_cvar->blocked_queue);
+  }
+
+  // stitch the cvar list together
+  if (found_cvar == cvars) {
+    cvars = found_cvar->next_cvar;
+  }
+  if (found_cvar->prev_cvar != NULL) {
+    found_cvar->prev_cvar->next_cvar = found_cvar->next_cvar;
+  }
+  if (found_cvar->next_cvar != NULL) {
+    found_cvar->next_cvar->prev_cvar = found_cvar->prev_cvar;
+  }
+
+  // delete the cvar
+  delete_cvar(found_cvar);
+
+  return SUCCESS;
 }
 
 #endif //CURRENT_CHUNGUS_SYNC_SYSCALL_HANDLERS

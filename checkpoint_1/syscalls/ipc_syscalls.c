@@ -178,8 +178,9 @@ int handle_PipeWrite(int pipe_id, void *buf, int len)
 * Kill pipe by pipe id, and any queued children waiting for pipe input. If necessary, 
 * we could specify a kill/don't kill option in our input args.
  *
- * kill_children = 0  --> don't kill
- * kill_children = 1  --> do kill
+ * kill_children = 0  --> don't kill -- these processes are put back in the ready queue
+ *                                      which may have weird side effects!
+ * kill_children = 1  --> do kill (default)
 */
 int handle_PipeKill(int pipe_id, int kill_children) {
   TracePrintf(1, "HANDLE_PIPE_KILL: Attempting to delete a pipe with id %d\n", pipe_id);
@@ -190,24 +191,41 @@ int handle_PipeKill(int pipe_id, int kill_children) {
     return ERROR;
   }
 
-  // kill children
-  if (kill_children == 1) {
-    // clear the read-blocked children
-    pcb_t* next_child = remove_from_queue(found_pipe->blocked_read_queue);
-    while (next_child != NULL) {
+  // kill children, or put them in ready queue
+  // clear the read-blocked children
+  pcb_t* next_child = remove_from_queue(found_pipe->blocked_read_queue);
+  while (next_child != NULL) {
+    if (kill_children == 1) {
       delete_process(next_child, ERROR);
-      next_child = remove_from_queue(found_pipe->blocked_read_queue);
     }
+    else {
+      add_to_queue(ready_queue, next_child);
+    }
+    next_child = remove_from_queue(found_pipe->blocked_read_queue);
+  }
 
-    // clear the write-blocked children
-    next_child = remove_from_queue(found_pipe->blocked_write_queue);
-    while (next_child != NULL) {
+  // clear the write-blocked children
+  next_child = remove_from_queue(found_pipe->blocked_write_queue);
+  while (next_child != NULL) {
+    if (kill_children == 1) {
       delete_process(next_child, ERROR);
-      next_child = remove_from_queue(found_pipe->blocked_write_queue);
     }
+    else {
+      add_to_queue(ready_queue, next_child);
+    }
+    next_child = remove_from_queue(found_pipe->blocked_write_queue);
   }
 
   // stitch the pipe list together
+  if (found_pipe == pipes) {
+    pipes = found_pipe->next_pipe;
+  }
+  if (found_pipe->prev_pipe != NULL) {
+    found_pipe->prev_pipe->next_pipe = found_pipe->next_pipe;
+  }
+  if (found_pipe->next_pipe != NULL) {
+    found_pipe->next_pipe->prev_pipe = found_pipe->prev_pipe;
+  }
 
   // delete the pipe
   delete_pipe(found_pipe);

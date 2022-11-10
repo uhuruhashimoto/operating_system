@@ -24,6 +24,11 @@ ERROR is returned.
 int handle_Release(int lock_id);
 
 /*
+ * Kill a lock with this id
+ */
+int handle_LockKill(int lock_id);
+
+/*
  * Create a new condition variable; save its identifier at *cvar idp. In case of any error, the value ERROR is
 returned.
  */
@@ -49,6 +54,11 @@ When the lock is finally acquired, the call returns to userland.
 In case of any error, the value ERROR is returned.
  */
 int handle_CvarWait(int cvar_id, int lock_id);
+
+/*
+ * Kill a cvar with this id
+ */
+int handle_CvarKill(int cvar_id);
 
 
 

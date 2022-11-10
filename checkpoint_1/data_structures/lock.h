@@ -46,4 +46,9 @@ int acquire(int lock_id);
  */
 int release(int lock_id);
 
+/*
+ * Deletes the lock
+ */
+int delete_lock(lock_t* lock);
+
 #endif //CURRENT_CHUNGUS_LOCK_H

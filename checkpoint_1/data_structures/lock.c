@@ -143,3 +143,12 @@ int release(int lock_id)
   TracePrintf(1, "RELEASE_LOCK: Finishing");
   return SUCCESS;
 }
+
+/*
+ * Deletes the lock
+ */
+int delete_lock(lock_t* lock) {
+  free(lock->blocked_queue);
+  free(lock);
+  return SUCCESS;
+}

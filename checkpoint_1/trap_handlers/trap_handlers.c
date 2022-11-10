@@ -107,10 +107,10 @@ void handle_trap_kernel(UserContext* context) {
     // use the ranges for each type of object id to figure out what type of object we're killing
     case YALNIX_RECLAIM:
       int id = context->regs[0];
-      int kill_children = context->regs[1];
 
+      // each of these processes default to killing all waiting children.
       if (id >= min_possible_pipe_id && id <= max_possible_pipe_id) {
-        rc = handle_PipeKill(id, kill_children);
+        rc = handle_PipeKill(id, 1);
       }
       else if (id >= min_possible_lock_id && id <= max_possible_lock_id) {
 
@@ -203,8 +203,6 @@ void handle_trap_clock(UserContext* context) {
  */
 void handle_trap_unhandled(UserContext* context) {
   TracePrintf(1, "This trap is not yet implemented\n");
-  // TODO -- log something (maybe trap id?)
-  // TODO -- return to user execution
 }
 
 /***************** FUTURE HANDLERS *********************/

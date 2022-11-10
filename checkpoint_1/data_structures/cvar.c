@@ -3,6 +3,10 @@
 #include "../kernel_start.h"
 #include <ykernel.h>
 
+/*
+ * Create a cvar with a particular id
+ * The caller is trusted to not allocate a cvar with an id already on the cvar list
+ */
 cvar_t* create_cvar(int cvar_id)
 {
   cvar_t* new_cvar = malloc(sizeof (cvar_t));
@@ -22,6 +26,9 @@ cvar_t* create_cvar(int cvar_id)
   return new_cvar;
 }
 
+/*
+ * Find the next available id to allocate the cvar with
+ */
 cvar_t* create_cvar_any_id() {
   int cvar_id = ++max_cvar_id;
   if (cvar_id > max_possible_cvar_id) {
@@ -35,7 +42,7 @@ cvar_t* create_cvar_any_id() {
     return NULL;
   }
 
-  // stick the cvar in
+  // stick the cvar in the list
   cvar_t* old_cvars = cvars;
   cvars = new_cvar;
   new_cvar->next_cvar = old_cvars;
@@ -46,6 +53,9 @@ cvar_t* create_cvar_any_id() {
   return cvars;
 }
 
+/*
+ * Find a cvar with the given id
+ */
 cvar_t* find_cvar(int cvar_id)
 {
   cvar_t* next_cvar = cvars;
@@ -58,7 +68,12 @@ cvar_t* find_cvar(int cvar_id)
   return NULL;
 }
 
-cvar_t* delete_cvar(cvar_t* cvar)
+/*
+ * Delete a cvar; we assume blocked_queue to already be empty
+ */
+int delete_cvar(cvar_t* cvar)
 {
-
+  free(cvar->blocked_queue);
+  free(cvar);
+  return SUCCESS;
 }

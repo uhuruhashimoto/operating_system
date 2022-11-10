@@ -1,6 +1,7 @@
 #include "pipe.h"
 #include "queue.h"
 #include "../kernel_start.h"
+#include "../syscalls/sync_syscalls.h"
 #include <ykernel.h>
 #include <yalnix.h>
 
@@ -159,6 +160,8 @@ void delete_pipe(pipe_t* pipe)
 {
   free(pipe->blocked_write_queue);
   free(pipe->blocked_write_queue);
+  handle_LockKill(pipe->read_lock->lock_id);
+  handle_LockKill(pipe->write_lock->lock_id);
   free(pipe);
 }
 
