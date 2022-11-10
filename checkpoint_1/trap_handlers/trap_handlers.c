@@ -217,7 +217,7 @@ void handle_trap_unhandled(UserContext* context) {
 void handle_trap_illegal(UserContext* context) {
   TracePrintf(1, "TRAP_ILLEGAL: Killing the user process\n");
   // abort the current process
-  delete_process(running_process, ERROR);
+  delete_process(running_process, ERROR, true);
 }
 
 /*
@@ -244,7 +244,7 @@ void handle_trap_math(UserContext* context) {
   TracePrintf(1, "TRAP_MATH: Aborting the user process\n");
   // abort the user process
   // run the next process on the ready queue
-  delete_process(running_process, ERROR);
+  delete_process(running_process, ERROR, true);
 }
 
 /*

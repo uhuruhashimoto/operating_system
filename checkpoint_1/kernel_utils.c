@@ -127,6 +127,42 @@ int switch_between_processes(pcb_t *current_process, pcb_t *next_process) {
 }
 
 /*
+ * A special case where the CALLING PROCESS is different from the DESTROYED PROCESS
+ * We will just wipe out the page tables directly on the destroyed process
+ */
+int destroy_process_no_switch(pcb_t* process) {
+  // free the pid for the process
+  helper_retire_pid(process->pid);
+
+  // wipe out the page table for the process
+  int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
+  for (int i = 0; i < region_1_page_table_size; i++) {
+    if (process->region_1_page_table[i].valid) {
+      TracePrintf(1, "DELETE PROCESS: Removing %d from frame table\n", process->region_1_page_table[i].pfn);
+      frame_table_global->frame_table[process->region_1_page_table[i].pfn] = 0;
+      process->region_1_page_table[i].valid = false;
+    }
+  }
+
+  TracePrintf(1, "DELETE PROCESS: Zeroed R1 page table\n");
+  free(process->region_1_page_table);
+  TracePrintf(1, "DELETE PROCESS: Wiped out R1 page table\n");
+  process->region_1_page_table = NULL;
+
+  TracePrintf(5, "=====Freeing KernelStack=====\n");
+  int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
+  for (int i=0; i<num_stack_pages; i++) {
+    // free the existing R0 kernel page tables
+    if (process->kernel_stack[i].valid) {
+      process->kernel_stack[i].valid = false;
+      frame_table_global->frame_table[process->kernel_stack[i].pfn] = 0;
+    }
+  }
+
+  return SUCCESS;
+}
+
+/*
  * A special case, where we delete the old process
  */
 int switch_between_processes_delete_old(pcb_t *current_process, pcb_t *next_process) {
@@ -163,19 +199,26 @@ int switch_between_processes_delete_old(pcb_t *current_process, pcb_t *next_proc
 /*
  * Deletes the process if no parent
  * If there is parent, triggers it
+ * will switch to either the parent or to the next process in the
  *
  * returns ERROR on error, SUCCESS otherwise
  */
 int
-delete_process(pcb_t* process, int status_code)
+delete_process(pcb_t* process, int status_code, bool do_process_switch)
 {
   TracePrintf(1, "DELETE PROCESS: Attempting to delete process %d with exit code %d\n", (process->pid), status_code);
 
   // check to see if the parent is dead; if so, completely delete the PCB and switch to the next possible process
   if (process->parent == NULL || process->parent->hasExited == true) {
-    // installs the next element from the queue and COMPLETELY DELETES THE CURRENT PROCESS
-    TracePrintf(1, "DELETE PROCESS: No parent -- installing next from queue\n");
-    install_next_from_queue(process, -1);
+    if (do_process_switch) {
+      // installs the next element from the queue and COMPLETELY DELETES THE CURRENT PROCESS
+      TracePrintf(1, "DELETE PROCESS: No parent -- installing next from queue\n");
+      install_next_from_queue(process, -1);
+    }
+    else {
+      destroy_process_no_switch(process);
+      free(process);
+    }
   }
 
     // otherwise:
@@ -194,15 +237,28 @@ delete_process(pcb_t* process, int status_code)
       switch_between_processes(process, process->parent);
 
       // THIS LINE RUNS WHEN PARENT (IN WAIT) SWITCHES TO CHILD
-      TracePrintf(1, "DELETE PROCESS: Back to child from waiting parent\n");
-      running_process = process->parent;
-      switch_between_processes_delete_old(process, process->parent);
-      TracePrintf(1, "DELETING PROCESS: Parent should never switch back to child again\n");
-      Halt();
+      // there are some cases (deleting locks / cvars) when we won't want to switch back to parent immediately
+      if (do_process_switch) {
+        TracePrintf(1, "DELETE PROCESS: Back to child from waiting parent\n");
+        running_process = process->parent;
+        switch_between_processes_delete_old(process, process->parent);
+        TracePrintf(1, "DELETING PROCESS: Parent should never switch back to child again\n");
+        Halt();
+      }
+      else {
+        destroy_process_no_switch(process);
+        free(process);
+      }
     }
     else {
-      TracePrintf(1, "DELETE PROCESS: Parent is not waiting: installing next from queue\n");
-      install_next_from_queue(process, 1);
+      if (do_process_switch) {
+        TracePrintf(1, "DELETE PROCESS: Parent is not waiting: installing next from queue\n");
+        install_next_from_queue(process, 1);
+      }
+      else {
+        destroy_process_no_switch(process);
+        // note -- don't free the process; leave it around as a zombie
+      }
     }
   }
 }

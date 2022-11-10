@@ -196,7 +196,7 @@ int handle_PipeKill(int pipe_id, int kill_children) {
   pcb_t* next_child = remove_from_queue(found_pipe->blocked_read_queue);
   while (next_child != NULL) {
     if (kill_children == 1) {
-      delete_process(next_child, ERROR);
+      delete_process(next_child, ERROR, false);
     }
     else {
       add_to_queue(ready_queue, next_child);
@@ -208,7 +208,7 @@ int handle_PipeKill(int pipe_id, int kill_children) {
   next_child = remove_from_queue(found_pipe->blocked_write_queue);
   while (next_child != NULL) {
     if (kill_children == 1) {
-      delete_process(next_child, ERROR);
+      delete_process(next_child, ERROR, false);
     }
     else {
       add_to_queue(ready_queue, next_child);

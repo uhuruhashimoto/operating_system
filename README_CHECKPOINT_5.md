@@ -29,7 +29,8 @@ and is blocked until the parent releases the lock.
 ./yalnix ./checkpoint_1/test_processes/pipe_lock_cvar_tests/lock_destructor_test
 ```
 Creates a process which creates a lock, forks twice, then acquires the lock. The child processes also attempt to acquire
-the lock, and are blocked. The parent then destroys the lock and should kill all the children.
+the lock, and are blocked. The parent then destroys the lock and should kill all the children. It waits on the children
+to make sure we exterminated them in a safe manner.
 
 ### Pipe Test
 ```
@@ -39,6 +40,14 @@ Creates a process which creates a pipe, forks four times and exits. The first tw
 the pipe. The first will write more bytes (512) than the length of the pipe; the second one will write a few additional bytes.
 The last three children will read out these bytes. We expect to see the bytes in the pipes increment in a sane way, with
 Child 3 reading 64 ints / 256 bytes, Child 4 reading 64 ints / 256 bytes, and Child 5 reading 2 ints / 8 bytes.
+
+#### Pipe Destructor Test
+```
+./yalnix ./checkpoint_1/test_processes/pipe_lock_cvar_tests/pipe_destructor_test
+```
+Creates a process which creates a pipe, forks twice. The child processes attempt to read from the pipe, and are blocked.
+The parent then destroys the pipe and should kill all the children. It waits on the children
+to make sure we exterminated them in a safe manner.
 
 ### Cvar Test
 ```

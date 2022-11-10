@@ -34,7 +34,7 @@ int switch_between_processes(pcb_t *current_process, pcb_t *next_process);
  * returns ERROR on error, SUCCESS if
  */
 int
-delete_process(pcb_t* process, int status_code);
+delete_process(pcb_t* process, int status_code, bool do_process_switch);
 
 /*
 * Switches kernel context, deleting curr_pcb_p

@@ -33,4 +33,8 @@ int main(void) {
 
   TracePrintf(1, "LOCK_TEST: Parent destroying the lock\n");
   Reclaim(lock_id);
+
+  // make sure we didn't do anything silly with switching / pcbs
+  Wait(&rc);
+  TracePrintf(1, "LOCK_TEST: Wait returned with value %d\n", rc);
 }

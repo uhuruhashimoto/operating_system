@@ -160,8 +160,8 @@ void delete_pipe(pipe_t* pipe)
 {
   free(pipe->blocked_write_queue);
   free(pipe->blocked_write_queue);
-  handle_LockKill(pipe->read_lock->lock_id);
-  handle_LockKill(pipe->write_lock->lock_id);
+  handle_LockKill(pipe->read_lock->lock_id, 1);
+  handle_LockKill(pipe->write_lock->lock_id, 1);
   free(pipe);
 }
 

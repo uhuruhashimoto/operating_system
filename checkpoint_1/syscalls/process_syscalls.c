@@ -141,7 +141,7 @@ void handle_Exit(int status)
   running_process->children = NULL;
 
   TracePrintf(1, "EXIT: Calling the delete_process handler\n");
-  delete_process(running_process, status);
+  delete_process(running_process, status, true);
 }
 
 /*
