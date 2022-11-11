@@ -4,7 +4,7 @@ Elliot Potter
 Oct 27, 2022
 
 This is Yalnix, our operating system for COSC 58 22F. The current kernel boots and handles cloning and switching processes,
-as well as handling fork, exec and wait syscalls.
+as well as handling fork, exec and wait syscalls. It also currently supports reading from and writing to terminals (using the TtyPrintf user command).
 
 No outstanding bugs (that we know of!)
 
@@ -81,3 +81,21 @@ stack approaches the heap, in which case it terminates the process.
 ./yalnix ./checkpoint_1/test_processes/segfault_random_access_test
 ```
 This test probes 4 different parts of the address space: \0, kernel space, the middle of user space, and above user space
+
+## TTY Print Test
+```
+./yalnix ./checkpoint_1/test_processes/tty_print_test
+```
+This test simply prints a message to each terminal, specifying the terminal number so we can see that the messages are received correctly.
+
+## TTY Print Synchronization Test
+```
+./yalnix ./checkpoint_1/test_processes/sync_tty_print_test
+```
+This test loops and forks five times, and each time the parent and child each print a message to the system console. By running it multiple times, we can see different interleavings of the messages themselves, but see that they never become truncated or broken up (that is; waiting processes wait their turn to write as expected).
+
+## TTY Read Test
+```
+./yalnix ./checkpoint_1/test_processes/init
+```
+Reading from the terminal may be tested by simply running init or idle, and writing characters to individual terminals. Our system puts the messages into a non null-terminated rotary buffer and prints it every time it receives more input. In the future, we will screen this input and may use it to trigger syscalls or run executables (as one would be able to do in a regular shell).
