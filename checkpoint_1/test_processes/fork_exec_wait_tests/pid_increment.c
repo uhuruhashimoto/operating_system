@@ -12,6 +12,6 @@ int main(void) {
             Exit(0);
         }
         TracePrintf(1, "Parent %d back from fork; waiting for child pid %d!\n", GetPid(), pid);
-        Wait(pid);
+        Wait(GetPid());
     }
 }
