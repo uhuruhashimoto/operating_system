@@ -1,3 +1,6 @@
+/*
+* This process forks until we run out of physical memory (at child 34). 
+*/
 #include <yuser.h>
 
 int main(void) {
@@ -12,6 +15,6 @@ int main(void) {
                 TracePrintf(1, "Hi! I'm the child with pid %d and I'll run forever.\n", child_pid);
             }
         }
-        TracePrintf(1, "Parent %d back from fork!\n", pid);
+        TracePrintf(1, "Parent %d back from fork!\n", GetPid());
     }
 }
