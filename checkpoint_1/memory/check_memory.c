@@ -10,17 +10,20 @@
  * and has valid page entries through the entire section of memory.
  * Returns ERROR if this is not the case.
  */
-int check_memory(void* mem_loc, unsigned int mem_size, bool read_required, bool write_required, bool exec_required) {
+int check_memory(void* mem_loc, unsigned int mem_size,
+                 bool read_required, bool write_required, bool exec_required) {
   int start_memory_loc_in_region_1 = ((int)mem_loc - VMEM_1_BASE);
   int end_memory_loc_in_region_1 = ((int)mem_loc + mem_size - VMEM_1_BASE);
 
   // are we in region 0?
-  if (start_memory_loc_in_region_1 < 0 || end_memory_loc_in_region_1 < 0) {
+  if ((start_memory_loc_in_region_1 < 0 || end_memory_loc_in_region_1 < 0)) {
     return ERROR;
   }
 
   int start_page_idx = start_memory_loc_in_region_1 >> PAGESHIFT;
   int end_page_idx = end_memory_loc_in_region_1 >> PAGESHIFT;
+
+//  TracePrintf(1, "Start page: %d, end page: %d\n", start_page_idx, end_page_idx);
 
   // check all the page table entries between start and end page to see if they're valid
   for (int i = start_page_idx; i <= end_page_idx; i++) {
@@ -73,6 +76,8 @@ int check_memory_string(char* mem_loc, bool read_required, bool write_required, 
   char* current_scan_loc = mem_loc;
   // scan until we hit invalid memory, or until we hit a NULL byte
   while (check_memory(current_scan_loc, sizeof(char), read_required, write_required, exec_required) != ERROR) {
+    TracePrintf(1, "%c\n", current_scan_loc[0]);
+
     // if we hit '\0', we've found the end of the string
     if (current_scan_loc[0] == '\0') {
       string_terminated = true;

@@ -106,7 +106,7 @@ int handle_Exec(char *filename, char **argvec)
   // load the ELF file from *filename
   // get the page table for the new process
   // place the arguments to be executed by the new process
-  if ((rc = LoadProgram(filename, argvec, running_process)) != SUCCESS) {
+  if ((rc = LoadProgram(filename, argvec, running_process, false)) != SUCCESS) {
     TracePrintf(1, "Loading the init process failed with exit code %d\n", rc);
     Halt();
   }

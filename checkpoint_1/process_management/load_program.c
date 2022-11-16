@@ -32,7 +32,7 @@
  * ==>> the current process.
  */
 int
-LoadProgram(char *name, char *args[], pcb_t* proc)
+LoadProgram(char *name, char *args[], pcb_t* proc, bool r0)
 
 {
   int fd;
@@ -51,14 +51,19 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   long segment_size;
   char *argbuf;
 
-  /*
+  if (!r0) {
+    /*
    * Check to see if name is valid
    * Check to see if char* args[] is valid
    */
-  if (check_memory_string(name, true, false, false) == ERROR ||
-    check_memory_string_array(args, true, false, false) == ERROR) {
-    TracePrintf(0, "LoadProgram: Invalid permissions on either name or args[]\n");
-    return ERROR;
+    if (check_memory_string(name, true, false, false) == ERROR) {
+      TracePrintf(0, "LoadProgram: Invalid permissions on name!\n");
+      return ERROR;
+    }
+    if(check_memory_string_array(args, true, false, false) == ERROR) {
+      TracePrintf(0, "LoadProgram: Invalid permissions on args[]\n");
+      return ERROR;
+    }
   }
 
   /*

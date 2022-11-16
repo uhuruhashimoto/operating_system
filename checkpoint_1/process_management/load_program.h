@@ -14,9 +14,11 @@
  *  "args", which is in standard argv format.  The argument "proc" points
  *  to the process or PCB structure for the process into which the program
  *  is to be loaded.
+ *
+ *  r0 is only true for the init process.
  */
 
 int
-LoadProgram(char *name, char *args[], pcb_t* proc);
+LoadProgram(char *name, char *args[], pcb_t* proc, bool r0);
 
 #endif //CURRENT_CHUNGUS_LOAD_PROGRAM

@@ -11,7 +11,8 @@
  * and has valid page entries through the entire section of memory.
  * Returns ERROR if this is not the case.
  */
-int check_memory(void* mem_loc, unsigned int mem_size, bool read_required, bool write_required, bool exec_required);
+int check_memory(void* mem_loc, unsigned int mem_size,
+                 bool read_required, bool write_required, bool exec_required);
 
 /*
  * Checks to see if this memory is valid.
