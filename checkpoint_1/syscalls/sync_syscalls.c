@@ -15,7 +15,7 @@
 int handle_LockInit(int *lock_idp) {
   TracePrintf(1, "HANDLE_LOCK_INIT: Creating a new lock!\n");
 
-  if (check_memory(lock_idp, sizeof (int)) == ERROR) {
+  if (check_memory(lock_idp, sizeof (int), false, true, false) == ERROR) {
     return ERROR;
   }
 
@@ -96,7 +96,7 @@ returned.
  */
 int handle_CvarInit(int *cvar_idp) {
   TracePrintf(1, "HANDLE_CVAR_INIT: attempting to create a new cvar\n");
-  if (check_memory(cvar_idp, sizeof (int)) == ERROR) {
+  if (check_memory(cvar_idp, sizeof (int), false, true, false) == ERROR) {
     return ERROR;
   }
 

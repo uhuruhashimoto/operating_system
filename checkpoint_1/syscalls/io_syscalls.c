@@ -71,7 +71,7 @@ int handle_TtyRead(int tty_id, void *buf, int len)
   TracePrintf(1, "TtyRead: tty_id: %d, buf: %p, len: %d\n", tty_id, buf, len);
 
   // check the memory locations of this buffer
-  if (check_memory(buf, len) == ERROR) {
+  if (check_memory(buf, len, false, true, false) == ERROR) {
     TracePrintf(1, "TtyRead: This buffer is not valid\n");
     return ERROR;
   }
@@ -110,7 +110,7 @@ int handle_TtyWrite(int tty_id, void *buf, int len)
   TracePrintf(1, "TtyWrite: Attempting to write bytes to a tty\n");
 
   // check the memory locations of this buffer
-  if (check_memory(buf, len) == ERROR) {
+  if (check_memory(buf, len, true, false, false) == ERROR) {
     TracePrintf(1, "TtyWrite: This buffer is not valid\n");
     return ERROR;
   }
