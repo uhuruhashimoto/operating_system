@@ -57,7 +57,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    */
   if (check_memory_string(name, true, false, false) == ERROR ||
     check_memory_string_array(args, true, false, false) == ERROR) {
-    TracePrintf(0, "LoadProgram: Invalid permissions on either name or args[]\n")
+    TracePrintf(0, "LoadProgram: Invalid permissions on either name or args[]\n");
     return ERROR;
   }
 
