@@ -5,6 +5,7 @@
 #include "../data_structures/queue.h"
 #include "../data_structures/frame_table.h"
 #include "../debug_utils/debug.h"
+#include "../memory/check_memory.h"
 
 extern frame_table_struct_t *frame_table_global;
 extern pcb_t* running_process;
@@ -44,6 +45,15 @@ int handle_Fork(void)
           frame_table_global->frame_table_size, 
           0
       );
+
+      if (new_frame == MEMFULL) {
+        TracePrintf(1, "FORK HANDLER: Ran out of free frames to allocate!\n");
+        // clear the already-allocated frames on the page table
+        delete_r1_page_table(child_pcb, i-1);
+        free(child_pcb);
+        return ERROR;
+      }
+
       // use the page below the stack as a buffer to write stack pages into frames
       bufpage->valid = 1;
       bufpage->prot = (PROT_READ | PROT_WRITE);
@@ -187,6 +197,11 @@ pcb_t* get_first_exited_child(pcb_t* parent) {
 int handle_Wait(int *status_ptr)
 {
   TracePrintf(1, "HANDLE_WAIT: triggered for process %d\n", running_process->pid);
+
+  if (check_memory(status_ptr, sizeof (int), false, true, false)) {
+    TracePrintf(1, "HANDLE_WAIT: Provided a pointer to invalid memory\n");
+    return ERROR;
+  }
 
   // return ERROR immediately if no remaining children, alive or dead
   if (running_process->children == NULL) {

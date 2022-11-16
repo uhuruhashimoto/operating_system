@@ -134,20 +134,7 @@ int destroy_process_no_switch(pcb_t* process) {
   // free the pid for the process
   helper_retire_pid(process->pid);
 
-  // wipe out the page table for the process
-  int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
-  for (int i = 0; i < region_1_page_table_size; i++) {
-    if (process->region_1_page_table[i].valid) {
-      TracePrintf(1, "DELETE PROCESS: Removing %d from frame table\n", process->region_1_page_table[i].pfn);
-      frame_table_global->frame_table[process->region_1_page_table[i].pfn] = 0;
-      process->region_1_page_table[i].valid = false;
-    }
-  }
-
-  TracePrintf(1, "DELETE PROCESS: Zeroed R1 page table\n");
-  free(process->region_1_page_table);
-  TracePrintf(1, "DELETE PROCESS: Wiped out R1 page table\n");
-  process->region_1_page_table = NULL;
+  delete_r1_page_table(process, -1);
 
   TracePrintf(5, "=====Freeing KernelStack=====\n");
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
@@ -169,20 +156,7 @@ int switch_between_processes_delete_old(pcb_t *current_process, pcb_t *next_proc
   // free the pid for the process
   helper_retire_pid(current_process->pid);
 
-  // wipe out the page table for the process
-  int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
-  for (int i = 0; i < region_1_page_table_size; i++) {
-    if (current_process->region_1_page_table[i].valid) {
-      TracePrintf(1, "DELETE PROCESS: Removing %d from frame table\n", current_process->region_1_page_table[i].pfn);
-      frame_table_global->frame_table[current_process->region_1_page_table[i].pfn] = 0;
-      current_process->region_1_page_table[i].valid = false;
-    }
-  }
-
-  TracePrintf(1, "DELETE PROCESS: Zeroed R1 page table\n");
-  free(current_process->region_1_page_table);
-  TracePrintf(1, "DELETE PROCESS: Wiped out R1 page table\n");
-  current_process->region_1_page_table = NULL;
+  delete_r1_page_table(current_process, -1);
 
   // sets the R1 PT
   WriteRegister(REG_PTBR1, (int) next_process->region_1_page_table);
@@ -194,6 +168,26 @@ int switch_between_processes_delete_old(pcb_t *current_process, pcb_t *next_proc
   }
 
   return 0;
+}
+
+/*
+ * Clears the page table up to the upto index
+ */
+int delete_r1_page_table(pcb_t *process, int upto_index) {
+  // wipe out the page table for the process
+  int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
+  for (int i = 0; (i < region_1_page_table_size && (upto_index == -1 || i <= upto_index)); i++) {
+    if (process->region_1_page_table[i].valid) {
+      TracePrintf(1, "DELETE R1 PAGE TABLE: Removing %d from frame table\n", process->region_1_page_table[i].pfn);
+      frame_table_global->frame_table[process->region_1_page_table[i].pfn] = 0;
+      process->region_1_page_table[i].valid = false;
+    }
+  }
+
+  TracePrintf(1, "DELETE R1 PAGE TABLE: Zeroed R1 page table\n");
+  free(process->region_1_page_table);
+  TracePrintf(1, "DELETE R1 PAGE TABLE: Wiped out R1 page table\n");
+  process->region_1_page_table = NULL;
 }
 
 /*
@@ -252,7 +246,8 @@ delete_process(pcb_t* process, int status_code, bool do_process_switch)
     }
     else {
       if (do_process_switch) {
-        TracePrintf(1, "DELETE PROCESS: Parent is not waiting: installing next from queue\n");
+        TracePrintf(1, "DELETE PROCESS: Parent is not waiting: installing next from queue and freeing page tables\n");
+        // TODO -- change this to -1
         install_next_from_queue(process, 1);
       }
       else {
@@ -306,8 +301,6 @@ KernelContext *KCSwitchDelete( KernelContext *kc_in, void *curr_pcb_p, void *nex
   print_reg_0_page_table(1, "Switch/Delete");
   print_kernel_stack(1);
 
-  // delete the old pcb
-  free(curr_pcb);
   // set the kernel stack in region 0 to the kernel stack in the new pcb
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);
   return next_pcb->kctxt;

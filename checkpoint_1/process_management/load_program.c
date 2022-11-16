@@ -13,6 +13,7 @@
 #include "../kernel_start.h"
 #include "../data_structures/pcb.h"
 #include "../data_structures/frame_table.h"
+#include "../memory/check_memory.h"
 
 /*
  * ==>> #include anything you need for your kernel here
@@ -49,6 +50,11 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   int stack_npg;
   long segment_size;
   char *argbuf;
+
+  /*
+   * TODO: Check to see if string inputs are valid
+   * TODO: Check to see if char* args[] is valid
+   */
 
   /*
  * Open the executable file

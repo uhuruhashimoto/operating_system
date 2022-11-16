@@ -28,6 +28,11 @@ int install_next_from_queue(pcb_t* current_process, int code);
 int switch_between_processes(pcb_t *current_process, pcb_t *next_process);
 
 /*
+ * Clears the page table, upto the index
+ */
+int delete_r1_page_table(pcb_t *process, int upto_index);
+
+/*
  * Deletes the process if no parent
  * If there is parent, triggers it
  *
