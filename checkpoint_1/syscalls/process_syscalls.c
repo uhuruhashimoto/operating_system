@@ -50,6 +50,8 @@ int handle_Fork(void)
         TracePrintf(1, "FORK HANDLER: Ran out of free frames to allocate!\n");
         // clear the already-allocated frames on the page table
         delete_r1_page_table(child_pcb, i-1);
+        // retire the new pcb
+        helper_retire_pid(child_pcb->pid);
         free(child_pcb);
         return ERROR;
       }
@@ -241,6 +243,7 @@ int handle_Wait(int *status_ptr)
       running_process->waitingForChildExit = false;
       int status = exited->rc;
       *status_ptr = status;
+      switch_between_processes(running_process, exited);
       return status;
     }
   }

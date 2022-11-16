@@ -132,6 +132,7 @@ int switch_between_processes(pcb_t *current_process, pcb_t *next_process) {
  */
 int destroy_process_no_switch(pcb_t* process) {
   // free the pid for the process
+  TracePrintf(1, "RETIRING OLD PID: %d\n", process->pid);
   helper_retire_pid(process->pid);
 
   delete_r1_page_table(process, -1);
@@ -154,6 +155,7 @@ int destroy_process_no_switch(pcb_t* process) {
  */
 int switch_between_processes_delete_old(pcb_t *current_process, pcb_t *next_process) {
   // free the pid for the process
+  TracePrintf(1, "RETIRING OLD PID: %d\n", current_process->pid);
   helper_retire_pid(current_process->pid);
 
   delete_r1_page_table(current_process, -1);
@@ -247,8 +249,7 @@ delete_process(pcb_t* process, int status_code, bool do_process_switch)
     else {
       if (do_process_switch) {
         TracePrintf(1, "DELETE PROCESS: Parent is not waiting: installing next from queue and freeing page tables\n");
-        // TODO -- change this to -1
-        install_next_from_queue(process, 1);
+        install_next_from_queue(process, -1);
       }
       else {
         destroy_process_no_switch(process);
