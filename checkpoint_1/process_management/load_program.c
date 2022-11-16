@@ -52,9 +52,14 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   char *argbuf;
 
   /*
-   * TODO: Check to see if string inputs are valid
-   * TODO: Check to see if char* args[] is valid
+   * Check to see if name is valid
+   * Check to see if char* args[] is valid
    */
+  if (check_memory_string(name, true, false, false) == ERROR ||
+    check_memory_string_array(args, true, false, false) == ERROR) {
+    TracePrintf(0, "LoadProgram: Invalid permissions on either name or args[]\n")
+    return ERROR;
+  }
 
   /*
  * Open the executable file
