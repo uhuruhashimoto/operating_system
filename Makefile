@@ -32,7 +32,7 @@ fork_exec_wait_tests/fork_test.c fork_exec_wait_tests/exec_test.c fork_exec_wait
 fork_exec_wait_tests/pid_increment.c pipe_lock_cvar_tests/lock_test.c pipe_lock_cvar_tests/pipe_test.c pipe_lock_cvar_tests/cvar_test.c \
 pipe_lock_cvar_tests/lock_destructor_test.c pipe_lock_cvar_tests/pipe_destructor_test.c pipe_lock_cvar_tests/cvar_destructor_test.c \
 tty_tests/tty_print_test.c sync_tty_print_test.c segfault_stack_test.c segfault_random_access_test.c \
-class_tests/bigstack.c class_tests/forktest.c class_tests/torture.c class_tests/zero.c
+class_tests/bigstack.c class_tests/forktest.c class_tests/torture.c class_tests/zero.c mean_memory_tests.c
 
 U_INCS =
 
