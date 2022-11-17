@@ -98,6 +98,11 @@ Calls to TtyWrite for more than TERMINAL MAX LINE bytes should be supported.
 int handle_TtyWrite(int tty_id, void *buf, int len)
 {
   TracePrintf(1, "TtyWrite: Attempting to write bytes to a tty\n");
+  // check the tty id
+  if (tty_id < 0 || tty_id > (NUM_TERMINALS-1)) {
+    TracePrintf(1, "TtyWrite: Invalid tty id %d\n", tty_id);
+    return ERROR;
+  }
 
   // check the memory locations of this buffer
   if (check_memory(buf, len, true, false, false, false) == ERROR) {
