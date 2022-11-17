@@ -194,18 +194,6 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   TracePrintf(3, "Setting up page table for the process\n");
   pte_t page;
   int page_table_reg_1_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
-  pte_t *region_1_page_table = malloc(sizeof(pte_t) * page_table_reg_1_size);
-  if (region_1_page_table == NULL) {
-    TracePrintf(1, "Failed to allocate space for the new r1 page table!\n");
-    return ERROR;
-  }
-
-  for (int ind=0; ind<page_table_reg_1_size; ind++) {
-    page.valid = 0;
-    page.prot = (PROT_WRITE);
-    region_1_page_table[ind] = page;
-  }
-
 
   /* ==>> Throw away the old region 1 virtual address space by
    * ==>> current process by walking through the R1 page table and,
@@ -219,9 +207,8 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
       // clear the frame
       frame_table_global->frame_table[proc->region_1_page_table[ind].pfn] = 0;
     }
+    proc->region_1_page_table[ind].prot = (PROT_WRITE);
   }
-  free(proc->region_1_page_table);
-  proc->region_1_page_table = NULL;
 
   /*
    * ==>> Then, build up the new region1.
@@ -242,14 +229,14 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
 
   int nextIndex = 0;
   for (int i = 0; i < li.t_npg; i++) {
-    region_1_page_table[i+text_pg1].valid = 1;
-    region_1_page_table[i+text_pg1].prot = (PROT_READ | PROT_WRITE);
+    proc->region_1_page_table[i+text_pg1].valid = 1;
+    proc->region_1_page_table[i+text_pg1].prot = (PROT_READ | PROT_WRITE);
     // gets a new free frame
     int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
     if (pfn == -1) {
       return KILL;
     }
-    region_1_page_table[i+text_pg1].pfn = pfn;
+    proc->region_1_page_table[i+text_pg1].pfn = pfn;
     nextIndex = pfn;
   }
 
@@ -262,13 +249,13 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   TracePrintf(4, "Allocating space for %d data pages, starting at page %d, in table with %d pages\n",
               data_npg, data_pg1, page_table_reg_1_size);
   for (int i = 0; i < data_npg; i++) {
-    region_1_page_table[i+data_pg1].valid = 1;
-    region_1_page_table[i+data_pg1].prot = (PROT_READ | PROT_WRITE);
+    proc->region_1_page_table[i+data_pg1].valid = 1;
+    proc->region_1_page_table[i+data_pg1].prot = (PROT_READ | PROT_WRITE);
     int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
     if (pfn == -1) {
       return KILL;
     }
-    region_1_page_table[i+data_pg1].pfn = pfn;
+    proc->region_1_page_table[i+data_pg1].pfn = pfn;
     nextIndex = pfn;
   }
 
@@ -281,22 +268,16 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   TracePrintf(4, "Allocating space for %d stack pages, starting at page %d, in table with %d pages\n",
               stack_npg, MAX_PT_LEN - stack_npg, page_table_reg_1_size);
   for (int i = 0; i < stack_npg; i++) {
-    region_1_page_table[MAX_PT_LEN - stack_npg + i].valid = 1;
-    region_1_page_table[MAX_PT_LEN - stack_npg + i].prot = (PROT_READ | PROT_WRITE);
+    proc->region_1_page_table[MAX_PT_LEN - stack_npg + i].valid = 1;
+    proc->region_1_page_table[MAX_PT_LEN - stack_npg + i].prot = (PROT_READ | PROT_WRITE);
     int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
     if (pfn == -1) {
       return KILL;
     }
-    region_1_page_table[MAX_PT_LEN - stack_npg + i].pfn = pfn;
+    proc->region_1_page_table[MAX_PT_LEN - stack_npg + i].pfn = pfn;
     nextIndex = pfn;
   }
 
-  /*
-   * ==>> (Finally, make sure that there are no stale region1 mappings left in >
-   */
-  proc->region_1_page_table = region_1_page_table;
-  // set page table base
-  WriteRegister(REG_PTBR1, (unsigned  int)region_1_page_table);
   // set page table limit
   WriteRegister(REG_PTLR1, page_table_reg_1_size);
   // flush the TLB
@@ -347,17 +328,17 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
    */
   TracePrintf(3, "Finalizing page table protections...\n");
   for (int ind=0; ind < li.t_npg; ind++) {
-    region_1_page_table[ind+text_pg1].prot = (PROT_READ | PROT_EXEC);
+    proc->region_1_page_table[ind+text_pg1].prot = (PROT_READ | PROT_EXEC);
   }
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 
   for (int i = 0; i < page_table_reg_1_size; i++) {
-    if (region_1_page_table[i].valid) {
+    if (proc->region_1_page_table[i].valid) {
       TracePrintf(4, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
                   VMEM_1_BASE + (i << PAGESHIFT),
                   VMEM_1_BASE + ((i+1) << PAGESHIFT)-1,
-                  region_1_page_table[i].valid,
-                  region_1_page_table[i].pfn
+                  proc->region_1_page_table[i].valid,
+                  proc->region_1_page_table[i].pfn
       );
     }
   }

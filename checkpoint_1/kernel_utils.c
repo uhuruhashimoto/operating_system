@@ -437,7 +437,6 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   TracePrintf(1, "=====OLD PCB Kernel Stack=====\n");
   print_kernel_stack(1);
 
-
   // flush TLB
 //  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);

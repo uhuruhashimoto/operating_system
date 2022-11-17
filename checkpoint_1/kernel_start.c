@@ -288,8 +288,8 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   running_process = idle_process;
 
   // Create a pcb for init
-  int init_pid = helper_new_pid(region_1_page_table);
   pcb_t *init_pcb = allocate_pcb();
+  int init_pid = helper_new_pid(init_pcb->region_1_page_table);
   init_pcb->pid = init_pid;
   add_to_queue(ready_queue, init_pcb);
 
