@@ -319,8 +319,13 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   if (running_process->pid == init_pcb->pid) {
     // load the init process into the forked pcb
     TracePrintf(1, "Attempting to load program with name: %s\n", name);
-    if (LoadProgram(name, cmd_args, init_pcb) == -1) {
-      TracePrintf(1, "Loading the init process failed with exit code -1\n");
+    int load_program_rc;
+    if ((load_program_rc = LoadProgram(name, cmd_args, init_pcb)) == -1 ||
+        load_program_rc == -2
+        ) {
+      TracePrintf(1, "Loading the init process failed with exit code %d\n",
+                  load_program_rc
+                  );
       Halt();
     }
   } else {

@@ -27,10 +27,6 @@
  *  is to be loaded.
  */
 
-/*
- * ==>> Declare the argument "proc" to be a pointer to the PCB of
- * ==>> the current process.
- */
 int
 LoadProgram(char *name, char *args[], pcb_t* proc)
 
@@ -249,7 +245,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
     // gets a new free frame
     int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
     if (pfn == -1) {
-      return ERROR;
+      return KILL;
     }
     region_1_page_table[i+text_pg1].pfn = pfn;
     nextIndex = pfn;
@@ -268,7 +264,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
     region_1_page_table[i+data_pg1].prot = (PROT_READ | PROT_WRITE);
     int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
     if (pfn == -1) {
-      return ERROR;
+      return KILL;
     }
     region_1_page_table[i+data_pg1].pfn = pfn;
     nextIndex = pfn;
@@ -287,7 +283,7 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
     region_1_page_table[MAX_PT_LEN - stack_npg + i].prot = (PROT_READ | PROT_WRITE);
     int pfn = get_free_frame(frame_table_global->frame_table, frame_table_global->frame_table_size, nextIndex);
     if (pfn == -1) {
-      return ERROR;
+      return KILL;
     }
     region_1_page_table[MAX_PT_LEN - stack_npg + i].pfn = pfn;
     nextIndex = pfn;
