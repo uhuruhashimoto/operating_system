@@ -50,12 +50,14 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   /*
  * Check to see if name is valid
  * Check to see if char* args[] is valid
+   *
+   * We pass immediately if the name/args were passed in to kernel_start
  */
   if (name != cmd_args_global[0] && check_memory_string(name, true, false, false, false) == ERROR) {
     TracePrintf(0, "LoadProgram: Invalid permissions on name!\n");
     return ERROR;
   }
-  if(args != cmd_args_global || check_memory_string_array(args, true, false, false, false) == ERROR) {
+  if(args != cmd_args_global && check_memory_string_array(args, true, false, false, false) == ERROR) {
     TracePrintf(0, "LoadProgram: Invalid permissions on args[]\n");
     return ERROR;
   }

@@ -47,10 +47,10 @@ int check_page(int prot, bool read_required, bool write_required, bool exec_requ
  */
 int check_memory(void* mem_loc, unsigned int mem_size,
                  bool read_required, bool write_required, bool exec_required, bool r0_legal) {
-  // pass immediately if we're reading bytes above region 1 or region 0
+  // fail immediately if we're reading bytes above region 1 or region 0
   // we cannot examine these memory addresses directly.
   if ((unsigned int) mem_loc > VMEM_1_BASE+VMEM_1_SIZE) {
-    return SUCCESS;
+    return ERROR;
   }
 
   int start_memory_loc_in_region_1 = ((unsigned int)mem_loc - VMEM_1_BASE);

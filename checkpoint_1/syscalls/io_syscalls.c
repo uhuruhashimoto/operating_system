@@ -65,6 +65,8 @@ int handle_TtyRead(int tty_id, void *buf, int len)
     return ERROR;
   }
 
+  Halt();
+
   // get the data on the current tty object
   tty_object_t *tty = get_tty_object(tty_id);
   if (tty == NULL) {
