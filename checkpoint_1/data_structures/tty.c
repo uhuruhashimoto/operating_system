@@ -18,6 +18,7 @@ tty_object_t *init_tty_object(int id) {
 
     if (tty_obj == NULL) {
       TracePrintf(1, "INIT_TTY_OBJECT: Not enough space to allocate tty obj\n");
+      return NULL;
     }
 
     bzero(tty_obj->buf, MAX_BUFFER_LEN);
@@ -38,6 +39,7 @@ tty_object_t *init_tty_object(int id) {
         tty_obj->write_lock == NULL || tty_obj->write_cvar == NULL
     ) {
       TracePrintf(1, "INIT_TTY_OBJECT: One of the subobjects is NULL\n");
+      return NULL;
     }
 
     return tty_obj;
@@ -54,6 +56,10 @@ tty_object_t *get_tty_object(int id) {
  * Checks if the terminal buffer is full
  */
 bool tty_buf_is_full(tty_object_t* tty) {
+  if (tty == NULL) {
+    TracePrintf(1, "TTY_BUF_IS_FULL: tty is NULL\n");
+    return true;
+  }
   // check to see if the tty is full
   if (tty->num_unconsumed_chars == tty->max_size) {
     return true;
@@ -65,6 +71,10 @@ bool tty_buf_is_full(tty_object_t* tty) {
  * Checks if the terminal buffer is empty
  */
 bool tty_buf_is_empty(tty_object_t* tty) {
+  if (tty == NULL) {
+    TracePrintf(1, "TTY_BUF_IS_EMPTY: tty is NULL\n");
+    return true;
+  }
   // check to see if the tty is empty
   if (tty->num_unconsumed_chars == 0) {
     return true;
@@ -77,6 +87,11 @@ bool tty_buf_is_empty(tty_object_t* tty) {
  * returns the byte if it exists, ERROR upon error
  */
 char tty_buf_read_byte(tty_object_t* tty) {
+  // Null checks for input
+  if (tty == NULL) {
+    TracePrintf(1, "TTY_BUF_READ_BYTE: tty is NULL\n");
+    return ERROR;
+  }
   // returns ERROR if there is no byte to read (is_empty)
   if (tty_buf_is_empty(tty)) {
     return ERROR;
@@ -94,6 +109,11 @@ char tty_buf_read_byte(tty_object_t* tty) {
 }
 
 int tty_buf_write_byte(tty_object_t* tty, char byte) {
+  // Null checks for input
+  if (tty == NULL) {
+    TracePrintf(1, "TTY_BUF_READ_BYTE: tty is NULL\n");
+    return ERROR;
+  }
   // returns ERROR if there is no more space in the buffer (is_full)
   if (tty_buf_is_full(tty)) {
     return ERROR;
