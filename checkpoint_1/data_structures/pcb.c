@@ -59,6 +59,10 @@ pcb_t *allocate_pcb() {
 * Set pcb values
 */
 pcb_t *set_pcb_values(pcb_t *pcb, int pid, pte_t *region_1_page_table, UserContext *uctxt) {
+  if (pcb == NULL) {
+    TracePrintf(1, "set_pcb_values: pcb is NULL\n");
+    return NULL;
+  }
   pcb -> pid = pid;
   pcb -> region_1_page_table = region_1_page_table;
   pcb -> uctxt = uctxt;
