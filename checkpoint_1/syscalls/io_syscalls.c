@@ -121,6 +121,7 @@ int handle_TtyWrite(int tty_id, void *buf, int len)
   void* kernel_buf = malloc(len * sizeof (char));
   if (kernel_buf == NULL) {
     TracePrintf(1, "TtyWrite: write to tty %d failed because we couldn't allocate a kernel buf\n");
+    return ERROR;
   }
   memcpy(kernel_buf, buf, len);
 
