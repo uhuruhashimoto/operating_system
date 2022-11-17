@@ -151,13 +151,12 @@ void handle_trap_clock(UserContext* context) {
     while (next_process != NULL) {
       // decrement their delays
       next_process->delayed_clock_cycles--;
-      TracePrintf(1, "Delayed process with id %d now has %d clock cycles remaining\n",
+      TracePrintf(1, "TRAP_CLOCK/DELAY: Delayed process with id %d now has %d clock cycles remaining\n",
                   next_process->pid, next_process->delayed_clock_cycles);
 
       // if any process gets a delay of 0 or less, put it back into the ready queue
       if (next_process->delayed_clock_cycles <= 0) {
         TracePrintf(3, "Delayed process with id %d will be put in the ready queue\n", next_process->pid);
-        add_to_queue(ready_queue, next_process);
 
         // remove it from the delay data structure
         if (next_process->prev_pcb == NULL) {
@@ -180,6 +179,8 @@ void handle_trap_clock(UserContext* context) {
           }
         }
       }
+
+      add_to_queue(ready_queue, next_process);
 
 //      TracePrintf(1, "Going from %d to %d\n", next_process, next_process->next_pcb);
       next_process = next_process->next_pcb;
