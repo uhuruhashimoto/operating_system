@@ -67,7 +67,7 @@ int check_memory(void* mem_loc, unsigned int mem_size,
   int start_page_idx = start_memory_loc_in_region_1 >> PAGESHIFT;
   int end_page_idx = end_memory_loc_in_region_1 >> PAGESHIFT;
 
-  TracePrintf(1, "Addr: %x, Start page: %d, end page: %d\n", mem_loc, start_page_idx, end_page_idx);
+  TracePrintf(5, "Addr: %x, Start page: %d, end page: %d\n", mem_loc, start_page_idx, end_page_idx);
 
   // check all the page table entries between start and end page to see if they're valid
   for (int i = start_page_idx; i <= end_page_idx; i++) {
@@ -98,7 +98,7 @@ int check_memory_r0(void* mem_loc, unsigned int mem_size, bool read_required, bo
   int start_page_idx = start_memory_loc_in_region_0 >> PAGESHIFT;
   int end_page_idx = end_memory_loc_in_region_0 >> PAGESHIFT;
 
-  TracePrintf(1, "Addr: %x, Start page: %d, end page: %d\n", mem_loc, start_page_idx, end_page_idx);
+  TracePrintf(5, "Addr: %x, Start page: %d, end page: %d\n", mem_loc, start_page_idx, end_page_idx);
 
   // check all the page table entries between start and end page to see if they're valid
   for (int i = start_page_idx; i <= end_page_idx; i++) {
@@ -130,7 +130,7 @@ int check_memory_string(char* mem_loc, bool read_required, bool write_required, 
   TracePrintf(1, "CHECK_MEMORY_STRING: Checking a string\n");
   // scan until we hit invalid memory, or until we hit a NULL byte
   while (check_memory(current_scan_loc, sizeof(char), read_required, write_required, exec_required, r0_legal) != ERROR) {
-    TracePrintf(1, "%c\n", current_scan_loc[0]);
+    TracePrintf(5, "%c\n", current_scan_loc[0]);
 
     // if we hit '\0', we've found the end of the string
     if (current_scan_loc[0] == '\0') {
@@ -174,7 +174,7 @@ int check_memory_string_array(char** mem_loc, bool read_required, bool write_req
     }
     current_scan_loc++;
 
-    TracePrintf(1, "CHECK_MEMORY_STRING_ARRAY: About to check next array location\n");
+    TracePrintf(5, "CHECK_MEMORY_STRING_ARRAY: About to check next array location\n");
   }
   if (array_terminated) {
     return SUCCESS;
