@@ -101,6 +101,10 @@ int handle_CvarInit(int *cvar_idp) {
   }
 
   cvar_t* cvar = create_cvar_any_id();
+  if (cvar == NULL) {
+    TracePrintf(1, "HANDLE_CVAR_INIT: Unable to create a new cvar\n");
+    return ERROR;
+  }
 
   // write cvar_idp
   cvar_idp[0] = cvar->id;
