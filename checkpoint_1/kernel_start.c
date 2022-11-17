@@ -60,6 +60,7 @@ void *trap_handler[NUM_TRAP_FUNCTIONS];
 int current_kernel_brk_page;
 frame_table_struct_t *frame_table_global;
 pte_t *region_0_page_table;
+char** cmd_args_global;
 
 // PROCESSES
 pcb_t* running_process;
@@ -107,6 +108,8 @@ char tty_buffer[TTY_BUFFER_SIZE];
 * the page number it will correspond to in our page table. 
 */
 void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
+  cmd_args_global = cmd_args;
+
   // full sizes
   int total_pmem_pages = UP_TO_PAGE(pmem_size) >> PAGESHIFT;
   int region_0_page_table_size = UP_TO_PAGE(VMEM_0_SIZE) >> PAGESHIFT;

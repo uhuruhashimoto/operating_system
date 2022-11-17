@@ -5,6 +5,8 @@
 int check_memory_r0(void* mem_loc, unsigned int mem_size, bool read_required, bool write_required, bool exec_required);
 
 int check_page(int prot, bool read_required, bool write_required, bool exec_required) {
+  TracePrintf(1, "Prot: %d, read %d, write %d, exec %d", prot, read_required, write_required, exec_required);
+
   bool is_read_enabled = false;
   bool is_write_enabled = false;
   bool is_exec_enabled = false;
@@ -98,7 +100,7 @@ int check_memory_r0(void* mem_loc, unsigned int mem_size, bool read_required, bo
   int start_page_idx = start_memory_loc_in_region_0 >> PAGESHIFT;
   int end_page_idx = end_memory_loc_in_region_0 >> PAGESHIFT;
 
-  TracePrintf(5, "Addr: %x, Start page: %d, end page: %d\n", mem_loc, start_page_idx, end_page_idx);
+  TracePrintf(1, "Addr: %x, Start page: %d, end page: %d\n", mem_loc, start_page_idx, end_page_idx);
 
   // check all the page table entries between start and end page to see if they're valid
   for (int i = start_page_idx; i <= end_page_idx; i++) {
@@ -112,7 +114,7 @@ int check_memory_r0(void* mem_loc, unsigned int mem_size, bool read_required, bo
       return ERROR;
     }
   }
-
+  TracePrintf(1, "Success!\n");
   return SUCCESS;
 }
 
@@ -127,10 +129,13 @@ int check_memory_r0(void* mem_loc, unsigned int mem_size, bool read_required, bo
 int check_memory_string(char* mem_loc, bool read_required, bool write_required, bool exec_required, bool r0_legal) {
   bool string_terminated = false;
   char* current_scan_loc = mem_loc;
-  TracePrintf(1, "CHECK_MEMORY_STRING: Checking a string\n");
+  TracePrintf(1, "CHECK_MEMORY_STRING: Checking a string %x\n", mem_loc);
   // scan until we hit invalid memory, or until we hit a NULL byte
   while (check_memory(current_scan_loc, sizeof(char), read_required, write_required, exec_required, r0_legal) != ERROR) {
-    TracePrintf(5, "%c\n", current_scan_loc[0]);
+    TracePrintf(1, "In next place\n");
+    char car = current_scan_loc[0];
+    TracePrintf(1, "%c\n", car);
+    TracePrintf(1, "In next place\n");
 
     // if we hit '\0', we've found the end of the string
     if (current_scan_loc[0] == '\0') {
@@ -177,6 +182,7 @@ int check_memory_string_array(char** mem_loc, bool read_required, bool write_req
     TracePrintf(5, "CHECK_MEMORY_STRING_ARRAY: About to check next array location\n");
   }
   if (array_terminated) {
+    TracePrintf(1, "CHECK_MEMORY_STRING_ARRAY: This address should be legal...\n");
     return SUCCESS;
   }
   else {

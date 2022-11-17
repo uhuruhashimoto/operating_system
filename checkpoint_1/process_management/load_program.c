@@ -51,11 +51,11 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
  * Check to see if name is valid
  * Check to see if char* args[] is valid
  */
-  if (check_memory_string(name, true, false, false, true) == ERROR) {
+  if (name != cmd_args_global[0] && check_memory_string(name, true, false, false, false) == ERROR) {
     TracePrintf(0, "LoadProgram: Invalid permissions on name!\n");
     return ERROR;
   }
-  if(check_memory_string_array(args, true, false, false, true) == ERROR) {
+  if(args != cmd_args_global || check_memory_string_array(args, true, false, false, false) == ERROR) {
     TracePrintf(0, "LoadProgram: Invalid permissions on args[]\n");
     return ERROR;
   }

@@ -32,6 +32,7 @@ extern void *trap_handler[16];
 extern int current_kernel_brk_page;
 extern frame_table_struct_t *frame_table_global;
 extern pte_t *region_0_page_table;
+extern char** cmd_args_global;
 
 // PROCESSES
 extern pcb_t* running_process;
