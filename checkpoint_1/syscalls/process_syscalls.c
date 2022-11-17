@@ -109,8 +109,8 @@ int handle_Exec(char *filename, char **argvec)
   if ((rc = LoadProgram(filename, argvec, running_process)) != SUCCESS) {
     TracePrintf(1, "Loading a process failed with exit code %d\n", rc);
     if (rc == -2) {
-      TracePrintf(1, "Halting the kernel\n", rc);
-      Halt();
+      TracePrintf(1, "Handle kill!\n", rc);
+      delete_process(running_process, -2, true);
     }
   }
 
