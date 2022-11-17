@@ -133,7 +133,7 @@ int handle_TtyWrite(int tty_id, void *buf, int len)
       bytes_to_transmit = remaining_bytes;
     }
     // make sure we're transmitting from the correct spot in the buffer
-    TracePrintf(1, "Sending %d bytes to tty %d\n", bytes_to_transmit, tty_id);
+    TracePrintf(5, "Sending %d bytes to tty %d\n", bytes_to_transmit, tty_id);
     TtyTransmit(tty_id, kernel_buf+(len - remaining_bytes), bytes_to_transmit);
 
     remaining_bytes -= bytes_to_transmit;

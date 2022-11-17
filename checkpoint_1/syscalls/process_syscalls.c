@@ -292,16 +292,7 @@ int handle_Brk(void *addr)
   }
 
   TracePrintf(5, "=====Region 1 Page Table Before SetBrk (%d pages)=====\n", region_1_page_table_size);
-  for (int i = 0; i < region_1_page_table_size; i++) {
-    if (region_1_page_table[i].valid) {
-      TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
-                  VMEM_1_BASE + (i << PAGESHIFT),
-                  VMEM_1_BASE + ((i+1) << PAGESHIFT)-1,
-                  region_1_page_table[i].valid,
-                  region_1_page_table[i].pfn
-      );
-    }
-  }
+  print_reg_1_page_table(running_process, 5, "");
 
   //find the brk
   while (!brkfound && current_brk_page < region_1_page_table_size){
@@ -310,6 +301,7 @@ int handle_Brk(void *addr)
     }
     current_brk_page++;
   }
+  current_brk_page--;
   TracePrintf(1, "SETBRK: Current brk found at %d pages\n", current_brk_page);
 
   // check to make sure we aren't going to grow into the user stack
@@ -345,16 +337,7 @@ int handle_Brk(void *addr)
     }
 
     TracePrintf(5, "=====Region 1 Page Table After SetBrk=====\n");
-    for (int i = 0; i < region_1_page_table_size; i++) {
-      if (region_1_page_table[i].valid) {
-        TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
-                    VMEM_1_BASE + (i << PAGESHIFT),
-                    VMEM_1_BASE + ((i+1) << PAGESHIFT)-1,
-                    region_1_page_table[i].valid,
-                    region_1_page_table[i].pfn
-        );
-      }
-    }
+    print_reg_1_page_table(running_process, 5, "");
 
     TracePrintf(1, "SETBRK: Brk set to %d pages\n", current_brk_page);
 

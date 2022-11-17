@@ -11,7 +11,7 @@ recurse(who, i)
   char *mem = (char *)malloc(2048); /* use up heap space */
   int j;
 
-  for (j = 0; j < 1024; j++) 
+  for (j = 0; j < 1024; j++)
     waste[j] = 'a';
 
   TtyPrintf(1, "%s %d\n", who, i);

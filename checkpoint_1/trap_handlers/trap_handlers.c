@@ -235,6 +235,8 @@ void handle_trap_memory(UserContext* context) {
   int address = (int)(context->addr);
   int page = (address - UP_TO_PAGE(VMEM_1_SIZE)) >> PAGESHIFT;
 
+  TracePrintf(1, "%d, %d\n", stack_page_id, page);
+
   // make sure we're close to the stack and not close to the heap, and that we're not above user space
   if (stack_page_id <= page + PAGES_AWAY_FROM_USER_STACK && stack_page_id > page &&
   !running_process->region_1_page_table[page-1].valid
@@ -264,7 +266,9 @@ void handle_trap_memory(UserContext* context) {
   }
   else {
     TracePrintf(1, "TRAP_MEMORY: Somewhere you shouldn't be, buddy. Die!\n");
+    print_reg_1_page_table(running_process, 0, "");
 
+    Halt();
     // deletes the process
     delete_process(running_process, -1, true);
   }
