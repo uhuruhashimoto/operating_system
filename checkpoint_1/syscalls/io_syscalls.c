@@ -23,6 +23,10 @@ extern char tty_buffer[TTY_BUFFER_SIZE];
 int init_kernel_tty_objects() {
   for (int i = 0; i<NUM_TERMINALS; i++) {
     tty_objects[i] = init_tty_object(i);
+    if (tty_objects[i] == NULL) {
+      TracePrintf(1, "Failed to allocate memory for tty global.\n");
+      return ERROR;
+    }
   }
 }
 

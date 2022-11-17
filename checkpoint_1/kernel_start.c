@@ -237,7 +237,10 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   }
 
   // TERMINALS
-  init_kernel_tty_objects(NUM_TERMINALS);
+  if (init_kernel_tty_objects(NUM_TERMINALS) == ERROR) {
+    TracePrintf(1, "KernelStart: Unable to initialize kernel tty objects. Halting.\n");
+    Halt();
+  }
 
   // TRAP HANDLERS
   // set up trap handler array
