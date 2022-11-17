@@ -77,7 +77,7 @@ int main(void)
 //     Exit(0);
 //   }
 //
-////    exec, with either flawed filename or argvec
+//    exec, with either flawed filename or argvec
 //   pid = Fork();
 //   if (pid == 0) {
 //     char** valid_argv = malloc(sizeof (char *) * 3);
@@ -98,40 +98,44 @@ int main(void)
 //     TtyPrintf(3, "ExecTest: started all tests\n");
 //     Exit(0);
 //   }
-//
-  // wait, with a flawed status_ptr
+
+////   wait, with a flawed status_ptr
 //  for (int i = 0; i < num_evil_addresses; i++) {
 //    TtyPrintf(2, "WaitTest: Waiting with evil status pointer %d\n", evil_addresses[i]);
 //    Wait(evil_addresses[i]);
 //  }
 //  TtyPrintf(2, "WaitTest: All tests passed\n");
-
-  // ---- brk, with a flawed addr ---- //
-  for (int i = 0; i < num_evil_addresses; i++ ) {
-    TtyPrintf(2, "SetBrk: Setting brk to evil address %d\n", evil_addresses[i]);
-    Brk(evil_addresses[i]);
-  }
-  TtyPrintf(2, "SetBrk: All tests passed\n");
-
-//  //---- TtyRead, with a flawed buf, or len > buf -------//
-//  TtyRead(0, "hello", 0);
-//  TtyRead(0, "hello", 10);
-//  for (int i = 0; i < num_evil_addresses; i++) {
-//    TtyRead(0, evil_addresses[i], 10);
-//  }
 //
-//  // ----- TtyWrite, with a flawed buf, or len > buf ------//
-//  // write with a flawed length
-//  TtyWrite(0, "hello", 0);
-//  // writes with length > buf; fails without writing
-//  TtyWrite(0, "hello", 10000000);
-//  // Null checks
-//  TtyWrite(-1, "hello", 5);
-//  TtyWrite(400, "hello", 5);
-//  TtyWrite(4105, "hello", 5);
-//  for (int i = 0; i < num_evil_addresses; i++) {
-//    TtyWrite(1, evil_addresses[i], 5);
+//  // ---- brk, with a flawed addr ---- //
+//  for (int i = 0; i < num_evil_addresses; i++ ) {
+//    TtyPrintf(2, "BrkTest: Setting brk to evil address %d\n", evil_addresses[i]);
+//    Brk(evil_addresses[i]);
 //  }
+//  TtyPrintf(2, "BrkTest: All tests passed\n");
+
+  //---- TtyRead, with a flawed buf, or len > buf -------//
+  TtyRead(0, "hello", 0);
+  TtyRead(0, "hello", 10);
+  for (int i = 0; i < num_evil_addresses; i++) {
+    TtyPrintf(1, "TtyReadTest: Reading into evil address %d\n", evil_addresses[i]);
+    TtyRead(0, evil_addresses[i], 10);
+  }
+  TtyPrintf(1, "TtyReadTest: All tests passed\n");
+
+  // ----- TtyWrite, with a flawed buf, or len > buf ------//
+  // write with a flawed length
+  TtyWrite(0, "hello", 0);
+  // writes with length > buf; fails without writing
+  TtyWrite(0, "hello", 10000000);
+  // Null checks
+  TtyWrite(-1, "hello", 5);
+  TtyWrite(400, "hello", 5);
+  TtyWrite(4105, "hello", 5);
+  for (int i = 0; i < num_evil_addresses; i++) {
+    TtyPrintf(1, "TtyWriteTest: Writing from evil address %d\n", evil_addresses[i]);
+    TtyWrite(1, evil_addresses[i], 5);
+  }
+  TtyPrintf(1, "TtyWriteTest: All tests passed\n");
 
 
   //------ TTYPrintf Tests----------//
