@@ -301,6 +301,10 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   int num_kernel_stack_pages = stack_end_page - stack_start_page;
   int pid = helper_new_pid(region_1_page_table);
   idle_process = allocate_pcb();
+  if (idle_process == NULL) {
+    TracePrintf(1, "Error: could not allocate memory for idle process. Halting.\n");
+    Halt();
+  }
   idle_process->pid = pid;
   idle_process = set_pcb_values(idle_process, pid, region_1_page_table, uctxt);
   for (int i=0; i<num_kernel_stack_pages; i++) {
@@ -313,6 +317,10 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   // Create a pcb for init
   pcb_t *init_pcb = allocate_pcb();
+  if (init_pcb == NULL) {
+    TracePrintf(1, "Error: could not allocate memory for init process. Halting.\n");
+    Halt();
+  }
   int init_pid = helper_new_pid(init_pcb->region_1_page_table);
   init_pcb->pid = init_pid;
   add_to_queue(ready_queue, init_pcb);

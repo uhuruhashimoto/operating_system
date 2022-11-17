@@ -25,6 +25,9 @@ int handle_Fork(void)
 {
   int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   pcb_t *child_pcb = allocate_pcb();
+  if (child_pcb == NULL) {
+    return ERROR;
+  }
 
   int child_pid = helper_new_pid(child_pcb->region_1_page_table);
   child_pcb->pid = child_pid;
