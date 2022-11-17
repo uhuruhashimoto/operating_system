@@ -122,6 +122,13 @@ int handle_TtyWrite(int tty_id, void *buf, int len)
     return ERROR;
   }
 
+  // create a buffer of the same size as *buf, copy buf into it
+  void* kernel_buf = malloc(len * sizeof (char));
+  if (kernel_buf == NULL) {
+    TracePrintf(1, "TtyRead: write to tty %d failed because we couldn't allocate a kernel buf\n");
+  }
+  memcpy(kernel_buf, buf, len);
+
   // block the calling process
   pcb_t *current_process = running_process;
   add_to_queue(tty->blocked_writes, current_process);
@@ -145,10 +152,12 @@ int handle_TtyWrite(int tty_id, void *buf, int len)
       bytes_to_transmit = remaining_bytes;
     }
     // make sure we're transmitting from the correct spot in the buffer
-    TtyTransmit(tty_id, buf+(len - remaining_bytes), bytes_to_transmit);
+    TtyTransmit(tty_id, kernel_buf+(len - remaining_bytes), bytes_to_transmit);
 
     remaining_bytes -= bytes_to_transmit;
   }
+
+  free(kernel_buf);
 
   // Update tty metadata
   if (acquire(tty->lock->lock_id) == ERROR) {
