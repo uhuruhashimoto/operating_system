@@ -123,6 +123,11 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
 
   // Page table setup
   region_0_page_table = malloc(sizeof(pte_t) * region_0_page_table_size);
+  if (region_0_page_table == NULL) {
+    // Halt; kernel will be unable to boot
+    TracePrintf(1, "KernelStart: Unable to allocate memory for region 0 page table. Halting.\n");
+    Halt();
+  }
   // kernelbrk page is the next UNMAPPED page -- i.e., one plus the kernel data end page
   current_kernel_brk_page = kernel_data_end_page+1;
   TracePrintf(1, "KernelBrk page initially set to %d\n", current_kernel_brk_page);
@@ -130,13 +135,25 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   // Frame table setup
   // Create frame tracking bit vector and put it in the global along with its size
   frame_table_global = malloc(sizeof(frame_table_global));
+  if (frame_table_global == NULL) {
+    TracePrintf(1, "KernelStart: Unable to allocate memory for frame table global. Halting.\n");
+    Halt();
+  }
   char *frame_table = malloc(sizeof(char) * total_pmem_pages);
+  if (frame_table == NULL) {
+    TracePrintf(1, "KernelStart: Unable to allocate memory for frame table. Halting.\n");
+    Halt();
+  }
   frame_table_global->frame_table = frame_table;
   frame_table_global->frame_table_size = total_pmem_pages;
 
   // Allocate global data structures
   ready_queue = create_queue(); 
   running_process = malloc(sizeof(pte_t *));
+  if (running_process == NULL) {
+    TracePrintf(1, "KernelStart: Unable to allocate memory for running process. Halting.\n");
+    Halt();
+  }
 
   // helpers to walk through page table
   pte_t kernel_page;
@@ -244,6 +261,10 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
   pte_t idle_page;
   int page_table_reg_1_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   pte_t *region_1_page_table = malloc(sizeof(pte_t) * page_table_reg_1_size);
+  if (region_1_page_table == NULL) {
+    TracePrintf(1, "Error: could not allocate memory for region 1 page table. Halting.\n");
+    Halt();
+  }
   int first_possible_free_frame = 0;
   for (int ind=0; ind<page_table_reg_1_size; ind++) {
     // set everything under the stack as non-valid (since the text is in the kernel and
