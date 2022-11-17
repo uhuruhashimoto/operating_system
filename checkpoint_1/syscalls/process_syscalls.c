@@ -312,6 +312,12 @@ int handle_Brk(void *addr)
   }
   TracePrintf(1, "SETBRK: Current brk found at %d pages\n", current_brk_page);
 
+  // check to make sure we aren't going to grow into the user stack
+  if (region_1_page_table[addr_page].valid) {
+    TracePrintf(1, "SETBRK: Preventing growth into the user stack\n", current_brk_page);
+    return ERROR;
+  }
+
   int first_possible_free_frame = 0;
   if (addr_page > current_brk_page) {
     TracePrintf(3, "SETBRK: Will try to find memory to allocate more frames\n");
@@ -357,6 +363,11 @@ int handle_Brk(void *addr)
   else {
     // TODO -- does this code path ever execute?
     TracePrintf(1, "SETBRK: SetKernelBrk found that we don't need to allocate more frames\n");
+    if (addr_page < running_process->brk_floor) {
+      TracePrintf(1, "SETBRK: Cannot set brk below the original size of the user heap\n");
+      return ERROR;
+    }
+
     while (addr_page < current_brk_page) {
       TracePrintf(1, "SETBRK: Deleting a page from the page table...\n");
       int discard_frame_number = region_1_page_table[current_brk_page].pfn;

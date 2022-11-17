@@ -87,6 +87,8 @@ LoadProgram(char *name, char *args[], pcb_t* proc)
   text_pg1 = (li.t_vaddr - VMEM_1_BASE) >> PAGESHIFT;
   data_pg1 = (li.id_vaddr - VMEM_1_BASE) >> PAGESHIFT;
   data_npg = li.id_npg + li.ud_npg;
+  proc->brk_floor = data_pg1 + data_npg;
+
   /*
    *  Figure out how many bytes are needed to hold the arguments on
    *  the new stack that we are building.  Also count the number of

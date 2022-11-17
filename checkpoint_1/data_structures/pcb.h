@@ -26,6 +26,8 @@ typedef struct pcb {
   UserContext *uctxt;
   KernelContext *kctxt;
 
+  int brk_floor;
+
   bool hasExited;                                      // whether the process is dead yet
   bool waitingForChildExit;                            // whether this pcb is a parent waiting for a child
   int rc;                                              // the return code of the process
