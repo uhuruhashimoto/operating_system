@@ -20,115 +20,118 @@ int main(void)
    // address above user space
    evil_addresses[5] = (void*)(0x100000 * 3);
 
- //  // PipeInit, with a flawed pipe_idp
- //  pid = Fork();
- //  if (pid == 0) {
- //    for (int i = 0; i < num_evil_addresses; i++) {
- //      TtyPrintf(0, "PipeInitTest: about to test pipe init with evil input %x\n", evil_addresses[i]);
- //      PipeInit(evil_addresses[i]);
- //    }
- //    TtyPrintf(0, "PipeInitTest: passed all tests\n");
- //    Exit(0);
- //  }
- //
- //  // LockInit, with a flawed lock_idp
- //  pid = Fork();
- //  if (pid == 0) {
- //    for (int i = 0; i < num_evil_addresses; i++) {
- //      TtyPrintf(1, "LockInitTest: about to test lock init with evil input %x\n", evil_addresses[i]);
- //      LockInit(evil_addresses[i]);
- //    }
- //    TtyPrintf(1, "LockInitTest: passed all tests\n");
- //    Exit(0);
- //  }
- //
- //  // CvarInit, with a flawed cvar_idp
- //  pid = Fork();
- //  if (pid == 0) {
- //    for (int i = 0; i < num_evil_addresses; i++) {
- //      TtyPrintf(1, "CvarInitTest: about to test cvar init with evil input %x\n", evil_addresses[i]);
- //      CvarInit(evil_addresses[i]);
- //    }
- //    TtyPrintf(1, "CvarInitTest: passed all tests\n");
- //    Exit(0);
- //  }
- //
- //  // PipeRead, with a flawed buf
- //  int pipe_id;
- //  PipeInit(pipe_id);
- //  pid = Fork();
- //  if (pid == 0) {
- //    for (int i = 0; i < num_evil_addresses; i++) {
- //      TtyPrintf(1, "PipeReadTest: about to test pipe read with evil input %x\n", evil_addresses[i]);
- //      PipeRead(pipe_id, evil_addresses[i], 10);
- //    }
- //    TtyPrintf(1, "PipeReadTest: passed all tests\n");
- //    Exit(0);
- //  }
- //
- //  // PipeWrite, with a flawed buf
- //  pid = Fork();
- //  if (pid == 0) {
- //    for (int i = 0; i < num_evil_addresses; i++) {
- //      TtyPrintf(1, "PipeWriteTest: about to test pipe write with evil input %x\n", evil_addresses[i]);
- //      PipeWrite(pipe_id, evil_addresses[i], 10);
- //    }
- //    TtyPrintf(1, "PipeWriteTest: passed all tests\n");
- //    Exit(0);
- //  }
-
- //   exec, with either flawed filename or argvec
-   pid = Fork();
-   if (pid == 0) {
-     char** valid_argv = malloc(sizeof (char *) * 3);
-     valid_argv[0] = "hello";
-     valid_argv[1] = "world";
-     valid_argv[2] = NULL;
-     for (int i = 0; i < num_evil_addresses; i++) {
-       pid = Fork();
-       if (pid == 0) {
-         TtyPrintf(3, "ExecTest: Trying to exec with evil name %x\n", evil_addresses[i]);
-         TracePrintf(1, "ExecTest: Trying to exec with evil name %x\n", evil_addresses[i]);
-         Exec(evil_addresses[i], valid_argv);
-         TtyPrintf(3, "ExecTest: Exec failed when trying to load name %x\n", evil_addresses[i]);
-         Exit(0);
-       }
-
-       pid = Fork();
-       if (pid == 0) {
-         TtyPrintf(3, "ExecTest: Trying to exec with evil argv %x\n", evil_addresses[i]);
-         TracePrintf(1, "ExecTest: Trying to exec with evil argv %x\n", evil_addresses[i]);
-         Exec("checkpoint_1/test_processes/test_message", evil_addresses[i]);
-         TtyPrintf(3, "ExecTest: Exec failed when trying to load argv %x\n", evil_addresses[i]);
-         Exit(0);
-       }
-     }
-     TtyPrintf(3, "ExecTest: started all tests\n");
-     Exit(0);
-   }
-
-  // TODO -- wait, with a flawed status_ptr
+//   // PipeInit, with a flawed pipe_idp
+//   pid = Fork();
+//   if (pid == 0) {
+//     for (int i = 0; i < num_evil_addresses; i++) {
+//       TtyPrintf(0, "PipeInitTest: about to test pipe init with evil input %x\n", evil_addresses[i]);
+//       PipeInit(evil_addresses[i]);
+//     }
+//     TtyPrintf(0, "PipeInitTest: passed all tests\n");
+//     Exit(0);
+//   }
+//
+//   // LockInit, with a flawed lock_idp
+//   pid = Fork();
+//   if (pid == 0) {
+//     for (int i = 0; i < num_evil_addresses; i++) {
+//       TtyPrintf(1, "LockInitTest: about to test lock init with evil input %x\n", evil_addresses[i]);
+//       LockInit(evil_addresses[i]);
+//     }
+//     TtyPrintf(1, "LockInitTest: passed all tests\n");
+//     Exit(0);
+//   }
+//
+//   // CvarInit, with a flawed cvar_idp
+//   pid = Fork();
+//   if (pid == 0) {
+//     for (int i = 0; i < num_evil_addresses; i++) {
+//       TtyPrintf(1, "CvarInitTest: about to test cvar init with evil input %x\n", evil_addresses[i]);
+//       CvarInit(evil_addresses[i]);
+//     }
+//     TtyPrintf(1, "CvarInitTest: passed all tests\n");
+//     Exit(0);
+//   }
+//
+//   // PipeRead, with a flawed buf
+//   int pipe_id;
+//   PipeInit(&pipe_id);
+//   pid = Fork();
+//   if (pid == 0) {
+//     for (int i = 0; i < num_evil_addresses; i++) {
+//       TtyPrintf(1, "PipeReadTest: about to test pipe read with evil input %x\n", evil_addresses[i]);
+//       PipeRead(pipe_id, evil_addresses[i], 10);
+//     }
+//     TtyPrintf(1, "PipeReadTest: passed all tests\n");
+//     Exit(0);
+//   }
+//
+//   // PipeWrite, with a flawed buf
+//   pid = Fork();
+//   if (pid == 0) {
+//     for (int i = 0; i < num_evil_addresses; i++) {
+//       TtyPrintf(1, "PipeWriteTest: about to test pipe write with evil input %x\n", evil_addresses[i]);
+//       PipeWrite(pipe_id, evil_addresses[i], 10);
+//     }
+//     TtyPrintf(1, "PipeWriteTest: passed all tests\n");
+//     Exit(0);
+//   }
+//
+////    exec, with either flawed filename or argvec
+//   pid = Fork();
+//   if (pid == 0) {
+//     char** valid_argv = malloc(sizeof (char *) * 3);
+//     valid_argv[0] = "hello";
+//     valid_argv[1] = "world";
+//     valid_argv[2] = NULL;
+//     for (int i = 0; i < num_evil_addresses; i++) {
+//       TtyPrintf(3, "ExecTest: Trying to exec with evil name %x\n", evil_addresses[i]);
+//       TracePrintf(1, "ExecTest: Trying to exec with evil name %x\n", evil_addresses[i]);
+//       Exec(evil_addresses[i], valid_argv);
+//       TtyPrintf(3, "ExecTest: Exec failed when trying to load name %x\n", evil_addresses[i]);
+//
+//       TtyPrintf(3, "ExecTest: Trying to exec with evil argv %x\n", evil_addresses[i]);
+//       TracePrintf(1, "ExecTest: Trying to exec with evil argv %x\n", evil_addresses[i]);
+//       Exec("checkpoint_1/test_processes/test_message", evil_addresses[i]);
+//       TtyPrintf(3, "ExecTest: Exec failed when trying to load argv %x\n", evil_addresses[i]);
+//     }
+//     TtyPrintf(3, "ExecTest: started all tests\n");
+//     Exit(0);
+//   }
+//
+  // wait, with a flawed status_ptr
+//  for (int i = 0; i < num_evil_addresses; i++) {
+//    TtyPrintf(2, "WaitTest: Waiting with evil status pointer %d\n", evil_addresses[i]);
+//    Wait(evil_addresses[i]);
+//  }
+//  TtyPrintf(2, "WaitTest: All tests passed\n");
 
   // ---- brk, with a flawed addr ---- //
+  for (int i = 0; i < num_evil_addresses; i++ ) {
+    TtyPrintf(2, "SetBrk: Setting brk to evil address %d\n", evil_addresses[i]);
+    Brk(evil_addresses[i]);
+  }
+  TtyPrintf(2, "SetBrk: All tests passed\n");
 
-  //---- TtyRead, with a flawed buf, or len > buf -------//
-  TtyRead(0, NULL, 10);
-  TtyRead(0, "hello", 0);
-  TtyRead(0, "hello", 10);
-  TtyRead(0, (void*)0x100000, 10);
-
-//  //----- TtyWrite, with a flawed buf, or len > buf ------//
+//  //---- TtyRead, with a flawed buf, or len > buf -------//
+//  TtyRead(0, "hello", 0);
+//  TtyRead(0, "hello", 10);
+//  for (int i = 0; i < num_evil_addresses; i++) {
+//    TtyRead(0, evil_addresses[i], 10);
+//  }
+//
+//  // ----- TtyWrite, with a flawed buf, or len > buf ------//
 //  // write with a flawed length
 //  TtyWrite(0, "hello", 0);
 //  // writes with length > buf; fails without writing
 //  TtyWrite(0, "hello", 10000000);
 //  // Null checks
-//  TtyWrite(NULL, "hello", 0);
-//  TtyWrite(NULL, NULL, 0);
-//  TtyWrite(NULL, NULL, NULL);
 //  TtyWrite(-1, "hello", 5);
 //  TtyWrite(400, "hello", 5);
 //  TtyWrite(4105, "hello", 5);
+//  for (int i = 0; i < num_evil_addresses; i++) {
+//    TtyWrite(1, evil_addresses[i], 5);
+//  }
 
 
   //------ TTYPrintf Tests----------//
