@@ -156,17 +156,21 @@ When the lock is finally acquired, the call returns to userland.
 In case of any error, the value ERROR is returned.
  */
 int handle_CvarWait(int cvar_id, int lock_id) {
+  TracePrintf(1, "HANDLE_CVAR_WAIT: Blocking on cvar with id %d\n", cvar_id);
+
   cvar_t* cvar = find_cvar(cvar_id);
   if (cvar == NULL) {
     TracePrintf(1, "HANDLE_CVAR_WAIT: Unable to find a cvar with id %d\n", cvar_id);
     return ERROR;
   }
+  TracePrintf(1, "HANDLE_CVAR_WAIT: found cvar\n");
 
   int rc = release(lock_id);
-  // NOTE: does NOT exit
+  // NOTE: does NOT exit in failure case
   if (rc == ERROR) {
     TracePrintf(1, "HANDLE_CVAR_WAIT: Unable to release a lock with id %d\n", lock_id);
   }
+  TracePrintf(1, "HANDLE_CVAR_WAIT: Passed lock release\n");
 
   // block the running process
   add_to_queue(cvar->blocked_queue, running_process);

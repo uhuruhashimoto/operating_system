@@ -60,9 +60,11 @@ cvar_t* find_cvar(int cvar_id)
 {
   cvar_t* next_cvar = cvars;
   while (next_cvar != NULL) {
+//    TracePrintf(1, "cvar: %d\n", next_cvar->id);
     if (next_cvar->id == cvar_id) {
       return next_cvar;
     }
+    next_cvar = next_cvar->next_cvar;
   }
 
   return NULL;
