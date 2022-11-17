@@ -5,6 +5,7 @@
 #include "../data_structures/tty.h"
 #include "../data_structures/queue.h"
 #include "../data_structures/lock.h"
+#include "../kernel_utils.h"
 
 extern pcb_t* running_process;
 extern pcb_t* idle_process;
@@ -26,15 +27,7 @@ int init_kernel_tty_objects() {
 }
 
 int read_helper(tty_object_t* tty, char* buf, int len) {
-  // wait to acquire the write_lock on the tty
-  while(tty->in_use){}
-  if (acquire(tty->lock->lock_id) == ERROR) {
-    return ERROR;
-  }
-  tty->in_use = true;
-  if (release(tty->lock->lock_id) == ERROR) {
-    return ERROR;
-  }
+  tty->reading = true;
 
   char next_char;
   int index = 0;
@@ -43,12 +36,8 @@ int read_helper(tty_object_t* tty, char* buf, int len) {
     index++;
   }
 
-  // Update tty metadata
-  if (acquire(tty->lock->lock_id) == ERROR) {
-    return ERROR;
-  }
-  tty->in_use = false;
-  if (release(tty->lock->lock_id) == ERROR) {
+  tty->reading = false;
+  if (release(tty->read_lock->lock_id) == ERROR) {
     return ERROR;
   }
 
@@ -87,15 +76,14 @@ int handle_TtyRead(int tty_id, void *buf, int len)
   int num_bytes_to_copy = tty->num_unconsumed_chars;
 
   // if there are no bytes to copy, wait until there are bytes
-  while (tty->num_unconsumed_chars > 0) {
+  while (tty->num_unconsumed_chars > 0 && tty->reading) {
     // if there is no line available, block the calling process and wait for a line from terminal
-    handle_CvarWait(tty->cvar->id, tty->lock->lock_id);
+    handle_CvarWait(tty->read_cvar->id, tty->read_lock->lock_id);
     TracePrintf(1, "TtyRead: Back from block on read\n");
   }
 
   TracePrintf(1, "TtyRead: There are supposedly chars to consume!\n");
   return read_helper(tty, buf, len);
-  TracePrintf(1, "TtyRead: read %d chars of %s\n", len, buf);
 }
 
 /*
@@ -118,30 +106,23 @@ int handle_TtyWrite(int tty_id, void *buf, int len)
   // get the data on the current tty object
   tty_object_t *tty = get_tty_object(tty_id);
   if (tty == NULL) {
-    TracePrintf(1, "TtyRead: A TTY with Id %d does not exist\n", tty_id);
+    TracePrintf(1, "TtyWrite: A TTY with Id %d does not exist\n", tty_id);
     return ERROR;
   }
 
   // create a buffer of the same size as *buf, copy buf into it
   void* kernel_buf = malloc(len * sizeof (char));
   if (kernel_buf == NULL) {
-    TracePrintf(1, "TtyRead: write to tty %d failed because we couldn't allocate a kernel buf\n");
+    TracePrintf(1, "TtyWrite: write to tty %d failed because we couldn't allocate a kernel buf\n");
   }
   memcpy(kernel_buf, buf, len);
 
-  // block the calling process
-  pcb_t *current_process = running_process;
-  add_to_queue(tty->blocked_writes, current_process);
-  
-  // wait to acquire the write_lock on the tty
-  while(tty->in_use){}
-  if (acquire(tty->lock->lock_id) == ERROR) {
+  // acquire the write lock
+  if (acquire(tty->write_lock->lock_id) == ERROR) {
+    TracePrintf(1, "TtyWrite: Unable to acquire write lock on tty %d\n", tty_id);
     return ERROR;
   }
-  tty->in_use = true;
-  if (release(tty->lock->lock_id) == ERROR) {
-    return ERROR;
-  }
+  tty->writing_proc = running_process;
 
   // loop until there are no more unconsumed bytes in the buf
   int remaining_bytes = len;
@@ -152,27 +133,19 @@ int handle_TtyWrite(int tty_id, void *buf, int len)
       bytes_to_transmit = remaining_bytes;
     }
     // make sure we're transmitting from the correct spot in the buffer
+    TracePrintf(1, "Sending %d bytes to tty %d\n", bytes_to_transmit, tty_id);
     TtyTransmit(tty_id, kernel_buf+(len - remaining_bytes), bytes_to_transmit);
 
     remaining_bytes -= bytes_to_transmit;
+    // swap to a different process while the tty is written
+    install_next_from_queue(running_process, 1);
   }
 
   free(kernel_buf);
 
-  // Update tty metadata
-  if (acquire(tty->lock->lock_id) == ERROR) {
+  if (release(tty->write_lock->lock_id) == ERROR) {
     return ERROR;
   }
-  tty->in_use = false;
-  if (release(tty->lock->lock_id) == ERROR) {
-    return ERROR;
-  }
-
-  // unblock the calling process (place on the ready queue)
-  if (tty->blocked_writes->head == current_process) {
-    remove_from_queue(tty->blocked_writes);
-  }
-  //add_to_queue(ready_queue, current_process);
 
   // return the number of bytes written
   return len;

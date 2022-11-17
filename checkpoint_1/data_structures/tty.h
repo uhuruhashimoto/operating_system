@@ -18,26 +18,23 @@
 */
 typedef struct tty_object {
   int id;
-  lock_t *lock;
-  cvar_t* cvar;
-  bool in_use;
+  lock_t *read_lock;
+  cvar_t* read_cvar;
+  lock_t *write_lock;
+  cvar_t* write_cvar;
+  pcb_t* writing_proc;
+  bool reading;
+  bool writing;
   char buf[MAX_BUFFER_LEN];
   int start_id;
   int end_id;
   int num_unconsumed_chars;
   int max_size;
-  queue_t* blocked_reads; 
-  queue_t* blocked_writes;
 } tty_object_t;
 
 tty_object_t *init_tty_object(int id);
 
 tty_object_t *get_tty_object(int id);
-
-/*
- * Gets the pcb_t* at head of tty queue, places it in ready queue, returns a pointer to it
- */
-pcb_t* unblock_pcb_on_tty(int tty_id);
 
 /*
  * Checks if the terminal buffer is full

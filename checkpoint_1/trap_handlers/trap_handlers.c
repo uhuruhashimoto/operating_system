@@ -305,10 +305,7 @@ void handle_trap_tty_receive(UserContext* context) {
     }
   }
 
-  // wake up waiting read processes
-  if (tty->blocked_reads->size) {
-     handle_CvarBroadcast(tty->cvar->id);
-  }
+  handle_CvarBroadcast(tty->read_cvar->id);
 }
 
 /*
@@ -316,12 +313,13 @@ void handle_trap_tty_receive(UserContext* context) {
  */
 void handle_trap_tty_transmit(UserContext* context) {
   int tty_id = context->code;
-  TracePrintf(1, "TRAP_TTY_TRANSMIT: tty_id = %d\n", tty_id);
-  // wake up all waiting processes
-  int num_waiting_writers = tty_objects[tty_id]->blocked_writes->size;
-  for (int i=0; i<num_waiting_writers; i++) {
-    pcb_t *woken_proc = remove_from_queue(tty_objects[tty_id]->blocked_writes);
-    add_to_queue(ready_queue, woken_proc);
+  tty_object_t* tty = get_tty_object(tty_id);
+  if (tty == NULL) {
+    TracePrintf(1, "There is no tty with id %d\n", tty_id);
+    return;
   }
+  TracePrintf(1, "TRAP_TTY_TRANSMIT: tty_id = %d\n", tty_id);
+  // wake up the waiting process
+  add_to_queue(ready_queue, tty->writing_proc);
 }
 

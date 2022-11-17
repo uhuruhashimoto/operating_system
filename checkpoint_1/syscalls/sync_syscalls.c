@@ -163,6 +163,7 @@ int handle_CvarWait(int cvar_id, int lock_id) {
   }
 
   int rc = release(lock_id);
+  // NOTE: does NOT exit
   if (rc == ERROR) {
     TracePrintf(1, "HANDLE_CVAR_WAIT: Unable to release a lock with id %d\n", lock_id);
   }
