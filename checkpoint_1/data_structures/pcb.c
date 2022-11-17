@@ -3,6 +3,7 @@
 
 /*
 * Allocate pcb data structures; e.g. kernel context and stack
+* If we encounter an error, we fail atomically and return NULL after freeing any allocated structures.
 */
 pcb_t *allocate_pcb() {
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;

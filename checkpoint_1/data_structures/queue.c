@@ -9,6 +9,10 @@
  */
 queue_t* create_queue() {
   queue_t* new_queue = malloc(sizeof (queue_t));
+  if (new_queue == NULL) {
+    TracePrintf(1, "CREATE_QUEUE: Failed to allocate memory for a new queue\n");
+    return NULL;
+  }
   new_queue->size = 0;
   new_queue->head = NULL;
   new_queue->tail = NULL;
