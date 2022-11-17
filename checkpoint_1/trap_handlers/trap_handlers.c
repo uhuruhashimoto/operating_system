@@ -147,8 +147,11 @@ void handle_trap_clock(UserContext* context) {
 
     // go through all processes in the delay data structure
     pcb_t* next_process = delayed_processes;
+    pcb_t *stored_process = NULL;
     TracePrintf(1, "TRAP_CLOCK/DELAY: Remaining Ticks: %d\n\n", next_process->delayed_clock_cycles);
     while (next_process != NULL) {
+      // Because add_to_queue adjust the processes next and previous pointers, we need to save them
+      stored_process = next_process->next_pcb;
       // decrement their delays
       next_process->delayed_clock_cycles--;
       TracePrintf(1, "TRAP_CLOCK/DELAY: Delayed process with id %d now has %d clock cycles remaining\n",
@@ -156,11 +159,11 @@ void handle_trap_clock(UserContext* context) {
 
       // if any process gets a delay of 0 or less, put it back into the ready queue
       if (next_process->delayed_clock_cycles <= 0) {
-        TracePrintf(3, "Delayed process with id %d will be put in the ready queue\n", next_process->pid);
+        TracePrintf(1, "Delayed process with id %d will be put in the ready queue\n", next_process->pid);
 
         // remove it from the delay data structure
         if (next_process->prev_pcb == NULL) {
-//          TracePrintf(1, "PrevPCB is NULL\n");
+         TracePrintf(1, "PrevPCB is NULL\n");
           // next_pcb may be NULL, this is OK
           if (next_process->next_pcb != NULL) {
             delayed_processes = next_process->next_pcb;
@@ -171,19 +174,18 @@ void handle_trap_clock(UserContext* context) {
           }
         }
         else {
-//          TracePrintf(1, "PrevPCB is NOT NULL\n");
+        //  TracePrintf(1, "PrevPCB is NOT NULL\n");
           // muck with pointers to remove our process from the queue
           next_process->prev_pcb->next_pcb = next_process->next_pcb;
           if (next_process->next_pcb != NULL) {
             next_process->next_pcb->prev_pcb = next_process->prev_pcb;
           }
         }
+        add_to_queue(ready_queue, next_process);
       }
 
-      add_to_queue(ready_queue, next_process);
-
 //      TracePrintf(1, "Going from %d to %d\n", next_process, next_process->next_pcb);
-      next_process = next_process->next_pcb;
+      next_process = stored_process;
     }
   }
 
