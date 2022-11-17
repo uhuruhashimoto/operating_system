@@ -199,7 +199,7 @@ int handle_Wait(int *status_ptr)
 {
   TracePrintf(1, "HANDLE_WAIT: triggered for process %d\n", running_process->pid);
 
-  if (check_memory(status_ptr, sizeof (int), false, true, false, false)) {
+  if (status_ptr != NULL && check_memory(status_ptr, sizeof (int), false, true, false, false) == ERROR) {
     TracePrintf(1, "HANDLE_WAIT: Provided a pointer to invalid memory\n");
     return ERROR;
   }
@@ -207,7 +207,9 @@ int handle_Wait(int *status_ptr)
   // return ERROR immediately if no remaining children, alive or dead
   if (running_process->children == NULL) {
     TracePrintf(1, "HANDLE_WAIT: Error: no children remaining for %d\n", running_process->pid);
-    *status_ptr = ERROR;
+    if (status_ptr != NULL) {
+      *status_ptr = ERROR;
+    }
     return ERROR;
   }
 
@@ -218,7 +220,9 @@ int handle_Wait(int *status_ptr)
   if (exited != NULL) {
     TracePrintf(1, "HANDLE_WAIT: Exited child found for parent %d with pid %d\n", running_process->pid, exited->pid);
     int status = exited->rc;
-    *status_ptr = status;
+    if (status_ptr != NULL) {
+      *status_ptr = status;
+    }
     return status;
   }
 
@@ -241,7 +245,9 @@ int handle_Wait(int *status_ptr)
       TracePrintf(1, "HANDLE_WAIT: Exited child found for parent %d with pid %d\n", running_process->pid, exited->pid);
       running_process->waitingForChildExit = false;
       int status = exited->rc;
-      *status_ptr = status;
+      if (status_ptr != NULL) {
+        *status_ptr = status;
+      }
       switch_between_processes(running_process, exited);
       return status;
     }
