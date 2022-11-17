@@ -25,15 +25,14 @@ lock_t* find_lock(int lock_id)
 lock_t* create_lock(int lock_id)
 {
   lock_t* new_lock = malloc(sizeof (lock_t));
-  new_lock->locking_proc = NULL;
-  new_lock->next_lock = NULL;
-  new_lock->prev_lock = NULL;
-  new_lock->locked = false;
-
   if (new_lock == NULL) {
     TracePrintf(1, "CREATE_LOCK: Failed to allocate memory for a new lock\n");
     return NULL;
   }
+  new_lock->locking_proc = NULL;
+  new_lock->next_lock = NULL;
+  new_lock->prev_lock = NULL;
+  new_lock->locked = false;
 
   new_lock->lock_id = lock_id;
   new_lock->blocked_queue = create_queue();
