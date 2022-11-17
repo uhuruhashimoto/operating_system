@@ -147,7 +147,9 @@ int release(int lock_id)
  * Deletes the lock
  */
 int delete_lock(lock_t* lock) {
-  free(lock->blocked_queue);
+  if (lock != NULL) {
+    free(lock->blocked_queue);
+  }
   free(lock);
   return SUCCESS;
 }

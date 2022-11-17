@@ -75,7 +75,9 @@ cvar_t* find_cvar(int cvar_id)
  */
 int delete_cvar(cvar_t* cvar)
 {
-  free(cvar->blocked_queue);
+  if (cvar != NULL) {
+    free(cvar->blocked_queue);
+  }
   free(cvar);
   return SUCCESS;
 }
