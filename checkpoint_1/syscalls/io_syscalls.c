@@ -75,9 +75,11 @@ int handle_TtyRead(int tty_id, void *buf, int len)
   // get the number of unconsumed chars
   int num_bytes_to_copy = tty->num_unconsumed_chars;
 
+  TracePrintf(1, "Number unconsumed chars: %d\n", tty->num_unconsumed_chars);
   // if there are no bytes to copy, wait until there are bytes
-  while (tty->num_unconsumed_chars > 0 && tty->reading) {
+  while (tty->num_unconsumed_chars == 0 || tty->reading) {
     // if there is no line available, block the calling process and wait for a line from terminal
+    TracePrintf(1, "TtyRead: Blocking until we get chars\n");
     handle_CvarWait(tty->read_cvar->id, tty->read_lock->lock_id);
     TracePrintf(1, "TtyRead: Back from block on read\n");
   }

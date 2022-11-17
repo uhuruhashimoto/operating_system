@@ -288,10 +288,11 @@ void handle_trap_math(UserContext* context) {
  * Hardware detected a new line in the terminal
  */
 void handle_trap_tty_receive(UserContext* context) {
+  TracePrintf(1, "HIT TTY RECEIVE TRAP\n");
   int tty_id = context->code;
   tty_object_t* tty = get_tty_object(tty_id);
   if (tty == NULL) {
-    TracePrintf(1, "There is no tty with id %d\n", tty_id);
+    TracePrintf(1, "TRAP_TTY_RECEIVE: There is no tty with id %d\n", tty_id);
     return;
   }
 
