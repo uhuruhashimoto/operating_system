@@ -16,7 +16,7 @@ int handle_PipeInit(int *pipe_idp)
 {
   TracePrintf(1, "HANDLE_PIPE_INIT: attempting to create a new pipe\n");
 
-  if (check_memory(pipe_idp, sizeof (int), false, true, false) == ERROR) {
+  if (check_memory(pipe_idp, sizeof (int), false, true, false, false) == ERROR) {
     return ERROR;
   }
 
@@ -59,7 +59,7 @@ int handle_PipeRead(int pipe_id, void *buf, int len)
 {
   TracePrintf(1, "HANDLE_PIPE_READ: Reading from a pipe with id %d\n", pipe_id);
 
-  if (check_memory(buf, (unsigned int) len, false, true, false) == ERROR) {
+  if (check_memory(buf, (unsigned int) len, false, true, false, false) == ERROR) {
     return ERROR;
   }
 
@@ -118,7 +118,7 @@ int handle_PipeWrite(int pipe_id, void *buf, int len)
 {
   TracePrintf(1, "HANDLE_PIPE_WRITE: Writing %d bytes to pipe with id %d\n", len, pipe_id);
 
-  if (check_memory(buf, (unsigned int) len, true, false, false) == ERROR) {
+  if (check_memory(buf, (unsigned int) len, true, false, false, false) == ERROR) {
     return ERROR;
   }
 

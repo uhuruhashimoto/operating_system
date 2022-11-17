@@ -19,6 +19,6 @@
  */
 
 int
-LoadProgram(char *name, char *args[], pcb_t* proc, bool r0);
+LoadProgram(char *name, char *args[], pcb_t* proc);
 
 #endif //CURRENT_CHUNGUS_LOAD_PROGRAM

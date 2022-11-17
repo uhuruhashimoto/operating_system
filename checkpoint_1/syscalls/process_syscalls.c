@@ -106,7 +106,7 @@ int handle_Exec(char *filename, char **argvec)
   // load the ELF file from *filename
   // get the page table for the new process
   // place the arguments to be executed by the new process
-  if ((rc = LoadProgram(filename, argvec, running_process, false)) != SUCCESS) {
+  if ((rc = LoadProgram(filename, argvec, running_process)) != SUCCESS) {
     TracePrintf(1, "Loading the init process failed with exit code %d\n", rc);
     Halt();
   }
@@ -200,7 +200,7 @@ int handle_Wait(int *status_ptr)
 {
   TracePrintf(1, "HANDLE_WAIT: triggered for process %d\n", running_process->pid);
 
-  if (check_memory(status_ptr, sizeof (int), false, true, false)) {
+  if (check_memory(status_ptr, sizeof (int), false, true, false, false)) {
     TracePrintf(1, "HANDLE_WAIT: Provided a pointer to invalid memory\n");
     return ERROR;
   }
