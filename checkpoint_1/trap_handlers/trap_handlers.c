@@ -167,6 +167,7 @@ void handle_trap_clock(UserContext* context) {
           // next_pcb may be NULL, this is OK
           if (next_process->next_pcb != NULL) {
             delayed_processes = next_process->next_pcb;
+            delayed_processes->prev_pcb = NULL;
           }
           else {
             delayed_processes = NULL;
