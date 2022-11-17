@@ -109,9 +109,13 @@ int main(void)
 
   // TODO -- wait, with a flawed status_ptr
 
-  // TODO -- brk, with a flawed addr
+  // ---- brk, with a flawed addr ---- //
 
-  // TODO -- TtyRead, with a flawed buf, or len > buf
+  //---- TtyRead, with a flawed buf, or len > buf -------//
+  TtyRead(0, NULL, 10);
+  TtyRead(0, "hello", 0);
+  TtyRead(0, "hello", 10);
+  TtyRead(0, (void*)0x100000, 10);
 
   //----- TtyWrite, with a flawed buf, or len > buf ------//
   // write with a flawed length
@@ -128,7 +132,7 @@ int main(void)
 
 
   //------ TTYPrintf Tests----------//
-  // These segfault and halt, as they should.
+  // When uncommented, these segfault and halt, as they should.
   // TtyPrintf(-1, "Hello from process %d\n", GetPid());
   // null checks - segfaults and halts
   // TtyPrintf(0, NULL);
