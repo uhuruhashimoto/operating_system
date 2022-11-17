@@ -170,6 +170,7 @@ void handle_trap_clock(UserContext* context) {
             delayed_processes->prev_pcb = NULL;
           }
           else {
+            add_to_queue(ready_queue, next_process);
             delayed_processes = NULL;
             break;
           }
