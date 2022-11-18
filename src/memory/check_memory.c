@@ -77,7 +77,7 @@ Never gonna let you down
 Never gonna run around and desert you
 Never gonna make you cry
 Never gonna say goodbye
-Never gonna tell a lie and hurt you 
+Never gonna tell a lie and hurt you
  */
 
 int check_memory_r0(void* mem_loc, unsigned int mem_size, bool read_required, bool write_required, bool exec_required);
