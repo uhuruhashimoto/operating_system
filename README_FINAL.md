@@ -7,6 +7,7 @@
 
 This is Yalnix, a preemptive, ring-0, monolithic kernel developed for COSC 58 225 (Operating Systems). This kernel is designed to be run on Ubuntu, using configured signal handlers. It currently supports reading to and writing from terminals, basic syscalls, and synchronization primitives. 
 
+Submission Note: We are using both of our late days for an on-time submission by 12:00 am, November 17.
 ## <ins> Usage </ins>
 
 `make` or `make all` - builds directory
