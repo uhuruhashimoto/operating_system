@@ -30,7 +30,8 @@ void handle_trap_kernel(UserContext* context) {
       rc = handle_Fork();
       break;
     case YALNIX_EXEC:
-      rc = handle_Exec((char *)context->regs[0], (char **) context->regs[1]); 
+      memcpy(running_process->uctxt, context, sizeof(UserContext));
+      rc = handle_Exec((char *)context->regs[0], (char **) context->regs[1]);
       memcpy(context, running_process->uctxt, sizeof(UserContext));
       break;
     case YALNIX_EXIT:
