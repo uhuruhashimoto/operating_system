@@ -5,7 +5,7 @@ int main(void)
    int pid;
 
    // find a bunch of evil memory addresses that might cause the kernel to fault
-   int num_evil_addresses = 6;
+   int num_evil_addresses = 7;
    void** evil_addresses = malloc(sizeof (void *) * num_evil_addresses);
    // NULL
    evil_addresses[0] = NULL;
@@ -19,6 +19,9 @@ int main(void)
    evil_addresses[4] = (void*)(0x100000 + 0x100000 / 2);
    // address above user space
    evil_addresses[5] = (void*)(0x100000 * 3);
+   // kernel text
+   evil_addresses[6] = (void*)(0x1000);
+
 
    // PipeInit, with a flawed pipe_idp
    pid = Fork();

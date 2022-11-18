@@ -180,15 +180,15 @@ int delete_r1_page_table(pcb_t *process, int upto_index) {
   int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   for (int i = 0; (i < region_1_page_table_size && (upto_index == -1 || i <= upto_index)); i++) {
     if (process->region_1_page_table[i].valid) {
-      TracePrintf(1, "DELETE R1 PAGE TABLE: Removing %d from frame table\n", process->region_1_page_table[i].pfn);
+      TracePrintf(5, "DELETE R1 PAGE TABLE: Removing %d from frame table\n", process->region_1_page_table[i].pfn);
       frame_table_global->frame_table[process->region_1_page_table[i].pfn] = 0;
       process->region_1_page_table[i].valid = false;
     }
   }
 
-  TracePrintf(1, "DELETE R1 PAGE TABLE: Zeroed R1 page table\n");
+  TracePrintf(5, "DELETE R1 PAGE TABLE: Zeroed R1 page table\n");
   free(process->region_1_page_table);
-  TracePrintf(1, "DELETE R1 PAGE TABLE: Wiped out R1 page table\n");
+  TracePrintf(5, "DELETE R1 PAGE TABLE: Wiped out R1 page table\n");
   process->region_1_page_table = NULL;
 }
 
@@ -297,9 +297,9 @@ KernelContext *KCSwitchDelete( KernelContext *kc_in, void *curr_pcb_p, void *nex
     );
   }
 
-  TracePrintf(1, "=====Region 0 Page Table After Switch/Delete=====\n");
-  print_reg_0_page_table(1, "Switch/Delete");
-  print_kernel_stack(1);
+  TracePrintf(5, "=====Region 0 Page Table After Switch/Delete=====\n");
+  print_reg_0_page_table(5, "Switch/Delete");
+  print_kernel_stack(5);
 
   // set the kernel stack in region 0 to the kernel stack in the new pcb
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_KSTACK);

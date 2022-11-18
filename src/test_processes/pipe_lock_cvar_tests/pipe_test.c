@@ -73,4 +73,8 @@ int main(void) {
     }
     Exit(0);
   }
+
+  while (1) {
+    Delay(100);
+  }
 }
