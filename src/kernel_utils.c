@@ -90,20 +90,20 @@ int install_next_from_queue(pcb_t* current_process, int code) {
     }
   }
 
-  TracePrintf(1, "INSTALL_NEXT: ABOUT TO SWAP PROCESSES\n");
+  TracePrintf(3, "INSTALL_NEXT: ABOUT TO SWAP PROCESSES\n");
   TracePrintf(1, "INSTALL_NEXT: PID of next process: %d\n", next_process->pid);
   running_process = next_process;
 
   // deletes the old process and swaps in the new one
   // this is a special case of switching between two processes
   if (code == -1) {
-    TracePrintf(1, "INSTALL_NEXT: SWAPPING AND DELETING\n");
+    TracePrintf(3, "INSTALL_NEXT: SWAPPING AND DELETING\n");
     switch_between_processes_delete_old(current_process, running_process);
   }
   else {
     // saves the current user context in the old pcb
     // clears the TLB
-    TracePrintf(1, "INSTALL_NEXT: SWAPPING\n");
+    TracePrintf(3, "INSTALL_NEXT: SWAPPING\n");
     switch_between_processes(current_process, running_process);
   }
 }
@@ -319,7 +319,7 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
   TracePrintf(5, "=====Region 0 Page Table Before Switch=====\n");
   print_reg_0_page_table(5, "");
 
-  TracePrintf(1, "=====Copying KernelStack into Region 0=====\n");
+  TracePrintf(5, "=====Copying KernelStack into Region 0=====\n");
   int num_stack_pages = KERNEL_STACK_MAXSIZE >> PAGESHIFT;
   for (int i=0; i<num_stack_pages; i++) {
     int stack_page_ind = (KERNEL_STACK_BASE >> PAGESHIFT) + i;
@@ -333,7 +333,7 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
     );
     // change the Region 0 kernel stack mappings to those for the new PCB
     region_0_page_table[stack_page_ind] = next_pcb->kernel_stack[i];
-    TracePrintf(1, "Copying page to KERNEL: Addr: %x to %x, Valid: %d, Pfn: %d\n",
+    TracePrintf(5, "Copying page to KERNEL: Addr: %x to %x, Valid: %d, Pfn: %d\n",
                 VMEM_0_BASE + (stack_page_ind << PAGESHIFT),
                 VMEM_0_BASE + ((stack_page_ind+1) << PAGESHIFT)-1,
                 region_0_page_table[stack_page_ind].valid,
@@ -378,8 +378,8 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   //copy current KernelContext into the new PCB
   pcb_t *new_pcb = (pcb_t  *)new_pcb_p;
   new_pcb->rc = 0;
-  TracePrintf(1, "==================================================\n");
-  TracePrintf(1, "Copying kernel context for process %d\n", new_pcb->pid);
+  TracePrintf(5, "==================================================\n");
+  TracePrintf(5, "Copying kernel context for process %d\n", new_pcb->pid);
   memcpy(new_pcb->kctxt, kc_in, sizeof(KernelContext));
 
   TracePrintf(5, "=====Region 0 Page Table Before Clone=====\n");

@@ -48,4 +48,10 @@ int main(int argc, char* argv[]) {
   if (rc == 0) {
     above_user_space_access();
   }
+
+  while(1)
+  {
+    Delay(100);
+    TtyPrintf(0, "Parent woke up; going back to sleep\n");
+  }
 }
