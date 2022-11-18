@@ -361,7 +361,6 @@ void KernelStart(char *cmd_args[], unsigned int pmem_size, UserContext *uctxt) {
       TracePrintf(1, "Loading the init process failed with exit code %d\n",
                   load_program_rc
                   );
-      Halt();
     }
   } else {
     // make sure idle never gets in the queue

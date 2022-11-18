@@ -239,7 +239,6 @@ delete_process(pcb_t* process, int status_code, bool do_process_switch)
         running_process = process->parent;
         switch_between_processes_delete_old(process, process->parent);
         TracePrintf(1, "DELETING PROCESS: Parent should never switch back to child again\n");
-        Halt();
       }
       else {
         destroy_process_no_switch(process);

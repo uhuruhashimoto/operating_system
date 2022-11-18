@@ -273,7 +273,7 @@ void handle_trap_memory(UserContext* context) {
     TracePrintf(1, "TRAP_MEMORY: Somewhere you shouldn't be, buddy. Die!\n");
     print_reg_1_page_table(running_process, 0, "");
 
-    Halt();
+    // Halt();
     // deletes the process
     delete_process(running_process, -1, true);
   }
