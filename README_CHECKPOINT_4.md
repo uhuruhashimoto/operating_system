@@ -22,30 +22,30 @@ Note: Makefile paths are set to VBox defaults and may need to be changed. If cor
 ./yalnix
 ```
 Will halt after attempting to load program "init", unless this is in the top-level directory of the project.
-We currently have an "init" executable, but it is located in the /checkpoint_1/test_processes directory.
+We currently have an "init" executable, but it is located in the /src/test_processes directory.
 Options: `-W` to dump core, `-lk [level]` to TracePrint at a level below 1 (for more information).
 
 ### Fork Test
 ```
-./yalnix ./checkpoint_1/test_processes/fork_exec_wait_tests/fork_test
+./yalnix ./src/test_processes/fork_exec_wait_tests/fork_test
 ```
 In this test, the init process forks a child, and they both print in an infinite loop, switching back and forth.
 
 ### Fork Bomb
 ```
-./yalnix ./checkpoint_1/test_processes/fork_exec_wait_tests/fork_bomb
+./yalnix ./src/test_processes/fork_exec_wait_tests/fork_bomb
 ```
 This process will continually fork until Yalnix runs out of memory and halts.
 
 ### Exec Test
 ```
-./yalnix ./checkpoint_1/test_processes/fork_exec_wait_tests/exec_test foo bar baz
+./yalnix ./src/test_processes/fork_exec_wait_tests/exec_test foo bar baz
 ```
 Prints the arguments passed into yalnix on invocation. (foo bar baz)
 
 ### Wait Test
 ```
-./yalnix ./checkpoint_1/test_processes/fork_exec_wait_tests/wait_test
+./yalnix ./src/test_processes/fork_exec_wait_tests/wait_test
 ```
 Tests three things. First, forks and executes a process that will terminate immediately (and waits for it). Second, forks
 and executes a process that will terminate after 3 ticks (and waits for it). Third, executes both processes simultaneously.

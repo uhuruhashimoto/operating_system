@@ -7,8 +7,8 @@
 
 
 # Where's your kernel source?
-#K_SRC_DIR = /home/cs58/vbs/yalnix_test/current_chungus/checkpoint_1
- K_SRC_DIR = /media/sf_cs58/current_chungus/checkpoint_1
+K_SRC_DIR = /home/cs58/vbs/yalnix_test/current_chungus/src
+#  K_SRC_DIR = /media/sf_cs58/current_chungus/src
 
 # What are the kernel c and include files?
 DATA_STRUCTURES = data_structures/pcb.c data_structures/queue.c data_structures/frame_table.c \
