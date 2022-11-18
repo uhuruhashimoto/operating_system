@@ -23,6 +23,8 @@ extern pte_t *region_0_page_table;
   */
 int handle_Fork(void)
 {
+  TracePrintf(1, "FORK_HANDLER: Attempting to fork a process based on the running process\n");
+
   int region_1_page_table_size = UP_TO_PAGE(VMEM_1_SIZE) >> PAGESHIFT;
   pcb_t *child_pcb = allocate_pcb();
   if (child_pcb == NULL) {
@@ -68,8 +70,11 @@ int handle_Fork(void)
       child_pcb->region_1_page_table[i].prot = running_process->region_1_page_table[i].prot; 
       child_pcb->region_1_page_table[i].pfn = bufpage->pfn; 
       // write bytes in question to the frame 
-      TracePrintf(5, "FORK HANDLER: Writing bytes %08x from %p to %p\n", * (int *)(VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_0_BASE + (bufpage_index << PAGESHIFT)));
-      TracePrintf(1, "FORK HANDLER: Bufpage: Addr %x, valid %d, prot %d, pfn %d\n", bufpage_index << PAGESHIFT, bufpage->valid, bufpage->prot, bufpage->pfn);
+      TracePrintf(5, "FORK HANDLER: Writing bytes %08x from %p to %p\n",
+                  * (int *)(VMEM_1_BASE + (i << PAGESHIFT)),
+                  (VMEM_1_BASE + (i << PAGESHIFT)), (VMEM_0_BASE + (bufpage_index << PAGESHIFT)));
+      TracePrintf(5, "FORK HANDLER: Bufpage: Addr %x, valid %d, prot %d, pfn %d\n",
+                  bufpage_index << PAGESHIFT, bufpage->valid, bufpage->prot, bufpage->pfn);
       memcpy((void *)(VMEM_0_BASE + (bufpage_index << PAGESHIFT)), (void *)(VMEM_1_BASE + (i << PAGESHIFT)), PAGESIZE);
       // flush the page from the TLB so it doesn't cache and overwrite the same frame
       bufpage->valid = 0;
@@ -87,8 +92,8 @@ int handle_Fork(void)
 
   TracePrintf(1, "Back from clone; return code is %d\n", running_process->rc);
 
-  print_reg_1_page_table(running_process, 1, "POST FLUSH");
-  print_reg_1_page_table_contents(running_process, 2, "POST FLUSH");
+  print_reg_1_page_table(running_process, 5, "POST FLUSH");
+  print_reg_1_page_table_contents(running_process, 5, "POST FLUSH");
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 
   // if we've done the bookkeeping in our round robin/clock trap, then our running process should 
@@ -103,6 +108,8 @@ int handle_Fork(void)
  */
 int handle_Exec(char *filename, char **argvec)
 {
+  TracePrintf(1, "EXEC_HANDLER: Attempting to load a new process with provided arguments\n");
+
   int rc = 0;
 
   // wipe out the page table for the old process 
@@ -110,11 +117,12 @@ int handle_Exec(char *filename, char **argvec)
   // get the page table for the new process
   // place the arguments to be executed by the new process
   if ((rc = LoadProgram(filename, argvec, running_process)) != SUCCESS) {
-    TracePrintf(1, "Loading a process failed with exit code %d\n", rc);
+    TracePrintf(1, "EXEC_HANDLER: Loading a process failed with exit code %d\n", rc);
     if (rc == -2) {
       TracePrintf(1, "Handle kill!\n", rc);
       delete_process(running_process, -2, true);
     }
+    return rc;
   }
 
   TracePrintf(5, "Exec handler: my pid is %d\n", running_process->pid);

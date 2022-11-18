@@ -344,9 +344,9 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
   TracePrintf(5, "=====Region 0 Page Table After Switch=====\n");
   print_reg_0_page_table(5, "");
 
-  TracePrintf(1, "=====OLD PCB Kernel Stack=====\n");
+  TracePrintf(5, "=====OLD PCB Kernel Stack=====\n");
   for (int i=0; i<num_stack_pages; i++) {
-    TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+    TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
                 KERNEL_STACK_BASE + (i << PAGESHIFT),
                 KERNEL_STACK_BASE + ((i+1) << PAGESHIFT)-1,
                 curr_pcb->kernel_stack[i].valid,
@@ -354,9 +354,9 @@ KernelContext *KCSwitch( KernelContext *kc_in, void *curr_pcb_p, void *next_pcb_
     );
   }
 
-  TracePrintf(1, "=====New PCB Kernel Stack=====\n");
+  TracePrintf(5, "=====New PCB Kernel Stack=====\n");
   for (int i=0; i<num_stack_pages; i++) {
-    TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+    TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
                 KERNEL_STACK_BASE + (i << PAGESHIFT),
                 KERNEL_STACK_BASE + ((i+1) << PAGESHIFT)-1,
                 next_pcb->kernel_stack[i].valid,
@@ -423,9 +423,9 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
   TracePrintf(5, "=====Region 0 Page Table After Clone=====\n");
   print_reg_0_page_table(5, "");
 
-  TracePrintf(1, "=====NEW PCB Kernel Stack=====\n");
+  TracePrintf(5, "=====NEW PCB Kernel Stack=====\n");
   for (int i=0; i<num_stack_pages; i++) {
-    TracePrintf(1, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
+    TracePrintf(5, "Addr: %x to %x, Valid: %d, Pfn: %d\n",
                 KERNEL_STACK_BASE + (i << PAGESHIFT),
                 KERNEL_STACK_BASE + ((i+1) << PAGESHIFT)-1,
                 new_pcb->kernel_stack[i].valid,
@@ -433,7 +433,7 @@ KernelContext *KCCopy( KernelContext *kc_in, void *new_pcb_p,void *not_used) {
     );
   }
 
-  TracePrintf(1, "=====OLD PCB Kernel Stack=====\n");
+  TracePrintf(5, "=====OLD PCB Kernel Stack=====\n");
   print_kernel_stack(1);
 
   // flush TLB

@@ -77,6 +77,10 @@ int handle_TtyRead(int tty_id, void *buf, int len)
     return ERROR;
   }
 
+  if (len == 0) {
+    return SUCCESS;
+  }
+
   // get the number of unconsumed chars
   int num_bytes_to_copy = tty->num_unconsumed_chars;
 
